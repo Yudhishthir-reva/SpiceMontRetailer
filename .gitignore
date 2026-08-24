@@ -1,0 +1,19 @@
+# Xcode
+## User settings
+xcuserdata/
+*.xcuserdatad
+
+## Build generated
+build/
+DerivedData/
+*.moved-aside
+*.xcuserstate
+
+## CocoaPods
+# We keep Podfile and Podfile.lock. Pods/ can be excluded or included based on repo standard.
+Pods/
+
+## Others
+.DS_Store
+*.swp
+*~

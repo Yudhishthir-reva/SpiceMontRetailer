@@ -6,34 +6,160 @@
 	objectVersion = 77;
 	objects = {
 
-/* Begin PBXFileReference section */
-		C58CCF9E303B143B0038A272 /* SpiceMontRetailer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SpiceMontRetailer.app; sourceTree = BUILT_PRODUCTS_DIR; };
-/* End PBXFileReference section */
+/* Begin PBXBuildFile section */
+		C435EE256564B531C8E902A8 /* Pods_SpiceMontRetailer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CB5697D51143704000A868C9 /* Pods_SpiceMontRetailer.framework */; };
+		C58CCFF8303B14C70038A272 /* LenientDecoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CCFDB303B14C70038A272 /* LenientDecoding.swift */; };
+		C58CCFF9303B14C70038A272 /* NetworkServiceManagable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CCFDC303B14C70038A272 /* NetworkServiceManagable.swift */; };
+		C58CCFFA303B14C70038A272 /* NetworkServiceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CCFDD303B14C70038A272 /* NetworkServiceManager.swift */; };
+		C58CCFFB303B14C70038A272 /* RequestConstant.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CCFDE303B14C70038A272 /* RequestConstant.swift */; };
+		C58CCFFC303B14C70038A272 /* APIRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CCFE0303B14C70038A272 /* APIRouter.swift */; };
+		C58CCFFD303B14C70038A272 /* RouterManagable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CCFE1303B14C70038A272 /* RouterManagable.swift */; };
+		C58CCFFE303B14C70038A272 /* AppRootManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CCFE3303B14C70038A272 /* AppRootManager.swift */; };
+		C58CCFFF303B14C70038A272 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CCFE4303B14C70038A272 /* NetworkMonitor.swift */; };
+		C58CD000303B14C70038A272 /* UserDefaultManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CCFE5303B14C70038A272 /* UserDefaultManager.swift */; };
+		C58CD001303B14C70038A272 /* Color+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CCFE7303B14C70038A272 /* Color+Extension.swift */; };
+		C58CD002303B14C70038A272 /* String+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CCFE8303B14C70038A272 /* String+Extension.swift */; };
+		C58CD003303B14C70038A272 /* View+NoInternet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CCFE9303B14C70038A272 /* View+NoInternet.swift */; };
+		C58CD004303B14C70038A272 /* AlertToast.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CCFEB303B14C70038A272 /* AlertToast.swift */; };
+		C58CD005303B14C70038A272 /* AnimatedBrandBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CCFEC303B14C70038A272 /* AnimatedBrandBackground.swift */; };
+		C58CD006303B14C70038A272 /* AppConstant.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CCFED303B14C70038A272 /* AppConstant.swift */; };
+		C58CD007303B14C70038A272 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CCFEE303B14C70038A272 /* AppTheme.swift */; };
+		C58CD008303B14C70038A272 /* RemoteImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CCFEF303B14C70038A272 /* RemoteImage.swift */; };
+		C58CD009303B14C70038A272 /* SpiceBackdrops.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CCFF0303B14C70038A272 /* SpiceBackdrops.swift */; };
+		C58CD00A303B14C70038A272 /* SpiceDecorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CCFF1303B14C70038A272 /* SpiceDecorView.swift */; };
+		C58CD00B303B14C70038A272 /* SpiceIllustrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CCFF2303B14C70038A272 /* SpiceIllustrations.swift */; };
+		C58CD00C303B14C70038A272 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CCFF4303B14C70038A272 /* AppDelegate.swift */; };
+		C58CD00D303B14C70038A272 /* SpiceMontRetailerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CCFF6303B14C70038A272 /* SpiceMontRetailerApp.swift */; };
+		C58CD00E303B14C70038A272 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C58CCFF5303B14C70038A272 /* Assets.xcassets */; };
+		C58CD012303B15160038A272 /* SplashScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD011303B15160038A272 /* SplashScreen.swift */; };
+		C58CD015303B166A0038A272 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD014303B166A0038A272 /* LoginView.swift */; };
+		C58CD019303B168E0038A272 /* LoginServiceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD018303B168E0038A272 /* LoginServiceManager.swift */; };
+		C58CD032303B200E0038A272 /* SearchScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD030303B200E0038A272 /* SearchScreen.swift */; };
+		C58CD033303B200E0038A272 /* AddAddressScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD01C303B200E0038A272 /* AddAddressScreen.swift */; };
+		C58CD034303B200E0038A272 /* ProductServiceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD02E303B200E0038A272 /* ProductServiceManager.swift */; };
+		C58CD035303B200E0038A272 /* OrderDetailScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD029303B200E0038A272 /* OrderDetailScreen.swift */; };
+		C58CD036303B200E0038A272 /* AccountScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD01A303B200E0038A272 /* AccountScreen.swift */; };
+		C58CD037303B200E0038A272 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD027303B200E0038A272 /* MainTabView.swift */; };
+		C58CD038303B200E0038A272 /* OrderServiceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD02A303B200E0038A272 /* OrderServiceManager.swift */; };
+		C58CD039303B200E0038A272 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD025303B200E0038A272 /* HomeViewModel.swift */; };
+		C58CD03A303B200E0038A272 /* HomeServiceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD024303B200E0038A272 /* HomeServiceManager.swift */; };
+		C58CD03B303B200E0038A272 /* OrdersScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD02B303B200E0038A272 /* OrdersScreen.swift */; };
+		C58CD03C303B200E0038A272 /* CheckoutScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD021303B200E0038A272 /* CheckoutScreen.swift */; };
+		C58CD03D303B200E0038A272 /* HomeScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD023303B200E0038A272 /* HomeScreen.swift */; };
+		C58CD03E303B200E0038A272 /* ProductDetailScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD02D303B200E0038A272 /* ProductDetailScreen.swift */; };
+		C58CD03F303B200E0038A272 /* CartScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD020303B200E0038A272 /* CartScreen.swift */; };
+		C58CD040303B200E0038A272 /* AddressServiceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD01E303B200E0038A272 /* AddressServiceManager.swift */; };
+		C58CD041303B200E0038A272 /* AddressListScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD01D303B200E0038A272 /* AddressListScreen.swift */; };
+		C58CD044303B20490038A272 /* SharedModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD042303B20490038A272 /* SharedModels.swift */; };
+		C58CD046303B20690038A272 /* CartManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD045303B20690038A272 /* CartManager.swift */; };
+		C58CD048303C04DE0038A272 /* OTPVerifyScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD047303C04DE0038A272 /* OTPVerifyScreen.swift */; };
+		C58CD04A303C189C0038A272 /* LoginViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD049303C189C0038A272 /* LoginViewModel.swift */; };
+		C58CD9100303B200E0038A272 /* SpiceDesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD9000303B200E0038A272 /* SpiceDesignSystem.swift */; };
+		C58CD9101303B200E0038A272 /* RetailerRegistrationFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD9001303B200E0038A272 /* RetailerRegistrationFlowView.swift */; };
+		C58CD9102303B200E0038A272 /* NotificationScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD9002303B200E0038A272 /* NotificationScreen.swift */; };
+		C58CD9103303B200E0038A272 /* BrandSelectionScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD9003303B200E0038A272 /* BrandSelectionScreen.swift */; };
+		C58CD9104303B200E0038A272 /* CategorySelectionScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD9004303B200E0038A272 /* CategorySelectionScreen.swift */; };
+		C58CD9105303B200E0038A272 /* ProductListingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD9005303B200E0038A272 /* ProductListingView.swift */; };
+		C58CD9106303B200E0038A272 /* OrderSuccessScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD9006303B200E0038A272 /* OrderSuccessScreen.swift */; };
+		C58CD9107303B200E0038A272 /* DeliveryTrackingScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD9007303B200E0038A272 /* DeliveryTrackingScreen.swift */; };
+		C58CD9108303B200E0038A272 /* GSTInvoiceScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD9008303B200E0038A272 /* GSTInvoiceScreen.swift */; };
+		C58CD9109303B200E0038A272 /* SchemesScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD9009303B200E0038A272 /* SchemesScreen.swift */; };
+		C58CD910A303B200E0038A272 /* LedgerScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD900A303B200E0038A272 /* LedgerScreen.swift */; };
+		C58CD910B303B200E0038A272 /* SalesmanScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD900B303B200E0038A272 /* SalesmanScreen.swift */; };
+/* End PBXBuildFile section */
 
-/* Begin PBXFileSystemSynchronizedRootGroup section */
-		C58CCFA0303B143B0038A272 /* SpiceMontRetailer */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = SpiceMontRetailer;
-			sourceTree = "<group>";
-		};
-/* End PBXFileSystemSynchronizedRootGroup section */
+/* Begin PBXFileReference section */
+		37B56382C6A46F498C5850CC /* Pods-SpiceMontRetailer.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SpiceMontRetailer.release.xcconfig"; path = "Target Support Files/Pods-SpiceMontRetailer/Pods-SpiceMontRetailer.release.xcconfig"; sourceTree = "<group>"; };
+		B54250F54D02D226B0533270 /* Pods-SpiceMontRetailer.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SpiceMontRetailer.debug.xcconfig"; path = "Target Support Files/Pods-SpiceMontRetailer/Pods-SpiceMontRetailer.debug.xcconfig"; sourceTree = "<group>"; };
+		C58CCF9E303B143B0038A272 /* SpiceMontRetailer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SpiceMontRetailer.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C58CCFDB303B14C70038A272 /* LenientDecoding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LenientDecoding.swift; sourceTree = "<group>"; };
+		C58CCFDC303B14C70038A272 /* NetworkServiceManagable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkServiceManagable.swift; sourceTree = "<group>"; };
+		C58CCFDD303B14C70038A272 /* NetworkServiceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkServiceManager.swift; sourceTree = "<group>"; };
+		C58CCFDE303B14C70038A272 /* RequestConstant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestConstant.swift; sourceTree = "<group>"; };
+		C58CCFE0303B14C70038A272 /* APIRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIRouter.swift; sourceTree = "<group>"; };
+		C58CCFE1303B14C70038A272 /* RouterManagable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouterManagable.swift; sourceTree = "<group>"; };
+		C58CCFE3303B14C70038A272 /* AppRootManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRootManager.swift; sourceTree = "<group>"; };
+		C58CCFE4303B14C70038A272 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
+		C58CCFE5303B14C70038A272 /* UserDefaultManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultManager.swift; sourceTree = "<group>"; };
+		C58CCFE7303B14C70038A272 /* Color+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Extension.swift"; sourceTree = "<group>"; };
+		C58CCFE8303B14C70038A272 /* String+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Extension.swift"; sourceTree = "<group>"; };
+		C58CCFE9303B14C70038A272 /* View+NoInternet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+NoInternet.swift"; sourceTree = "<group>"; };
+		C58CCFEB303B14C70038A272 /* AlertToast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertToast.swift; sourceTree = "<group>"; };
+		C58CCFEC303B14C70038A272 /* AnimatedBrandBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimatedBrandBackground.swift; sourceTree = "<group>"; };
+		C58CCFED303B14C70038A272 /* AppConstant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConstant.swift; sourceTree = "<group>"; };
+		C58CCFEE303B14C70038A272 /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
+		C58CCFEF303B14C70038A272 /* RemoteImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteImage.swift; sourceTree = "<group>"; };
+		C58CCFF0303B14C70038A272 /* SpiceBackdrops.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpiceBackdrops.swift; sourceTree = "<group>"; };
+		C58CCFF1303B14C70038A272 /* SpiceDecorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpiceDecorView.swift; sourceTree = "<group>"; };
+		C58CCFF2303B14C70038A272 /* SpiceIllustrations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpiceIllustrations.swift; sourceTree = "<group>"; };
+		C58CCFF4303B14C70038A272 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		C58CCFF5303B14C70038A272 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		C58CCFF6303B14C70038A272 /* SpiceMontRetailerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpiceMontRetailerApp.swift; sourceTree = "<group>"; };
+		C58CD011303B15160038A272 /* SplashScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashScreen.swift; sourceTree = "<group>"; };
+		C58CD014303B166A0038A272 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		C58CD018303B168E0038A272 /* LoginServiceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginServiceManager.swift; sourceTree = "<group>"; };
+		C58CD01A303B200E0038A272 /* AccountScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountScreen.swift; sourceTree = "<group>"; };
+		C58CD01C303B200E0038A272 /* AddAddressScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddAddressScreen.swift; sourceTree = "<group>"; };
+		C58CD01D303B200E0038A272 /* AddressListScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressListScreen.swift; sourceTree = "<group>"; };
+		C58CD01E303B200E0038A272 /* AddressServiceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressServiceManager.swift; sourceTree = "<group>"; };
+		C58CD020303B200E0038A272 /* CartScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CartScreen.swift; sourceTree = "<group>"; };
+		C58CD021303B200E0038A272 /* CheckoutScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckoutScreen.swift; sourceTree = "<group>"; };
+		C58CD023303B200E0038A272 /* HomeScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScreen.swift; sourceTree = "<group>"; };
+		C58CD024303B200E0038A272 /* HomeServiceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeServiceManager.swift; sourceTree = "<group>"; };
+		C58CD025303B200E0038A272 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
+		C58CD027303B200E0038A272 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		C58CD029303B200E0038A272 /* OrderDetailScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderDetailScreen.swift; sourceTree = "<group>"; };
+		C58CD02A303B200E0038A272 /* OrderServiceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderServiceManager.swift; sourceTree = "<group>"; };
+		C58CD02B303B200E0038A272 /* OrdersScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrdersScreen.swift; sourceTree = "<group>"; };
+		C58CD02D303B200E0038A272 /* ProductDetailScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductDetailScreen.swift; sourceTree = "<group>"; };
+		C58CD02E303B200E0038A272 /* ProductServiceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductServiceManager.swift; sourceTree = "<group>"; };
+		C58CD030303B200E0038A272 /* SearchScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchScreen.swift; sourceTree = "<group>"; };
+		C58CD042303B20490038A272 /* SharedModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedModels.swift; sourceTree = "<group>"; };
+		C58CD045303B20690038A272 /* CartManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CartManager.swift; sourceTree = "<group>"; };
+		C58CD047303C04DE0038A272 /* OTPVerifyScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OTPVerifyScreen.swift; sourceTree = "<group>"; };
+		C58CD049303C189C0038A272 /* LoginViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewModel.swift; sourceTree = "<group>"; };
+		CB5697D51143704000A868C9 /* Pods_SpiceMontRetailer.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SpiceMontRetailer.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		C58CD9000303B200E0038A272 /* SpiceDesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpiceDesignSystem.swift; sourceTree = "<group>"; };
+		C58CD9001303B200E0038A272 /* RetailerRegistrationFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetailerRegistrationFlowView.swift; sourceTree = "<group>"; };
+		C58CD9002303B200E0038A272 /* NotificationScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationScreen.swift; sourceTree = "<group>"; };
+		C58CD9003303B200E0038A272 /* BrandSelectionScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrandSelectionScreen.swift; sourceTree = "<group>"; };
+		C58CD9004303B200E0038A272 /* CategorySelectionScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategorySelectionScreen.swift; sourceTree = "<group>"; };
+		C58CD9005303B200E0038A272 /* ProductListingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductListingView.swift; sourceTree = "<group>"; };
+		C58CD9006303B200E0038A272 /* OrderSuccessScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderSuccessScreen.swift; sourceTree = "<group>"; };
+		C58CD9007303B200E0038A272 /* DeliveryTrackingScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeliveryTrackingScreen.swift; sourceTree = "<group>"; };
+		C58CD9008303B200E0038A272 /* GSTInvoiceScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GSTInvoiceScreen.swift; sourceTree = "<group>"; };
+		C58CD9009303B200E0038A272 /* SchemesScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemesScreen.swift; sourceTree = "<group>"; };
+		C58CD900A303B200E0038A272 /* LedgerScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LedgerScreen.swift; sourceTree = "<group>"; };
+		C58CD900B303B200E0038A272 /* SalesmanScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SalesmanScreen.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		C58CCF9B303B143B0038A272 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C435EE256564B531C8E902A8 /* Pods_SpiceMontRetailer.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		5E0BDA330EBB4152CDA03ADF /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				CB5697D51143704000A868C9 /* Pods_SpiceMontRetailer.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		C58CCF95303B143B0038A272 = {
 			isa = PBXGroup;
 			children = (
-				C58CCFA0303B143B0038A272 /* SpiceMontRetailer */,
+				C58CCFF7303B14C70038A272 /* SpiceMontRetailer */,
 				C58CCF9F303B143B0038A272 /* Products */,
+				E6075D42B994DD608F6108E1 /* Pods */,
+				5E0BDA330EBB4152CDA03ADF /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -45,6 +171,216 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		C58CCFDF303B14C70038A272 /* Network */ = {
+			isa = PBXGroup;
+			children = (
+				C58CCFDB303B14C70038A272 /* LenientDecoding.swift */,
+				C58CCFDC303B14C70038A272 /* NetworkServiceManagable.swift */,
+				C58CCFDD303B14C70038A272 /* NetworkServiceManager.swift */,
+				C58CCFDE303B14C70038A272 /* RequestConstant.swift */,
+			);
+			path = Network;
+			sourceTree = "<group>";
+		};
+		C58CCFE2303B14C70038A272 /* Router */ = {
+			isa = PBXGroup;
+			children = (
+				C58CCFE0303B14C70038A272 /* APIRouter.swift */,
+				C58CCFE1303B14C70038A272 /* RouterManagable.swift */,
+			);
+			path = Router;
+			sourceTree = "<group>";
+		};
+		C58CCFE6303B14C70038A272 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				C58CD043303B20490038A272 /* Models */,
+				C58CCFDF303B14C70038A272 /* Network */,
+				C58CCFE2303B14C70038A272 /* Router */,
+				C58CCFE3303B14C70038A272 /* AppRootManager.swift */,
+				C58CCFE4303B14C70038A272 /* NetworkMonitor.swift */,
+				C58CCFE5303B14C70038A272 /* UserDefaultManager.swift */,
+				C58CD045303B20690038A272 /* CartManager.swift */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		C58CCFEA303B14C70038A272 /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				C58CCFE7303B14C70038A272 /* Color+Extension.swift */,
+				C58CCFE8303B14C70038A272 /* String+Extension.swift */,
+				C58CCFE9303B14C70038A272 /* View+NoInternet.swift */,
+			);
+			path = Extensions;
+			sourceTree = "<group>";
+		};
+		C58CCFF3303B14C70038A272 /* Utility */ = {
+			isa = PBXGroup;
+			children = (
+				C58CD9000303B200E0038A272 /* SpiceDesignSystem.swift */,
+				C58CCFEB303B14C70038A272 /* AlertToast.swift */,
+				C58CCFEC303B14C70038A272 /* AnimatedBrandBackground.swift */,
+				C58CCFED303B14C70038A272 /* AppConstant.swift */,
+				C58CCFEE303B14C70038A272 /* AppTheme.swift */,
+				C58CCFEF303B14C70038A272 /* RemoteImage.swift */,
+				C58CCFF0303B14C70038A272 /* SpiceBackdrops.swift */,
+				C58CCFF1303B14C70038A272 /* SpiceDecorView.swift */,
+				C58CCFF2303B14C70038A272 /* SpiceIllustrations.swift */,
+			);
+			path = Utility;
+			sourceTree = "<group>";
+		};
+		C58CCFF7303B14C70038A272 /* SpiceMontRetailer */ = {
+			isa = PBXGroup;
+			children = (
+				C58CD00F303B14CD0038A272 /* Screens */,
+				C58CCFE6303B14C70038A272 /* Core */,
+				C58CCFEA303B14C70038A272 /* Extensions */,
+				C58CCFF3303B14C70038A272 /* Utility */,
+				C58CCFF4303B14C70038A272 /* AppDelegate.swift */,
+				C58CCFF5303B14C70038A272 /* Assets.xcassets */,
+				C58CCFF6303B14C70038A272 /* SpiceMontRetailerApp.swift */,
+			);
+			path = SpiceMontRetailer;
+			sourceTree = "<group>";
+		};
+		C58CD00F303B14CD0038A272 /* Screens */ = {
+			isa = PBXGroup;
+			children = (
+				C58CD013303B16580038A272 /* Login */,
+				C58CD010303B14DE0038A272 /* Splash */,
+				C58CD01B303B200E0038A272 /* Account */,
+				C58CD01F303B200E0038A272 /* Address */,
+				C58CD022303B200E0038A272 /* Cart */,
+				C58CD026303B200E0038A272 /* Home */,
+				C58CD028303B200E0038A272 /* Main */,
+				C58CD02C303B200E0038A272 /* Orders */,
+				C58CD02F303B200E0038A272 /* Product */,
+				C58CD031303B200E0038A272 /* Search */,
+			);
+			path = Screens;
+			sourceTree = "<group>";
+		};
+		C58CD010303B14DE0038A272 /* Splash */ = {
+			isa = PBXGroup;
+			children = (
+				C58CD011303B15160038A272 /* SplashScreen.swift */,
+			);
+			path = Splash;
+			sourceTree = "<group>";
+		};
+		C58CD013303B16580038A272 /* Login */ = {
+			isa = PBXGroup;
+			children = (
+				C58CD9001303B200E0038A272 /* RetailerRegistrationFlowView.swift */,
+				C58CD049303C189C0038A272 /* LoginViewModel.swift */,
+				C58CD047303C04DE0038A272 /* OTPVerifyScreen.swift */,
+				C58CD014303B166A0038A272 /* LoginView.swift */,
+				C58CD018303B168E0038A272 /* LoginServiceManager.swift */,
+			);
+			path = Login;
+			sourceTree = "<group>";
+		};
+		C58CD01B303B200E0038A272 /* Account */ = {
+			isa = PBXGroup;
+			children = (
+				C58CD900A303B200E0038A272 /* LedgerScreen.swift */,
+				C58CD900B303B200E0038A272 /* SalesmanScreen.swift */,
+				C58CD01A303B200E0038A272 /* AccountScreen.swift */,
+			);
+			path = Account;
+			sourceTree = "<group>";
+		};
+		C58CD01F303B200E0038A272 /* Address */ = {
+			isa = PBXGroup;
+			children = (
+				C58CD01C303B200E0038A272 /* AddAddressScreen.swift */,
+				C58CD01D303B200E0038A272 /* AddressListScreen.swift */,
+				C58CD01E303B200E0038A272 /* AddressServiceManager.swift */,
+			);
+			path = Address;
+			sourceTree = "<group>";
+		};
+		C58CD022303B200E0038A272 /* Cart */ = {
+			isa = PBXGroup;
+			children = (
+				C58CD9006303B200E0038A272 /* OrderSuccessScreen.swift */,
+				C58CD020303B200E0038A272 /* CartScreen.swift */,
+				C58CD021303B200E0038A272 /* CheckoutScreen.swift */,
+			);
+			path = Cart;
+			sourceTree = "<group>";
+		};
+		C58CD026303B200E0038A272 /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				C58CD9002303B200E0038A272 /* NotificationScreen.swift */,
+				C58CD9009303B200E0038A272 /* SchemesScreen.swift */,
+				C58CD023303B200E0038A272 /* HomeScreen.swift */,
+				C58CD024303B200E0038A272 /* HomeServiceManager.swift */,
+				C58CD025303B200E0038A272 /* HomeViewModel.swift */,
+			);
+			path = Home;
+			sourceTree = "<group>";
+		};
+		C58CD028303B200E0038A272 /* Main */ = {
+			isa = PBXGroup;
+			children = (
+				C58CD027303B200E0038A272 /* MainTabView.swift */,
+			);
+			path = Main;
+			sourceTree = "<group>";
+		};
+		C58CD02C303B200E0038A272 /* Orders */ = {
+			isa = PBXGroup;
+			children = (
+				C58CD9007303B200E0038A272 /* DeliveryTrackingScreen.swift */,
+				C58CD9008303B200E0038A272 /* GSTInvoiceScreen.swift */,
+				C58CD029303B200E0038A272 /* OrderDetailScreen.swift */,
+				C58CD02A303B200E0038A272 /* OrderServiceManager.swift */,
+				C58CD02B303B200E0038A272 /* OrdersScreen.swift */,
+			);
+			path = Orders;
+			sourceTree = "<group>";
+		};
+		C58CD02F303B200E0038A272 /* Product */ = {
+			isa = PBXGroup;
+			children = (
+				C58CD9003303B200E0038A272 /* BrandSelectionScreen.swift */,
+				C58CD9004303B200E0038A272 /* CategorySelectionScreen.swift */,
+				C58CD9005303B200E0038A272 /* ProductListingView.swift */,
+				C58CD02D303B200E0038A272 /* ProductDetailScreen.swift */,
+				C58CD02E303B200E0038A272 /* ProductServiceManager.swift */,
+			);
+			path = Product;
+			sourceTree = "<group>";
+		};
+		C58CD031303B200E0038A272 /* Search */ = {
+			isa = PBXGroup;
+			children = (
+				C58CD030303B200E0038A272 /* SearchScreen.swift */,
+			);
+			path = Search;
+			sourceTree = "<group>";
+		};
+		C58CD043303B20490038A272 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				C58CD042303B20490038A272 /* SharedModels.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		E6075D42B994DD608F6108E1 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				B54250F54D02D226B0533270 /* Pods-SpiceMontRetailer.debug.xcconfig */,
+				37B56382C6A46F498C5850CC /* Pods-SpiceMontRetailer.release.xcconfig */,
+			);
+			path = Pods;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -52,6 +388,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = C58CCFA9303B143B0038A272 /* Build configuration list for PBXNativeTarget "SpiceMontRetailer" */;
 			buildPhases = (
+				C83B1EF64CB5A6918BD866CA /* [CP] Check Pods Manifest.lock */,
 				C58CCF9A303B143B0038A272 /* Sources */,
 				C58CCF9B303B143B0038A272 /* Frameworks */,
 				C58CCF9C303B143B0038A272 /* Resources */,
@@ -60,12 +397,7 @@
 			);
 			dependencies = (
 			);
-			fileSystemSynchronizedGroups = (
-				C58CCFA0303B143B0038A272 /* SpiceMontRetailer */,
-			);
 			name = SpiceMontRetailer;
-			packageProductDependencies = (
-			);
 			productName = SpiceMontRetailer;
 			productReference = C58CCF9E303B143B0038A272 /* SpiceMontRetailer.app */;
 			productType = "com.apple.product-type.application";
@@ -109,16 +441,99 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C58CD00E303B14C70038A272 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		C83B1EF64CB5A6918BD866CA /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-SpiceMontRetailer-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		C58CCF9A303B143B0038A272 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C58CD9100303B200E0038A272 /* SpiceDesignSystem.swift in Sources */,
+				C58CD9101303B200E0038A272 /* RetailerRegistrationFlowView.swift in Sources */,
+				C58CD9102303B200E0038A272 /* NotificationScreen.swift in Sources */,
+				C58CD9103303B200E0038A272 /* BrandSelectionScreen.swift in Sources */,
+				C58CD9104303B200E0038A272 /* CategorySelectionScreen.swift in Sources */,
+				C58CD9105303B200E0038A272 /* ProductListingView.swift in Sources */,
+				C58CD9106303B200E0038A272 /* OrderSuccessScreen.swift in Sources */,
+				C58CD9107303B200E0038A272 /* DeliveryTrackingScreen.swift in Sources */,
+				C58CD9108303B200E0038A272 /* GSTInvoiceScreen.swift in Sources */,
+				C58CD9109303B200E0038A272 /* SchemesScreen.swift in Sources */,
+				C58CD910A303B200E0038A272 /* LedgerScreen.swift in Sources */,
+				C58CD910B303B200E0038A272 /* SalesmanScreen.swift in Sources */,
+				C58CCFF8303B14C70038A272 /* LenientDecoding.swift in Sources */,
+				C58CCFF9303B14C70038A272 /* NetworkServiceManagable.swift in Sources */,
+				C58CCFFA303B14C70038A272 /* NetworkServiceManager.swift in Sources */,
+				C58CCFFB303B14C70038A272 /* RequestConstant.swift in Sources */,
+				C58CCFFC303B14C70038A272 /* APIRouter.swift in Sources */,
+				C58CCFFD303B14C70038A272 /* RouterManagable.swift in Sources */,
+				C58CD015303B166A0038A272 /* LoginView.swift in Sources */,
+				C58CD032303B200E0038A272 /* SearchScreen.swift in Sources */,
+				C58CD04A303C189C0038A272 /* LoginViewModel.swift in Sources */,
+				C58CD033303B200E0038A272 /* AddAddressScreen.swift in Sources */,
+				C58CD034303B200E0038A272 /* ProductServiceManager.swift in Sources */,
+				C58CD035303B200E0038A272 /* OrderDetailScreen.swift in Sources */,
+				C58CD044303B20490038A272 /* SharedModels.swift in Sources */,
+				C58CD036303B200E0038A272 /* AccountScreen.swift in Sources */,
+				C58CD037303B200E0038A272 /* MainTabView.swift in Sources */,
+				C58CD038303B200E0038A272 /* OrderServiceManager.swift in Sources */,
+				C58CD039303B200E0038A272 /* HomeViewModel.swift in Sources */,
+				C58CD03A303B200E0038A272 /* HomeServiceManager.swift in Sources */,
+				C58CD03B303B200E0038A272 /* OrdersScreen.swift in Sources */,
+				C58CD03C303B200E0038A272 /* CheckoutScreen.swift in Sources */,
+				C58CD03D303B200E0038A272 /* HomeScreen.swift in Sources */,
+				C58CD03E303B200E0038A272 /* ProductDetailScreen.swift in Sources */,
+				C58CD03F303B200E0038A272 /* CartScreen.swift in Sources */,
+				C58CD040303B200E0038A272 /* AddressServiceManager.swift in Sources */,
+				C58CD041303B200E0038A272 /* AddressListScreen.swift in Sources */,
+				C58CD019303B168E0038A272 /* LoginServiceManager.swift in Sources */,
+				C58CD046303B20690038A272 /* CartManager.swift in Sources */,
+				C58CCFFE303B14C70038A272 /* AppRootManager.swift in Sources */,
+				C58CCFFF303B14C70038A272 /* NetworkMonitor.swift in Sources */,
+				C58CD048303C04DE0038A272 /* OTPVerifyScreen.swift in Sources */,
+				C58CD000303B14C70038A272 /* UserDefaultManager.swift in Sources */,
+				C58CD001303B14C70038A272 /* Color+Extension.swift in Sources */,
+				C58CD002303B14C70038A272 /* String+Extension.swift in Sources */,
+				C58CD003303B14C70038A272 /* View+NoInternet.swift in Sources */,
+				C58CD004303B14C70038A272 /* AlertToast.swift in Sources */,
+				C58CD005303B14C70038A272 /* AnimatedBrandBackground.swift in Sources */,
+				C58CD006303B14C70038A272 /* AppConstant.swift in Sources */,
+				C58CD007303B14C70038A272 /* AppTheme.swift in Sources */,
+				C58CD008303B14C70038A272 /* RemoteImage.swift in Sources */,
+				C58CD012303B15160038A272 /* SplashScreen.swift in Sources */,
+				C58CD009303B14C70038A272 /* SpiceBackdrops.swift in Sources */,
+				C58CD00A303B14C70038A272 /* SpiceDecorView.swift in Sources */,
+				C58CD00B303B14C70038A272 /* SpiceIllustrations.swift in Sources */,
+				C58CD00C303B14C70038A272 /* AppDelegate.swift in Sources */,
+				C58CD00D303B14C70038A272 /* SpiceMontRetailerApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -248,6 +663,7 @@
 		};
 		C58CCFAA303B143B0038A272 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = B54250F54D02D226B0533270 /* Pods-SpiceMontRetailer.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -259,8 +675,9 @@
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -269,17 +686,22 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com..SpiceMontRetailer;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
 		C58CCFAB303B143B0038A272 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 37B56382C6A46F498C5850CC /* Pods-SpiceMontRetailer.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -291,8 +713,9 @@
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -301,12 +724,16 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com..SpiceMontRetailer;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
