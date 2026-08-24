@@ -159,8 +159,13 @@ struct OTPVerifyScreen: View {
                             if filtered != newValue {
                                 viewModel.digits[index] = filtered
                             }
-                            if !filtered.isEmpty && index < 5 {
-                                focusedIndex = index + 1
+                            if !filtered.isEmpty {
+                                if index < 5 {
+                                    focusedIndex = index + 1
+                                } else if index == 5 && viewModel.otpString.count == 6 {
+                                    focusedIndex = nil
+                                    viewModel.verifyOTP(mobile: mobile)
+                                }
                             }
                         }
                 }

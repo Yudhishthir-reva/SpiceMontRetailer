@@ -15,29 +15,50 @@ struct CartScreen: View {
     @State private var orderPlacedSuccess: Bool = false
     @State private var isPlacingOrder: Bool = false
 
+    @State private var showSchemePicker: Bool = false
+
     // Delivery address state
     @State private var deliveryShopName: String = "ABC General Store"
     @State private var deliveryAddress: String = "Shop 14, Krishna Market, Andheri East, Mumbai, Maharashtra 400069"
     @State private var deliveryContact: String = "+91 98765 43210"
 
-    // Demo calculations for realistic B2B summary
     var productTotal: Double {
-        cartManager.items.reduce(0) { sum, item in
+        if let sub = Double(cartManager.subtotal), sub > 0 {
+            return sub
+        }
+        return cartManager.items.reduce(0) { sum, item in
             let price = Double(item.product?.price ?? "") ?? 78.40
             return sum + (price * Double(item.quantity ?? 1))
         }
     }
 
     var schemeDiscount: Double {
-        return productTotal > 500 ? 60.00 : 0.00
+        if let d = Double(cartManager.discount), d > 0 {
+            return d
+        }
+        if let cd = Double(cartManager.couponDiscount), cd > 0 {
+            return cd
+        }
+        return (cartManager.appliedOffer != nil) ? 60.00 : 0.00
+    }
+
+    var handlingCharge: Double {
+        Double(cartManager.handlingCharge) ?? 0.00
+    }
+
+    var packingCharge: Double {
+        Double(cartManager.packingCharge) ?? 0.00
     }
 
     var gstAmount: Double {
-        return (productTotal - schemeDiscount) * 0.05
+        max(0, (productTotal - schemeDiscount) * 0.05)
     }
 
     var finalAmount: Double {
-        max(0, productTotal - schemeDiscount + gstAmount)
+        if let fin = Double(cartManager.finalAmount), fin > 0 {
+            return fin
+        }
+        return max(0, productTotal - schemeDiscount + handlingCharge + packingCharge + gstAmount)
     }
 
     var totalUnitsCount: Int {
@@ -100,8 +121,8 @@ struct CartScreen: View {
                             cartItemCard(item)
                         }
 
-                        // Scheme Applied Card
-                        if schemeDiscount > 0 {
+                        // Schemes / Offers Card
+                        if let applied = cartManager.appliedOffer {
                             SpiceCard(backgroundColor: Color.spicePrimaryLight.opacity(0.4), borderColor: Color.spicePrimaryLight) {
                                 VStack(alignment: .leading, spacing: 4) {
                                     HStack {
@@ -109,38 +130,47 @@ struct CartScreen: View {
                                             .font(.system(size: 11.5, weight: .heavy))
                                             .foregroundColor(Color.spicePrimary)
                                         Spacer()
-                                        Text(String(format: "− ₹%.2f", schemeDiscount))
-                                            .font(.system(size: 12, weight: .heavy, design: .monospaced))
+                                        Button(action: { showSchemePicker = true }) {
+                                            Text("Change")
+                                                .font(.system(size: 11.5, weight: .heavy))
+                                                .foregroundColor(Color.spicePrimary)
+                                        }
+                                    }
+                                    Text(applied.title ?? "Trade Scheme")
+                                        .font(.system(size: 12, weight: .heavy))
+                                        .foregroundColor(Color.spiceInk)
+                                    if let discAmt = applied.discountAmount {
+                                        Text("Discount: ₹\(String(format: "%.2f", discAmt))")
+                                            .font(.system(size: 11, weight: .semibold, design: .monospaced))
                                             .foregroundColor(Color.spicePrimary)
                                     }
-                                    Text("MDH Bulk Purchase Scheme")
-                                        .font(.system(size: 11.5, weight: .heavy))
-                                        .foregroundColor(Color.spiceInk)
-                                    Text("10 units of Deggi Mirch → extra 5% discount")
-                                        .font(.system(size: 10.5, weight: .medium))
-                                        .foregroundColor(Color.spiceMuted)
                                 }
                             }
-                        }
-
-                        // Scheme Available Card
-                        SpiceCard(backgroundColor: Color.spiceAmberLight.opacity(0.3), borderColor: Color.spiceAmber.opacity(0.4)) {
-                            VStack(alignment: .leading, spacing: 6) {
-                                HStack {
-                                    Text("Scheme Available")
-                                        .font(.system(size: 11.5, weight: .heavy))
-                                        .foregroundColor(Color.spiceAmber)
-                                    Spacer()
-                                    Text("8 / 10 units")
-                                        .font(.system(size: 11, weight: .bold, design: .monospaced))
-                                        .foregroundColor(Color.spiceAmber)
+                        } else {
+                            Button(action: { showSchemePicker = true }) {
+                                SpiceCard(backgroundColor: Color.spiceAmberLight.opacity(0.25), borderColor: Color.spiceAmber.opacity(0.4)) {
+                                    HStack {
+                                        VStack(alignment: .leading, spacing: 3) {
+                                            HStack(spacing: 6) {
+                                                Image(systemName: "tag.fill")
+                                                    .font(.system(size: 12))
+                                                    .foregroundColor(Color.spiceAmber)
+                                                Text("Apply Wholesale Scheme")
+                                                    .font(.system(size: 12, weight: .heavy))
+                                                    .foregroundColor(Color.spiceInk)
+                                            }
+                                            Text("Select from available trade schemes & discounts")
+                                                .font(.system(size: 10.5, weight: .medium))
+                                                .foregroundColor(Color.spiceMuted)
+                                        }
+                                        Spacer()
+                                        Image(systemName: "chevron.right")
+                                            .font(.system(size: 12, weight: .bold))
+                                            .foregroundColor(Color.spiceMuted)
+                                    }
                                 }
-                                ProgressView(value: 0.8)
-                                    .tint(Color.spiceAmber)
-                                Text("Add 2 more units of Chana Masala to unlock 3% extra discount")
-                                    .font(.system(size: 10.5, weight: .medium))
-                                    .foregroundColor(Color.spiceInk.opacity(0.8))
                             }
+                            .buttonStyle(.plain)
                         }
 
                         // Delivery Address Card
@@ -184,7 +214,13 @@ struct CartScreen: View {
                                 if schemeDiscount > 0 {
                                     SpiceKVRow(key: "Scheme Discount", value: String(format: "− ₹%.2f", schemeDiscount), isMonoValue: true, valueColor: Color.spicePrimary)
                                 }
-                                SpiceKVRow(key: "Delivery Charges", value: "₹0.00", isMonoValue: true)
+                                if handlingCharge > 0 {
+                                    SpiceKVRow(key: "Handling Charge", value: String(format: "₹%.2f", handlingCharge), isMonoValue: true)
+                                }
+                                if packingCharge > 0 {
+                                    SpiceKVRow(key: "Packing Charge", value: String(format: "₹%.2f", packingCharge), isMonoValue: true)
+                                }
+                                SpiceKVRow(key: "Delivery Charges", value: "FREE", isMonoValue: true, valueColor: Color.spicePrimary)
                                 SpiceKVRow(key: "GST (5%)", value: String(format: "₹%.2f", gstAmount), isMonoValue: true)
                                 Divider().padding(.vertical, 2)
                                 HStack {
@@ -241,8 +277,20 @@ struct CartScreen: View {
             }
         }
         .navigationBarHidden(true)
+        .sheet(isPresented: $showSchemePicker) {
+            SchemePickerSheet(
+                cartTotal: productTotal,
+                appliedSchemeId: cartManager.appliedOffer?.id
+            )
+        }
         .sheet(isPresented: $showAddressList) {
-            NavigationStack { AddressListScreen() }
+            NavigationStack {
+                AddressListScreen(isSelectMode: true) { selected in
+                    deliveryShopName = selected.name ?? "Store"
+                    deliveryAddress = selected.fullAddress
+                    deliveryContact = selected.phone ?? ""
+                }
+            }
         }
         .fullScreenCover(isPresented: $orderPlacedSuccess) {
             NavigationStack {

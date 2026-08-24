@@ -20,7 +20,7 @@ struct AddAddressScreen: View {
     @State private var landmark = ""
     @State private var city = ""
     @State private var state = ""
-    @State private var addressType = "home"
+    @State private var addressType = "shop"
     @State private var isSaving = false
     @State private var isFetchingCity = false
     @State private var isShowToast = false
@@ -30,156 +30,162 @@ struct AddAddressScreen: View {
     private let service = AddressServiceManager()
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 16) {
-                // Name
-                formField(title: "FULL NAME", text: $name, placeholder: "Enter full name")
+        VStack(spacing: 0) {
+            // Top Bar
+            SpiceTopBar(
+                title: "Add Delivery Address",
+                showBack: true,
+                onBack: { dismiss() }
+            )
 
-                // Phone
-                formField(title: "PHONE NUMBER", text: $phone, placeholder: "10-digit mobile", keyboard: .numberPad)
-                    .onChange(of: phone) { _, newValue in
-                        phone = String(newValue.filter(\.isNumber).prefix(10))
+            ScrollView {
+                VStack(spacing: 14) {
+                    // Contact & Shop Info Card
+                    SpiceCard {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Shop & Contact Details")
+                                .font(.system(size: 13, weight: .heavy))
+                                .foregroundColor(Color.spiceInk)
+
+                            Divider()
+
+                            formField(title: "SHOP / OUTLET NAME", text: $name, placeholder: "e.g. ABC General Store")
+
+                            formField(title: "CONTACT MOBILE", text: $phone, placeholder: "10-digit mobile number", keyboard: .numberPad)
+                                .onChange(of: phone) { _, newValue in
+                                    phone = String(newValue.filter(\.isNumber).prefix(10))
+                                }
+                        }
                     }
 
-                // Pincode
-                HStack(spacing: 12) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        fieldLabel("PINCODE")
-                        HStack {
-                            TextField("Enter pincode", text: $pincode)
-                                .keyboardType(.numberPad)
-                                .font(.system(size: 15))
-                                .onChange(of: pincode) { _, newValue in
-                                    let digits = String(newValue.filter(\.isNumber).prefix(6))
-                                    pincode = digits
-                                    if digits.count == 6 { fetchCity() }
+                    // Location & Pincode Card
+                    SpiceCard {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Delivery Location")
+                                .font(.system(size: 13, weight: .heavy))
+                                .foregroundColor(Color.spiceInk)
+
+                            Divider()
+
+                            // Pincode & City
+                            HStack(spacing: 10) {
+                                VStack(alignment: .leading, spacing: 6) {
+                                    fieldLabel("PINCODE")
+                                    HStack {
+                                        TextField("6-digit PIN", text: $pincode)
+                                            .keyboardType(.numberPad)
+                                            .font(.system(size: 13.5, weight: .semibold, design: .monospaced))
+                                            .onChange(of: pincode) { _, newValue in
+                                                let digits = String(newValue.filter(\.isNumber).prefix(6))
+                                                pincode = digits
+                                                if digits.count == 6 { fetchCity() }
+                                            }
+
+                                        if isFetchingCity {
+                                            ProgressView().scaleEffect(0.7)
+                                        }
+                                    }
+                                    .padding(10)
+                                    .frame(height: 44)
+                                    .background(Color.spiceBackground)
+                                    .cornerRadius(8)
+                                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.spiceCardBorder, lineWidth: 1))
                                 }
 
-                            if isFetchingCity {
-                                ProgressView()
-                                    .scaleEffect(0.8)
+                                VStack(alignment: .leading, spacing: 6) {
+                                    fieldLabel("CITY")
+                                    TextField("City", text: $city)
+                                        .font(.system(size: 13.5, weight: .semibold))
+                                        .padding(10)
+                                        .frame(height: 44)
+                                        .background(Color.spiceBackground)
+                                        .cornerRadius(8)
+                                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.spiceCardBorder, lineWidth: 1))
+                                }
+                            }
+
+                            // State
+                            formField(title: "STATE", text: $state, placeholder: "State name")
+
+                            // Address Lines
+                            formField(title: "ADDRESS LINE 1", text: $addressLine1, placeholder: "Shop No., Building, Street Name")
+                            formField(title: "ADDRESS LINE 2 (OPTIONAL)", text: $addressLine2, placeholder: "Area, Colony, Market Name")
+                            formField(title: "LANDMARK (OPTIONAL)", text: $landmark, placeholder: "Near...")
+                        }
+                    }
+
+                    // Address Type Card
+                    SpiceCard {
+                        VStack(alignment: .leading, spacing: 10) {
+                            fieldLabel("ADDRESS TYPE")
+
+                            HStack(spacing: 8) {
+                                typeChip("Shop / Store", value: "shop", icon: "storefront.fill")
+                                typeChip("Godown / Warehouse", value: "warehouse", icon: "building.2.fill")
+                                typeChip("Office", value: "office", icon: "briefcase.fill")
                             }
                         }
-                        .padding(.horizontal, 14)
-                        .frame(height: 48)
-                        .background(AppTheme.fieldBackground)
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .stroke(AppTheme.fieldBorder, lineWidth: 1)
-                        }
                     }
-                    .frame(maxWidth: .infinity)
 
-                    VStack(alignment: .leading, spacing: 8) {
-                        fieldLabel("CITY")
-                        Text(city.isEmpty ? "Auto-fill" : city)
-                            .font(.system(size: 15))
-                            .foregroundStyle(city.isEmpty ? AppTheme.textMuted : AppTheme.textPrimary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 14)
-                            .frame(height: 48)
-                            .background(AppTheme.fieldBackground)
-                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                            .overlay {
-                                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                    .stroke(AppTheme.fieldBorder, lineWidth: 1)
-                            }
+                    // Save Button
+                    SpicePrimaryButton(title: "Save Delivery Address", height: 48, isEnabled: !isSaving) {
+                        saveAddress()
                     }
-                    .frame(maxWidth: .infinity)
+                    .padding(.top, 4)
+
+                    Spacer(minLength: 30)
                 }
-
-                // State
-                formField(title: "STATE", text: $state, placeholder: "Auto-filled from pincode")
-
-                // Address Lines
-                formField(title: "ADDRESS LINE 1", text: $addressLine1, placeholder: "House/Flat no, Street")
-                formField(title: "ADDRESS LINE 2", text: $addressLine2, placeholder: "Area, Colony (optional)")
-                formField(title: "LANDMARK", text: $landmark, placeholder: "Near... (optional)")
-
-                // Type
-                VStack(alignment: .leading, spacing: 8) {
-                    fieldLabel("ADDRESS TYPE")
-                    HStack(spacing: 10) {
-                        typeChip("Home", value: "home", icon: "house.fill")
-                        typeChip("Office", value: "office", icon: "building.2.fill")
-                        typeChip("Other", value: "other", icon: "mappin")
-                    }
-                }
-
-                // Save
-                PrimaryActionButton(title: "Save Address", icon: "checkmark", isLoading: isSaving) {
-                    saveAddress()
-                }
-                .padding(.top, 8)
+                .padding(16)
             }
-            .padding(16)
+            .background(Color.spiceBackground)
         }
-        .background(AppTheme.homeCanvas)
-        .spiceNavigationBar(title: "Add Address")
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button { dismiss() } label: {
-                    Image(systemName: "xmark")
-                        .foregroundStyle(.white)
-                }
-            }
-        }
+        .navigationBarHidden(true)
         .toast(isPresenting: $isShowToast, duration: 1.8, offsetY: 10, alert: {
             AlertToast(displayMode: .banner(.pop), type: .regular, title: toastMessage)
         }, onTap: nil, completion: nil)
     }
 
     // MARK: - Form helpers
-
     private func formField(title: String, text: Binding<String>, placeholder: String, keyboard: UIKeyboardType = .default) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             fieldLabel(title)
             TextField(placeholder, text: text)
                 .keyboardType(keyboard)
-                .font(.system(size: 15))
-                .padding(.horizontal, 14)
-                .frame(height: 48)
-                .background(AppTheme.fieldBackground)
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .stroke(AppTheme.fieldBorder, lineWidth: 1)
-                }
+                .font(.system(size: 13, weight: .medium))
+                .padding(10)
+                .frame(height: 44)
+                .background(Color.spiceBackground)
+                .cornerRadius(8)
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.spiceCardBorder, lineWidth: 1))
         }
     }
 
     private func fieldLabel(_ text: String) -> some View {
-        HStack(spacing: 6) {
-            Capsule()
-                .fill(AppTheme.brandGreen)
-                .frame(width: 3, height: 12)
-            Text(text)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(AppTheme.textSecondary)
-                .tracking(0.6)
-        }
+        Text(text)
+            .font(.system(size: 10, weight: .bold))
+            .foregroundColor(Color.spiceMuted)
+            .tracking(0.4)
     }
 
     private func typeChip(_ label: String, value: String, icon: String) -> some View {
         let isSelected = addressType == value
-        return Button { addressType = value } label: {
+        return Button(action: { addressType = value }) {
             HStack(spacing: 4) {
                 Image(systemName: icon)
-                    .font(.system(size: 12))
+                    .font(.system(size: 11))
                 Text(label)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 11.5, weight: .bold))
             }
-            .foregroundStyle(isSelected ? .white : AppTheme.textPrimary)
-            .padding(.horizontal, 14)
+            .padding(.horizontal, 10)
             .padding(.vertical, 8)
-            .background(isSelected ? AppTheme.brandGreen : AppTheme.accentSoft)
-            .clipShape(Capsule())
+            .background(isSelected ? Color.spicePrimary : Color.white)
+            .foregroundColor(isSelected ? .white : Color.spiceInk)
+            .cornerRadius(8)
+            .overlay(RoundedRectangle(cornerRadius: 8).stroke(isSelected ? Color.spicePrimary : Color.spiceCardBorder, lineWidth: 1))
         }
     }
 
     // MARK: - Network
-
     private func fetchCity() {
         isFetchingCity = true
         let params: [String: Any] = ["pincode": pincode]
@@ -201,9 +207,9 @@ struct AddAddressScreen: View {
     }
 
     private func saveAddress() {
-        guard !name.trim.isEmpty else { show("Please enter name"); return }
-        guard phone.trim.isValidIndianMobileNumber() else { show("Enter valid phone"); return }
-        guard pincode.count == 6 else { show("Enter valid pincode"); return }
+        guard !name.trim.isEmpty else { show("Please enter shop/contact name"); return }
+        guard phone.trim.isValidIndianMobileNumber() else { show("Enter valid 10-digit mobile"); return }
+        guard pincode.count == 6 else { show("Enter valid 6-digit pincode"); return }
         guard !addressLine1.trim.isEmpty else { show("Enter address line 1"); return }
         guard !city.trim.isEmpty else { show("City is required"); return }
         guard !state.trim.isEmpty else { show("State is required"); return }
@@ -235,7 +241,7 @@ struct AddAddressScreen: View {
                     onSaved?()
                     dismiss()
                 } else {
-                    show(response.message ?? "Failed to save")
+                    show(response.message ?? "Failed to save address")
                 }
             }
             .store(in: &cancellables)

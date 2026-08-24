@@ -319,3 +319,36 @@ struct SpiceEmptyStateView: View {
         }
     }
 }
+
+// MARK: - Offline Connectivity Banner
+
+struct SpiceOfflineBanner: View {
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "wifi.slash")
+                .font(.system(size: 12, weight: .bold))
+                .foregroundColor(.white)
+
+            Text("No Internet Connection · Working in Offline Mode")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(.white)
+
+            Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(Color.spiceDue)
+    }
+}
+
+// MARK: - Divider
+
+struct SpiceDivider: View {
+    var color: Color = Color.spiceDivider
+
+    var body: some View {
+        Rectangle()
+            .fill(color)
+            .frame(height: 1)
+    }
+}

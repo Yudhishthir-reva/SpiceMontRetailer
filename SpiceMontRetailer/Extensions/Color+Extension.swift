@@ -39,6 +39,8 @@ extension Color {
     static let spicePrimary = Color(hex: "#0E8A4C")
     static let spicePrimaryDark = Color(hex: "#0A6B3B")
     static let spicePrimaryLight = Color(hex: "#E6F4EC")
+    static let spicePrimaryWash = Color(hex: "#E7F3EC")
+    static let spicePrimaryBorder = Color(hex: "#B6DCC6")
     static let spiceTransit = Color(hex: "#1B57D6")
     static let spiceTransitLight = Color(hex: "#E8EEFC")
     static let spiceDue = Color(hex: "#C8322B")
@@ -74,6 +76,8 @@ extension UIColor {
 
     static let spicePrimary = UIColor(hex: "#0E8A4C")
     static let spicePrimaryDark = UIColor(hex: "#0A6B3B")
+    static let spicePrimaryWash = UIColor(hex: "#E7F3EC")
+    static let spicePrimaryBorder = UIColor(hex: "#B6DCC6")
     static let spiceTransit = UIColor(hex: "#1B57D6")
     static let spiceDue = UIColor(hex: "#C8322B")
     static let spiceAmber = UIColor(hex: "#A85B08")

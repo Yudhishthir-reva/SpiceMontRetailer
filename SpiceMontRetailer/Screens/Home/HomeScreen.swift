@@ -79,6 +79,9 @@ struct HomeScreen: View {
                 .background(Color.white)
                 .overlay(Divider().background(Color.spiceDivider), alignment: .bottom)
 
+            if viewModel.isAccountPending {
+                accountPendingStateView
+            } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 14) {
                         // User Info Header
@@ -343,15 +346,16 @@ struct HomeScreen: View {
                 }
                 .background(Color.spiceBackground)
             }
-            .navigationBarHidden(true)
-            .sheet(isPresented: $showNotifications) {
-                NavigationStack { NotificationScreen() }
-            }
-            .onAppear {
-                loadLiveDashboard()
-            }
+        }
+        .navigationBarHidden(true)
+        .sheet(isPresented: $showNotifications) {
+            NavigationStack { NotificationScreen() }
+        }
+        .onAppear {
+            loadLiveDashboard()
         }
     }
+}
 
     private func loadLiveDashboard() {
         let headers = defaults.authHeader
@@ -408,5 +412,49 @@ struct HomeScreen: View {
             }
         }
         .buttonStyle(.plain)
+    }
+
+    // MARK: - Account Pending State (Screen 03 on Home)
+    @ViewBuilder
+    private var accountPendingStateView: some View {
+        VStack(spacing: 16) {
+            Spacer()
+
+            Circle()
+                .fill(Color.spiceAmberLight)
+                .frame(width: 64, height: 64)
+                .overlay(
+                    Image(systemName: "hourglass")
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundColor(Color.spiceAmber)
+                )
+
+            SpiceStatusBadge(status: "PENDING_REVIEW")
+
+            Text("Your Account is Under Review")
+                .font(.system(size: 18, weight: .heavy))
+                .foregroundColor(Color.spiceInk)
+                .multilineTextAlignment(.center)
+
+            Text(viewModel.accountPendingMessage.isEmpty ? "Your retailer registration has been submitted and is being reviewed by our team. You will be able to place orders once approved." : viewModel.accountPendingMessage)
+                .font(.system(size: 12.5, weight: .medium))
+                .foregroundColor(Color.spiceMuted)
+                .multilineTextAlignment(.center)
+                .lineSpacing(3)
+                .padding(.horizontal, 24)
+
+            SpiceOutlinedButton(title: "Contact Support", icon: "phone.fill", color: Color.spicePrimary, height: 42) {
+                if let url = URL(string: "tel://18002004455") {
+                    UIApplication.shared.open(url)
+                }
+            }
+            .frame(width: 200)
+            .padding(.top, 8)
+
+            Spacer()
+        }
+        .padding(24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.spiceBackground)
     }
 }

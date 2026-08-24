@@ -10,39 +10,73 @@ import Combine
 
 struct AddressListScreen: View {
 
+    var isSelectMode: Bool = false
+    var selectedAddressId: Int? = nil
+    var onSelectAddress: ((Address) -> Void)? = nil
+
     @State private var addresses: [Address] = []
     @State private var isLoading = true
     @State private var showAddAddress = false
     @State private var isShowToast = false
     @State private var toastMessage = ""
+    @Environment(\.dismiss) private var dismiss
 
     private let service = AddressServiceManager()
 
     var body: some View {
-        Group {
-            if isLoading {
-                ProgressView()
-                    .frame(maxHeight: .infinity)
+        VStack(spacing: 0) {
+            // Top Bar
+            SpiceTopBar(
+                title: isSelectMode ? "Select Delivery Address" : "Delivery Addresses",
+                showBack: true,
+                onBack: { dismiss() }
+            )
+
+            if isLoading && addresses.isEmpty {
+                ScrollView {
+                    VStack(spacing: 12) {
+                        ForEach(1...3, id: \.self) { _ in
+                            SpiceSkeletonBox(height: 120, cornerRadius: 14)
+                        }
+                    }
+                    .padding(16)
+                }
+                .background(Color.spiceBackground)
             } else if addresses.isEmpty {
                 emptyState
             } else {
-                addressesList
-            }
-        }
-        .background(AppTheme.homeCanvas)
-        .spiceNavigationBar(title: "My Addresses")
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button { showAddAddress = true } label: {
-                    Image(systemName: "plus")
-                        .foregroundStyle(.white)
+                ScrollView {
+                    VStack(spacing: 12) {
+                        ForEach(addresses) { address in
+                            addressCard(address)
+                        }
+                        Spacer(minLength: 70)
+                    }
+                    .padding(16)
+                }
+                .refreshable {
+                    loadAddresses()
+                }
+                .background(Color.spiceBackground)
+
+                // Bottom Add Address Bar
+                VStack(spacing: 0) {
+                    Divider()
+                    SpicePrimaryButton(title: "+ Add New Address", height: 48) {
+                        showAddAddress = true
+                    }
+                    .padding(16)
+                    .background(Color.white)
                 }
             }
         }
+        .navigationBarHidden(true)
         .onAppear(perform: loadAddresses)
         .sheet(isPresented: $showAddAddress) {
             NavigationStack {
-                AddAddressScreen { loadAddresses() }
+                AddAddressScreen {
+                    loadAddresses()
+                }
             }
         }
         .toast(isPresenting: $isShowToast, duration: 1.8, offsetY: 10, alert: {
@@ -50,109 +84,122 @@ struct AddressListScreen: View {
         }, onTap: nil, completion: nil)
     }
 
-    private var addressesList: some View {
-        ScrollView {
-            LazyVStack(spacing: 12) {
-                ForEach(addresses) { address in
-                    addressCard(address)
-                }
-            }
-            .padding(16)
-        }
-    }
-
+    // MARK: - Address Card
     private func addressCard(_ address: Address) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                HStack(spacing: 6) {
-                    Image(systemName: address.type?.lowercased() == "office" ? "building.2" : "house.fill")
-                        .foregroundStyle(AppTheme.brandGreen)
-                        .font(.system(size: 14))
+        let isSelected = selectedAddressId == address.id || (selectedAddressId == nil && address.isDefault == true)
 
-                    Text(address.name ?? "Address")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(AppTheme.textPrimary)
-                }
+        return SpiceCard(
+            backgroundColor: (isSelectMode && isSelected) ? Color.spicePrimaryWash.opacity(0.5) : Color.white,
+            borderColor: (isSelectMode && isSelected) ? Color.spicePrimary : Color.spiceCardBorder
+        ) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    HStack(spacing: 6) {
+                        if isSelectMode {
+                            Image(systemName: isSelected ? "largecircle.fill.circle" : "circle")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(isSelected ? Color.spicePrimary : Color.spiceMuted)
+                        } else {
+                            Image(systemName: address.type?.lowercased() == "office" ? "building.2.fill" : "storefront.fill")
+                                .font(.system(size: 13))
+                                .foregroundColor(Color.spicePrimary)
+                        }
 
-                if address.isDefault == true {
-                    Text("DEFAULT")
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(AppTheme.brandGreen)
-                        .clipShape(RoundedRectangle(cornerRadius: 4))
-                }
+                        Text(address.name ?? "Store Address")
+                            .font(.system(size: 13.5, weight: .heavy))
+                            .foregroundColor(Color.spiceInk)
+                    }
 
-                Spacer()
+                    Spacer()
 
-                if address.isDefault != true {
-                    Button {
-                        setDefault(id: address.id ?? 0)
-                    } label: {
-                        Text("Set Default")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(AppTheme.brandGreen)
+                    if address.isDefault == true {
+                        SpiceStatusBadge(status: "DEFAULT")
+                    } else if !isSelectMode {
+                        Button(action: {
+                            setDefault(id: address.id ?? 0)
+                        }) {
+                            Text("Set Default")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundColor(Color.spicePrimary)
+                        }
                     }
                 }
-            }
 
-            Text(address.fullAddress)
-                .font(.system(size: 13))
-                .foregroundStyle(AppTheme.textSecondary)
+                Divider()
 
-            if let phone = address.phone, !phone.isEmpty {
-                HStack(spacing: 4) {
-                    Image(systemName: "phone.fill")
-                        .font(.system(size: 10))
-                    Text(phone)
-                        .font(.system(size: 12))
+                Text(address.fullAddress)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(Color.spiceInk.opacity(0.85))
+                    .lineSpacing(2)
+
+                if let phone = address.phone, !phone.isEmpty {
+                    HStack(spacing: 6) {
+                        Image(systemName: "phone.fill")
+                            .font(.system(size: 10))
+                            .foregroundColor(Color.spiceMuted)
+                        Text("+91 \(phone)")
+                            .font(.system(size: 11.5, weight: .semibold, design: .monospaced))
+                            .foregroundColor(Color.spiceMuted)
+                    }
                 }
-                .foregroundStyle(AppTheme.textMuted)
+
+                if isSelectMode {
+                    Divider().padding(.top, 2)
+
+                    SpicePrimaryButton(
+                        title: isSelected ? "✓ Deliver to this Address" : "Deliver Here",
+                        height: 36
+                    ) {
+                        onSelectAddress?(address)
+                        dismiss()
+                    }
+                    .padding(.top, 2)
+                }
             }
         }
-        .padding(14)
-        .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(
-                    address.isDefault == true ? AppTheme.brandGreen : AppTheme.cardBorder,
-                    lineWidth: address.isDefault == true ? 1.5 : 1
-                )
+        .onTapGesture {
+            if isSelectMode {
+                onSelectAddress?(address)
+                dismiss()
+            }
         }
     }
 
+    // MARK: - Empty State
     private var emptyState: some View {
         VStack(spacing: 16) {
             Spacer()
-            Image(systemName: "mappin.slash")
-                .font(.system(size: 56))
-                .foregroundStyle(AppTheme.textMuted.opacity(0.4))
 
-            Text("No addresses saved")
-                .font(.system(size: 20, weight: .bold))
-                .foregroundStyle(AppTheme.textPrimary)
+            Circle()
+                .fill(Color.spicePrimaryWash)
+                .frame(width: 72, height: 72)
+                .overlay(
+                    Image(systemName: "mappin.and.ellipse")
+                        .font(.system(size: 30))
+                        .foregroundColor(Color.spicePrimary)
+                )
 
-            Text("Add a delivery address to get started")
-                .font(.system(size: 14))
-                .foregroundStyle(AppTheme.textSecondary)
+            Text("No Delivery Addresses")
+                .font(.system(size: 17, weight: .heavy))
+                .foregroundColor(Color.spiceInk)
 
-            Button { showAddAddress = true } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "plus")
-                    Text("Add Address")
-                }
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(.white)
-                .padding(.horizontal, 24)
-                .frame(height: 44)
-                .background(AppTheme.ctaGradient)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            Text("Add your shop, godown, or outlet delivery address to receive wholesale orders.")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(Color.spiceMuted)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+
+            SpicePrimaryButton(title: "+ Add Address", height: 44) {
+                showAddAddress = true
             }
+            .frame(width: 180)
             .padding(.top, 8)
+
             Spacer()
         }
+        .padding(24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.spiceBackground)
     }
 
     // MARK: - Network
@@ -182,7 +229,7 @@ struct AddressListScreen: View {
             .sink { _ in }
             receiveValue: { response in
                 if response.status == true {
-                    toastMessage = "Default address updated"
+                    toastMessage = "Default delivery address updated"
                     isShowToast = true
                     loadAddresses()
                 }

@@ -87,14 +87,15 @@ struct SplashScreen: View {
                     .padding(.top, 12)
 
                 // MARK: Tagline
-                Text("India's finest flavours,\ndelivered to your doorstep.")
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(AppTheme.textSecondary)
+                Text("India's Leading Spices B2B Network\nDirect Wholesale Supply & Live Schemes")
+                    .font(.system(size: 14.5, weight: .semibold))
+                    .foregroundStyle(Color.spiceMuted)
                     .multilineTextAlignment(.center)
+                    .lineSpacing(4)
                     .opacity(showTagline ? 1 : 0)
                     .offset(y: showTagline ? 0 : 12)
                     .padding(.top, 14)
-                    .padding(.horizontal, 40)
+                    .padding(.horizontal, 36)
 
                 Spacer()
 
@@ -105,9 +106,9 @@ struct SplashScreen: View {
                         .padding(.bottom, 8)
                 }
 
-                Text("Powered by Reva")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(AppTheme.textMuted)
+                Text("SpiceMonk Retailer B2B")
+                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                    .foregroundStyle(Color.spiceMuted.opacity(0.8))
                     .opacity(showLoader ? 1 : 0)
                     .padding(.bottom, 28)
             }
