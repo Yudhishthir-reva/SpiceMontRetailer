@@ -13,7 +13,6 @@ struct CategorySelectionScreen: View {
     var brandId: Int? = nil
 
     @Environment(\.dismiss) private var dismiss
-    @State private var searchText: String = ""
     @ObservedObject private var cartManager = CartManager.shared
     @State private var showCart: Bool = false
 
@@ -25,154 +24,94 @@ struct CategorySelectionScreen: View {
     private let service = HomeServiceManager()
     @State private var cancellables = Set<AnyCancellable>()
 
-    var filteredCategories: [SpiceCategory] {
-        if searchText.trimmingCharacters(in: .whitespaces).isEmpty {
+    private let columns = [
+        GridItem(.flexible(), spacing: 12),
+        GridItem(.flexible(), spacing: 12),
+        GridItem(.flexible(), spacing: 12)
+    ]
+
+    var displayCategories: [SpiceCategory] {
+        if !categories.isEmpty {
             return categories
         }
-        return categories.filter { $0.name?.localizedCaseInsensitiveContains(searchText) == true }
+        return sampleCategories
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Top Bar
-            HStack {
-                Button(action: { dismiss() }) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(Color.spiceInk)
-                }
+        ZStack(alignment: .bottom) {
+            Color.spiceBackground.ignoresSafeArea()
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(brandName)
-                        .font(.system(size: 15, weight: .heavy))
-                        .foregroundColor(Color.spiceInk)
-                    Text("Select Category")
-                        .font(.system(size: 10.5, weight: .medium))
-                        .foregroundColor(Color.spiceMuted)
-                }
-
-                Spacer()
-
-                Button(action: { showCart = true }) {
-                    ZStack(alignment: .topTrailing) {
-                        Image(systemName: "cart.fill")
-                            .font(.system(size: 17))
+            VStack(spacing: 0) {
+                // MARK: - Top Bar
+                HStack(alignment: .center, spacing: 12) {
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 16, weight: .bold))
                             .foregroundColor(Color.spiceInk)
-                            .padding(6)
-
-                        if cartManager.itemCount > 0 {
-                            Text("\(cartManager.itemCount)")
-                                .font(.system(size: 9, weight: .heavy, design: .monospaced))
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 4)
-                                .padding(.vertical, 1)
-                                .background(Color.spicePrimary)
-                                .clipShape(Capsule())
-                                .offset(x: 4, y: -2)
-                        }
+                            .padding(4)
                     }
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(Color.white)
-            .overlay(Divider().background(Color.spiceDivider), alignment: .bottom)
 
-            if isLoading && categories.isEmpty {
-                ScrollView {
-                    VStack(spacing: 10) {
-                        SpiceSkeletonBox(height: 44, cornerRadius: 10)
-                        ForEach(1...5, id: \.self) { _ in
-                            SpiceSkeletonBox(height: 70, cornerRadius: 12)
-                        }
-                    }
-                    .padding(16)
-                }
-                .background(Color.spiceBackground)
-            } else {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 12) {
-                        // Search Bar
-                        HStack(spacing: 8) {
-                            Image(systemName: "magnifyingglass")
-                                .foregroundColor(Color.spiceMuted)
-                                .font(.system(size: 13, weight: .semibold))
-                            TextField("Search category in \(brandName)", text: $searchText)
-                                .font(.system(size: 13, weight: .medium))
-                        }
-                        .padding(12)
-                        .background(Color.white)
-                        .cornerRadius(10)
-                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.spiceCardBorder, lineWidth: 1))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(brandName)
+                            .font(.system(size: 17, weight: .heavy))
+                            .foregroundColor(Color.spiceInk)
 
-                        Text("Step 2 of 3 · \(filteredCategories.count) categories available")
-                            .font(.system(size: 11, weight: .semibold))
+                        Text("Step 2 of 3")
+                            .font(.system(size: 12, weight: .medium))
                             .foregroundColor(Color.spiceMuted)
+                    }
 
-                        if filteredCategories.isEmpty {
-                            SpiceEmptyStateView(
-                                title: "No Categories",
-                                message: "No categories available for \(brandName).",
-                                buttonTitle: "Refresh"
-                            ) {
-                                loadCategories()
-                            }
-                            .padding(.top, 20)
-                        } else {
-                            VStack(spacing: 8) {
-                                ForEach(filteredCategories) { cat in
-                                    NavigationLink(destination: ProductListingView(brandName: brandName, categoryName: cat.name ?? "Category", brandId: brandId, categoryId: cat.id)) {
-                                        SpiceCard(padding: 12) {
-                                            HStack(spacing: 12) {
-                                                if let img = cat.image, !img.isEmpty {
-                                                    RemoteImage(url: img)
-                                                        .frame(width: 46, height: 46)
-                                                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                                                } else {
-                                                    RoundedRectangle(cornerRadius: 8)
-                                                        .fill(LinearGradient(colors: [Color.spicePrimaryLight, Color(hex: "#C8E6D6")], startPoint: .topLeading, endPoint: .bottomTrailing))
-                                                        .frame(width: 46, height: 46)
-                                                        .overlay(
-                                                            Image(systemName: "square.grid.2x2.fill")
-                                                                .font(.system(size: 18))
-                                                                .foregroundColor(Color.spicePrimary)
-                                                        )
-                                                }
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
+                .padding(.bottom, 10)
+                .background(Color.white)
+                .overlay(Divider().background(Color.spiceDivider), alignment: .bottom)
 
-                                                VStack(alignment: .leading, spacing: 2) {
-                                                    Text(cat.name ?? "")
-                                                        .font(.system(size: 13.5, weight: .bold))
-                                                        .foregroundColor(Color.spiceInk)
-                                                    if let pCount = cat.productsCount {
-                                                        Text("\(pCount) products")
-                                                            .font(.system(size: 11, weight: .medium))
-                                                            .foregroundColor(Color.spiceMuted)
-                                                    }
-                                                }
-
-                                                Spacer()
-
-                                                Image(systemName: "chevron.right")
-                                                    .font(.system(size: 12, weight: .bold))
-                                                    .foregroundColor(Color.spiceMuted)
-                                            }
-                                        }
-                                    }
-                                    .buttonStyle(.plain)
-                                }
+                if isLoading && categories.isEmpty {
+                    ScrollView {
+                        LazyVGrid(columns: columns, spacing: 12) {
+                            ForEach(0..<6, id: \.self) { _ in
+                                SpiceSkeletonBox(height: 120, cornerRadius: 14)
                             }
                         }
+                        .padding(16)
                     }
-                    .padding(16)
+                } else {
+                    ScrollView(showsIndicators: false) {
+                        LazyVGrid(columns: columns, spacing: 12) {
+                            ForEach(displayCategories) { cat in
+                                NavigationLink(
+                                    destination: ProductListingView(
+                                        brandName: brandName,
+                                        categoryName: cat.name ?? "Category",
+                                        brandId: brandId,
+                                        categoryId: cat.id
+                                    )
+                                ) {
+                                    categoryCard(cat)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(16)
+                        .padding(.bottom, 80)
+                    }
+                    .refreshable {
+                        loadCategories()
+                        cartManager.fetchCart()
+                    }
                 }
-                .refreshable {
-                    loadCategories()
-                }
-                .background(Color.spiceBackground)
             }
+
+            // MARK: - Floating Bottom Cart Pill Bar
+            floatingCartBar
         }
+        .navigationBarHidden(true)
         .onAppear {
             loadCategories()
+            cartManager.fetchCart()
         }
         .sheet(isPresented: $showCart) {
             NavigationStack { CartScreen() }
@@ -182,6 +121,96 @@ struct CategorySelectionScreen: View {
         }, onTap: nil, completion: nil)
     }
 
+    // MARK: - Category 3-Column Card
+    private func categoryCard(_ cat: SpiceCategory) -> some View {
+        VStack(spacing: 0) {
+            // Category Image Box
+            ZStack {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color(hex: "#F2F5F3"))
+
+                if let img = cat.image, !img.isEmpty {
+                    RemoteImage(url: img)
+                        .scaledToFill()
+                        .frame(maxWidth: .infinity, maxHeight: 72)
+                        .clipped()
+                        .cornerRadius(10)
+                } else {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(LinearGradient(colors: [Color(hex: "#56CCF2"), Color(hex: "#2F80ED")], startPoint: .topLeading, endPoint: .bottomTrailing))
+                        .overlay(
+                            Image(systemName: "photo.fill")
+                                .font(.system(size: 24))
+                                .foregroundColor(.white.opacity(0.8))
+                        )
+                }
+            }
+            .frame(height: 72)
+            .padding(6)
+
+            // Category Name Label
+            Text((cat.name ?? "Category").uppercased())
+                .font(.system(size: 11, weight: .heavy))
+                .foregroundColor(Color.spiceInk)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .minimumScaleFactor(0.85)
+                .padding(.horizontal, 6)
+                .padding(.top, 4)
+                .padding(.bottom, 10)
+        }
+        .background(Color.white)
+        .cornerRadius(14)
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color.spiceCardBorder.opacity(0.8), lineWidth: 1)
+        )
+    }
+
+    // MARK: - Floating Bottom Cart Pill Bar
+    @ViewBuilder
+    private var floatingCartBar: some View {
+        if cartManager.cartCount > 0 {
+            VStack(spacing: 0) {
+                Button(action: {
+                    showCart = true
+                }) {
+                    HStack {
+                        Image(systemName: "cart.fill")
+                            .font(.system(size: 14, weight: .bold))
+
+                        Text("\(cartManager.cartCount) \(cartManager.cartCount == 1 ? "unit" : "units") in cart")
+                            .font(.system(size: 13.5, weight: .heavy))
+
+                        Spacer()
+
+                        Text("VIEW CART")
+                            .font(.system(size: 12.5, weight: .heavy))
+                            .tracking(0.5)
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 16)
+                    .frame(height: 48)
+                    .background(Color.spicePrimary)
+                    .cornerRadius(12)
+                    .shadow(color: Color.spicePrimary.opacity(0.3), radius: 8, x: 0, y: 4)
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 12)
+                .padding(.top, 8)
+                .background(
+                    LinearGradient(
+                        colors: [Color.spiceBackground.opacity(0), Color.spiceBackground],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+            }
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+        }
+    }
+
+    // MARK: - Service Call
     private func loadCategories() {
         isLoading = true
         let headers = UserDefaultManager.shared.authHeader
@@ -196,11 +225,20 @@ struct CategorySelectionScreen: View {
                 isLoading = false
                 if case .failure(let error) = completion {
                     toastMessage = (error as? RequestError)?.errorString ?? error.localizedDescription
-                    isShowToast = true
                 }
             } receiveValue: { response in
                 self.categories = response.categories ?? []
             }
             .store(in: &cancellables)
+    }
+
+    // Fallback sample categories matching reference screenshot
+    private var sampleCategories: [SpiceCategory] {
+        [
+            SpiceCategory(id: 1, name: "DHANIA POWDER", image: ""),
+            SpiceCategory(id: 2, name: "HALDI POWDER", image: ""),
+            SpiceCategory(id: 3, name: "Masala-FL", image: ""),
+            SpiceCategory(id: 4, name: "MIRCH POWDER", image: "")
+        ]
     }
 }

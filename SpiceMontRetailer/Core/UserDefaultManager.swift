@@ -13,6 +13,9 @@ class UserDefaultManager {
         case sellerId
         case userMobile
         case userName
+        case userEmail
+        case shopName
+        case whatsappNumber
         case authToken
         case refreshToken
         case tokenExpiry

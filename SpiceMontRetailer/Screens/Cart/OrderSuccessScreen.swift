@@ -8,7 +8,8 @@
 import SwiftUI
 
 struct OrderSuccessScreen: View {
-    var orderNumber: String = "#SM10248"
+    var orderId: Int? = nil
+    var orderNumber: String = "#2026-27/2967"
     var orderDate: String = "Today, 9:41 AM"
     var totalAmount: Double = 957.60
     var totalItems: Int = 4
@@ -48,49 +49,38 @@ struct OrderSuccessScreen: View {
                     // Summary Card
                     SpiceCard {
                         VStack(alignment: .leading, spacing: 10) {
-                            SpiceKVRow(key: "Order Number", value: orderNumber, isMonoValue: true)
-                            SpiceKVRow(key: "Order Date", value: orderDate, isMonoValue: true)
-                            SpiceKVRow(key: "Total Items", value: "\(totalItems) products · \(totalUnits) units")
-                            SpiceKVRow(key: "Total Amount", value: String(format: "₹%.2f", totalAmount), isMonoValue: true, valueColor: Color.spiceInk)
                             HStack {
-                                Text("Status").font(.system(size: 12, weight: .semibold)).foregroundColor(Color.spiceMuted)
-                                Spacer()
-                                SpiceStatusBadge(status: "CONFIRMED")
-                            }
-
-                            Divider().padding(.vertical, 2)
-
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Delivery Address")
-                                    .font(.system(size: 11, weight: .bold))
-                                    .foregroundColor(Color.spiceMuted)
-                                Text(deliveryAddress)
-                                    .font(.system(size: 11.5, weight: .medium))
+                                Text(orderNumber)
+                                    .font(.system(size: 14, weight: .heavy, design: .monospaced))
                                     .foregroundColor(Color.spiceInk)
-                                    .lineSpacing(3)
+                                Spacer()
+                                SpiceStatusBadge(status: "PLACED")
                             }
+
+                            Divider()
+
+                            SpiceKVRow(key: "Order Date", value: orderDate)
+                            SpiceKVRow(key: "Total Amount", value: String(format: "₹%.2f", totalAmount), isMonoValue: true)
+                            SpiceKVRow(key: "Items Count", value: "\(totalItems) products (\(totalUnits) units)")
+                            SpiceKVRow(key: "Delivery To", value: deliveryAddress)
                         }
                     }
-
-                    Spacer(minLength: 24)
 
                     // Action Buttons
                     VStack(spacing: 10) {
-                        SpicePrimaryButton(title: "View Order") {
-                            navigateToOrderDetail = true
-                        }
-
-                        SpiceOutlinedButton(title: "Track Order") {
+                        SpicePrimaryButton(title: "Track Order", height: 48) {
                             navigateToTracking = true
                         }
 
-                        Button(action: { dismiss() }) {
-                            Text("Continue Shopping")
-                                .font(.system(size: 12.5, weight: .heavy))
-                                .foregroundColor(Color.spiceInk)
-                                .padding(.vertical, 8)
+                        SpiceOutlinedButton(title: "View Order Details", height: 48) {
+                            navigateToOrderDetail = true
+                        }
+
+                        SpiceGhostButton(title: "Back to Home", height: 44) {
+                            dismiss()
                         }
                     }
+                    .padding(.top, 8)
                 }
                 .padding(20)
             }
@@ -98,10 +88,10 @@ struct OrderSuccessScreen: View {
         }
         .navigationBarHidden(true)
         .navigationDestination(isPresented: $navigateToOrderDetail) {
-            OrderDetailScreen(orderId: orderNumber.replacingOccurrences(of: "#", with: ""))
+            OrderDetailScreen(orderId: "\(orderId ?? 6434)")
         }
         .navigationDestination(isPresented: $navigateToTracking) {
-            DeliveryTrackingScreen(orderNumber: orderNumber)
+            DeliveryTrackingScreen(orderId: orderId, orderNumber: orderNumber)
         }
     }
 }

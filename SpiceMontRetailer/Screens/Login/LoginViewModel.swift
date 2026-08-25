@@ -62,8 +62,9 @@ class LoginViewModel: ObservableObject {
                 if case .failure(let error) = completion {
                     let errStr = (error as? RequestError)?.errorString ?? error.localizedDescription
                     if errStr.localizedCaseInsensitiveContains("429") || errStr.localizedCaseInsensitiveContains("too many") {
-                        self?.startCooldown(seconds: 30)
-                        self?.toastMessage = "Too many attempts. Please wait 30 seconds."
+                        self?.mobileError = errStr
+                        self?.toastMessage = errStr
+                        self?.isShowToastView = true
                     } else if errStr.localizedCaseInsensitiveContains("404") || errStr.localizedCaseInsensitiveContains("not registered") || errStr.localizedCaseInsensitiveContains("not found") {
                         self?.accountBlock = AccountBlock(status: .notRegistered, message: errStr)
                     } else if errStr.localizedCaseInsensitiveContains("403") || errStr.localizedCaseInsensitiveContains("block") || errStr.localizedCaseInsensitiveContains("inactive") {
@@ -71,6 +72,7 @@ class LoginViewModel: ObservableObject {
                     } else if errStr.localizedCaseInsensitiveContains("pending") {
                         self?.accountBlock = AccountBlock(status: .pendingReview, message: errStr)
                     } else {
+                        self?.mobileError = errStr
                         self?.toastMessage = errStr
                         self?.isShowToastView = true
                     }
@@ -90,6 +92,7 @@ class LoginViewModel: ObservableObject {
                     } else if msg.localizedCaseInsensitiveContains("not registered") || msg.localizedCaseInsensitiveContains("not found") {
                         self?.accountBlock = AccountBlock(status: .notRegistered, message: msg)
                     } else {
+                        self?.mobileError = msg
                         self?.toastMessage = msg
                         self?.isShowToastView = true
                     }

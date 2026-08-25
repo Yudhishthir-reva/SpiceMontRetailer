@@ -8,322 +8,281 @@
 import SwiftUI
 import Combine
 
-enum OrdersTab {
-    case running
-    case history
-}
-
 struct OrdersScreen: View {
-    @State private var selectedTab: OrdersTab = .running
-    @State private var runningFilter: String = "All"
-    @State private var historyFilter: String = "All"
-    @State private var searchText: String = ""
     @Environment(\.dismiss) private var dismiss
+    @State private var searchText: String = ""
+    @State private var selectedStatusFilter: String = "All Orders"
+    @State private var selectedDate: Date? = nil
 
     @State private var allOrders: [Order] = []
     @State private var isLoading: Bool = false
     @State private var isShowToast: Bool = false
     @State private var toastMessage: String = ""
 
-    private let runningChips = ["All", "Confirmed", "Processing", "Packed", "Dispatched", "Out for Delivery"]
-    private let historyChips = ["All", "Delivered", "Cancelled"]
+    private let statusChips = [
+        "All Orders",
+        "Pending",
+        "Assigned",
+        "Out for Delivery",
+        "Delivered",
+        "Cancelled"
+    ]
 
     private let orderService = OrderServiceManager()
     @State private var cancellables = Set<AnyCancellable>()
 
-    var runningOrders: [Order] {
-        let running = allOrders.filter { order in
-            let status = (order.status ?? "").lowercased()
-            return status != "delivered" && status != "cancelled"
-        }
-        if runningFilter == "All" {
-            return running
-        }
-        return running.filter { ($0.statusLabel).localizedCaseInsensitiveContains(runningFilter) }
-    }
+    var displayedOrders: [Order] {
+        var list = allOrders
 
-    var historyOrders: [Order] {
-        var history = allOrders.filter { order in
-            let status = (order.status ?? "").lowercased()
-            return status == "delivered" || status == "cancelled"
-        }
-        if historyFilter != "All" {
-            history = history.filter { ($0.statusLabel).localizedCaseInsensitiveContains(historyFilter) }
-        }
-        if !searchText.trimmingCharacters(in: .whitespaces).isEmpty {
-            history = history.filter {
-                ($0.orderNumber?.localizedCaseInsensitiveContains(searchText) == true) ||
-                ("\($0.id ?? 0)".localizedCaseInsensitiveContains(searchText))
+        // 1. Status Filter
+        if selectedStatusFilter != "All Orders" {
+            list = list.filter {
+                $0.statusLabel.localizedCaseInsensitiveContains(selectedStatusFilter) ||
+                ($0.status ?? "").localizedCaseInsensitiveContains(selectedStatusFilter)
             }
         }
-        return history
+
+        // 2. Date Filter
+        if let filterDate = selectedDate {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
+            let dateStr = formatter.string(from: filterDate)
+
+            list = list.filter { order in
+                if let oDate = order.orderDate, oDate.contains(dateStr) { return true }
+                if let cDate = order.createdAt, cDate.contains(dateStr) { return true }
+                return false
+            }
+        }
+
+        // 3. Search Text
+        let trimmed = searchText.trimmingCharacters(in: .whitespaces)
+        if !trimmed.isEmpty {
+            list = list.filter {
+                $0.orderNumberFormatted.localizedCaseInsensitiveContains(trimmed) ||
+                ("\($0.id ?? 0)".localizedCaseInsensitiveContains(trimmed))
+            }
+        }
+
+        return list
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Top Bar
-            SpiceTopBar(title: "My Orders", showBack: false)
+        NavigationStack {
+            ZStack {
+                Color.spiceBackground.ignoresSafeArea()
 
-            // Segmented Header
-            HStack(spacing: 24) {
-                Button(action: { selectedTab = .running }) {
-                    VStack(spacing: 6) {
-                        Text("Running Orders (\(runningOrders.count))")
-                            .font(.system(size: 13, weight: selectedTab == .running ? .heavy : .bold))
-                            .foregroundColor(selectedTab == .running ? Color.spicePrimary : Color.spiceMuted)
-                        Rectangle()
-                            .fill(selectedTab == .running ? Color.spicePrimary : Color.clear)
-                            .frame(height: 2.5)
-                    }
-                }
+                VStack(spacing: 0) {
+                    // MARK: - Header
+                    HStack {
+                        Text("My Orders")
+                            .font(.system(size: 22, weight: .heavy))
+                            .foregroundColor(Color.spiceInk)
 
-                Button(action: { selectedTab = .history }) {
-                    VStack(spacing: 6) {
-                        Text("Order History (\(historyOrders.count))")
-                            .font(.system(size: 13, weight: selectedTab == .history ? .heavy : .bold))
-                            .foregroundColor(selectedTab == .history ? Color.spicePrimary : Color.spiceMuted)
-                        Rectangle()
-                            .fill(selectedTab == .history ? Color.spicePrimary : Color.clear)
-                            .frame(height: 2.5)
+                        Spacer()
                     }
-                }
-                Spacer()
-            }
-            .padding(.horizontal, 16)
-            .padding(.top, 6)
-            .background(Color.white)
-            .overlay(Divider().background(Color.spiceDivider), alignment: .bottom)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 12)
+                    .padding(.bottom, 10)
 
-            if isLoading && allOrders.isEmpty {
-                ScrollView {
-                    VStack(spacing: 12) {
-                        ForEach(1...4, id: \.self) { _ in
-                            SpiceSkeletonBox(height: 140, cornerRadius: 16)
-                        }
-                    }
-                    .padding(16)
-                }
-                .background(Color.spiceBackground)
-            } else {
-                ScrollView {
-                    VStack(spacing: 12) {
-                        if selectedTab == .running {
-                            runningSection
-                        } else {
-                            historySection
-                        }
-                    }
-                    .padding(16)
-                }
-                .refreshable {
-                    loadOrders()
-                }
-                .background(Color.spiceBackground)
-            }
-        }
-        .onAppear {
-            loadOrders()
-        }
-        .toast(isPresenting: $isShowToast, duration: 2.0, offsetY: 10, alert: {
-            AlertToast(displayMode: .banner(.pop), type: .regular, title: toastMessage)
-        }, onTap: nil, completion: nil)
-    }
+                    ScrollView(showsIndicators: false) {
+                        VStack(alignment: .leading, spacing: 12) {
+                            // MARK: - Search Bar
+                            HStack(spacing: 10) {
+                                Image(systemName: "magnifyingglass")
+                                    .foregroundColor(Color.spiceMuted)
+                                    .font(.system(size: 14, weight: .semibold))
 
-    // MARK: - Running Section
-    private var runningSection: some View {
-        VStack(spacing: 12) {
-            // Filter Chips
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 6) {
-                    ForEach(runningChips, id: \.self) { chip in
-                        Button(action: { runningFilter = chip }) {
-                            Text(chip)
-                                .font(.system(size: 11.5, weight: .bold))
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(runningFilter == chip ? Color.spicePrimary : Color.white)
-                                .foregroundColor(runningFilter == chip ? .white : Color.spiceInk)
-                                .cornerRadius(20)
-                                .overlay(RoundedRectangle(cornerRadius: 20).stroke(runningFilter == chip ? Color.spicePrimary : Color.spiceCardBorder, lineWidth: 1))
-                        }
-                    }
-                }
-            }
-
-            if runningOrders.isEmpty {
-                SpiceEmptyStateView(
-                    title: "No Running Orders",
-                    message: "You do not have any active running orders right now.",
-                    buttonTitle: "Refresh"
-                ) {
-                    loadOrders()
-                }
-                .padding(.top, 20)
-            } else {
-                ForEach(runningOrders) { order in
-                    SpiceCard {
-                        VStack(alignment: .leading, spacing: 10) {
-                            HStack {
-                                Text(order.orderNumberFormatted)
-                                    .font(.system(size: 13, weight: .heavy, design: .monospaced))
-                                    .foregroundColor(Color.spiceInk)
-                                Spacer()
-                                SpiceStatusBadge(status: order.statusLabel.uppercased())
+                                TextField("Search loaded orders by number", text: $searchText)
+                                    .font(.system(size: 13, weight: .medium))
                             }
+                            .padding(.horizontal, 12)
+                            .frame(height: 46)
+                            .background(Color.white)
+                            .cornerRadius(12)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.spiceCardBorder, lineWidth: 1)
+                            )
 
-                            Text("\(order.createdAt ?? "") · \(order.itemsCount ?? order.items?.count ?? 0) items · \(order.total?.priceLabel ?? "₹0")")
-                                .font(.system(size: 11.5, weight: .medium))
-                                .foregroundColor(Color.spiceMuted)
-
-                            // 5-Stage Bar
-                            let stageIndex = progressStepIndex(for: order.status)
-                            HStack(spacing: 4) {
-                                ForEach(1...5, id: \.self) { step in
-                                    Rectangle()
-                                        .fill(step <= stageIndex ? Color.spicePrimary : Color.spiceLightGray)
-                                        .frame(height: 3)
-                                        .cornerRadius(1.5)
-                                }
-                            }
-
-                            HStack {
-                                Text("Confirmed").frame(maxWidth: .infinity, alignment: .leading)
-                                Text("Packed").frame(maxWidth: .infinity, alignment: .center)
-                                Text("Delivered").frame(maxWidth: .infinity, alignment: .trailing)
-                            }
-                            .font(.system(size: 9.5, weight: .medium, design: .monospaced))
-                            .foregroundColor(Color.spiceMuted)
-
-                            HStack(spacing: 8) {
-                                NavigationLink(destination: DeliveryTrackingScreen(orderNumber: order.orderNumberFormatted)) {
-                                    Text("Track Order")
-                                        .font(.system(size: 12, weight: .heavy))
-                                        .foregroundColor(.white)
-                                        .frame(maxWidth: .infinity)
-                                        .frame(height: 36)
-                                        .background(Color.spicePrimary)
-                                        .cornerRadius(8)
-                                }
-
-                                NavigationLink(destination: OrderDetailScreen(orderId: "\(order.id ?? 0)")) {
-                                    Text("View Details")
-                                        .font(.system(size: 12, weight: .bold))
-                                        .foregroundColor(Color.spiceInk)
-                                        .frame(maxWidth: .infinity)
-                                        .frame(height: 36)
-                                        .background(Color.white)
-                                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.spiceCardBorder, lineWidth: 1))
-                                        .cornerRadius(8)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // MARK: - History Section
-    private var historySection: some View {
-        VStack(spacing: 12) {
-            // Search Input
-            HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass")
-                    .foregroundColor(Color.spiceMuted)
-                    .font(.system(size: 13, weight: .semibold))
-                TextField("Search order number", text: $searchText)
-                    .font(.system(size: 12.5, weight: .medium))
-            }
-            .padding(10)
-            .background(Color.white)
-            .cornerRadius(10)
-            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.spiceCardBorder, lineWidth: 1))
-
-            // Filter Chips
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 6) {
-                    ForEach(historyChips, id: \.self) { chip in
-                        Button(action: { historyFilter = chip }) {
-                            Text(chip)
-                                .font(.system(size: 11.5, weight: .bold))
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(historyFilter == chip ? Color.spicePrimary : Color.white)
-                                .foregroundColor(historyFilter == chip ? .white : Color.spiceInk)
-                                .cornerRadius(20)
-                                .overlay(RoundedRectangle(cornerRadius: 20).stroke(historyFilter == chip ? Color.spicePrimary : Color.spiceCardBorder, lineWidth: 1))
-                        }
-                    }
-                }
-            }
-
-            if historyOrders.isEmpty {
-                SpiceEmptyStateView(
-                    title: "No Order History",
-                    message: "No delivered or past orders found.",
-                    buttonTitle: "Refresh"
-                ) {
-                    loadOrders()
-                }
-                .padding(.top, 20)
-            } else {
-                ForEach(historyOrders) { order in
-                    SpiceCard {
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack {
-                                Text(order.orderNumberFormatted)
-                                    .font(.system(size: 13, weight: .heavy, design: .monospaced))
-                                    .foregroundColor(Color.spiceInk)
-                                Spacer()
-                                SpiceStatusBadge(status: order.statusLabel.uppercased())
-                            }
-
-                            Text("\(order.createdAt ?? "") · \(order.itemsCount ?? order.items?.count ?? 0) items · \(order.total?.priceLabel ?? "₹0")")
-                                .font(.system(size: 11.5, weight: .medium))
-                                .foregroundColor(Color.spiceMuted)
-
-                            HStack(spacing: 8) {
-                                if (order.status ?? "").lowercased() == "delivered" {
-                                    NavigationLink(destination: CartScreen()) {
-                                        Text("Repeat Order")
-                                            .font(.system(size: 11.5, weight: .heavy))
-                                            .foregroundColor(.white)
-                                            .frame(maxWidth: .infinity)
-                                            .frame(height: 34)
-                                            .background(Color.spicePrimary)
-                                            .cornerRadius(8)
-                                    }
-
-                                    NavigationLink(destination: GSTInvoiceScreen(invoiceNumber: "INV-\(order.id ?? 1000)", orderNumber: order.orderNumberFormatted)) {
-                                        Text("Invoice")
-                                            .font(.system(size: 11.5, weight: .bold))
-                                            .foregroundColor(Color.spiceInk)
-                                            .frame(maxWidth: .infinity)
-                                            .frame(height: 34)
-                                            .background(Color.white)
-                                            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.spiceCardBorder, lineWidth: 1))
-                                            .cornerRadius(8)
+                            // MARK: - Status Filter Chips
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 8) {
+                                    ForEach(statusChips, id: \.self) { chip in
+                                        Button(action: {
+                                            selectedStatusFilter = chip
+                                        }) {
+                                            Text(chip)
+                                                .font(.system(size: 12.5, weight: .bold))
+                                                .padding(.horizontal, 14)
+                                                .padding(.vertical, 7)
+                                                .background(selectedStatusFilter == chip ? Color.spicePrimary : Color.white)
+                                                .foregroundColor(selectedStatusFilter == chip ? .white : Color.spiceInk)
+                                                .cornerRadius(20)
+                                                .overlay(
+                                                    RoundedRectangle(cornerRadius: 20)
+                                                        .stroke(selectedStatusFilter == chip ? Color.spicePrimary : Color.spiceCardBorder, lineWidth: 1)
+                                                )
+                                        }
+                                        .buttonStyle(.plain)
                                     }
                                 }
+                                .padding(.vertical, 2)
+                            }
 
-                                NavigationLink(destination: OrderDetailScreen(orderId: "\(order.id ?? 0)")) {
-                                    Text("Details")
-                                        .font(.system(size: 11.5, weight: .bold))
-                                        .foregroundColor(Color.spiceInk)
-                                        .frame(maxWidth: .infinity)
-                                        .frame(height: 34)
-                                        .background(Color.white)
-                                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.spiceCardBorder, lineWidth: 1))
-                                        .cornerRadius(8)
+                            // MARK: - Date Filter Chip
+                            HStack {
+                                SpiceDateFilterChip(selectedDate: $selectedDate)
+                                Spacer()
+                            }
+
+                            // MARK: - Order Cards List
+                            if displayedOrders.isEmpty {
+                                SpiceEmptyStateView(
+                                    title: "No Orders Found",
+                                    message: "No orders match your filter criteria.",
+                                    buttonTitle: "Refresh"
+                                ) {
+                                    loadOrders()
+                                }
+                                .padding(.top, 30)
+                            } else {
+                                VStack(spacing: 12) {
+                                    ForEach(displayedOrders) { order in
+                                        orderCardView(order: order)
+                                    }
                                 }
                             }
+
+                            Spacer(minLength: 24)
                         }
+                        .padding(.horizontal, 16)
+                        .padding(.top, 4)
+                    }
+                    .refreshable {
+                        loadOrders()
                     }
                 }
             }
+            .navigationBarHidden(true)
+            .onAppear {
+                loadOrders()
+            }
+            .toast(isPresenting: $isShowToast, duration: 2.0, offsetY: 10, alert: {
+                AlertToast(displayMode: .banner(.pop), type: .regular, title: toastMessage)
+            }, onTap: nil, completion: nil)
         }
     }
 
+    // MARK: - Order Card Component
+    @ViewBuilder
+    private func orderCardView(order: Order) -> some View {
+        let isAssigned = (order.status ?? "").lowercased() == "assigned"
+        let isOutForDelivery = (order.status ?? "").lowercased().contains("out")
+        let isProcessing = (order.status ?? "").lowercased() == "processing"
+        let showTrackButton = isAssigned || isOutForDelivery || isProcessing
+
+        NavigationLink(destination: OrderDetailScreen(orderId: "\(order.id ?? 0)")) {
+            VStack(alignment: .leading, spacing: 10) {
+                // Top Row: Order Number + Status Badge
+                HStack {
+                    Text(order.orderNumberFormatted)
+                        .font(.system(size: 14, weight: .heavy, design: .monospaced))
+                        .foregroundColor(Color.spiceInk)
+
+                    Spacer()
+
+                    statusBadgeView(status: order.statusLabel)
+                }
+
+                // Middle Row: Date & Amount
+                HStack(spacing: 6) {
+                    Text(formatDate(order.displayDateOnly))
+                        .font(.system(size: 12.5, weight: .medium))
+                        .foregroundColor(Color.spiceMuted)
+
+                    Text("·")
+                        .font(.system(size: 12.5, weight: .bold))
+                        .foregroundColor(Color.spiceMuted)
+
+                    Text(order.total?.priceLabel ?? "₹0.00")
+                        .font(.system(size: 13, weight: .heavy, design: .monospaced))
+                        .foregroundColor(Color.spiceInk)
+                }
+
+                // Optional Bottom Action: Track Order
+                if showTrackButton {
+                    NavigationLink(destination: DeliveryTrackingScreen(orderId: order.id, orderNumber: order.orderNumberFormatted)) {
+                        HStack {
+                            Spacer()
+                            Text("Track Order")
+                                .font(.system(size: 13, weight: .heavy))
+                                .foregroundColor(.white)
+                            Spacer()
+                        }
+                        .frame(height: 42)
+                        .background(Color.spicePrimary)
+                        .cornerRadius(10)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.top, 2)
+                }
+            }
+            .padding(14)
+            .background(Color.white)
+            .cornerRadius(14)
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(Color.spiceCardBorder.opacity(0.8), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Status Badge
+    @ViewBuilder
+    private func statusBadgeView(status: String) -> some View {
+        let cleanStatus = status.uppercased()
+        let badgeColor: (bg: Color, text: Color) = {
+            switch cleanStatus {
+            case "PENDING":
+                return (Color(hex: "#FEF4E6"), Color(hex: "#B87314"))
+            case "ASSIGNED":
+                return (Color(hex: "#EBF3FE"), Color(hex: "#2563EB"))
+            case "OUT FOR DELIVERY", "SHIPPED", "DISPATCHED":
+                return (Color(hex: "#EDE9FE"), Color(hex: "#6D28D9"))
+            case "DELIVERED":
+                return (Color(hex: "#E8F8EE"), Color(hex: "#167444"))
+            case "CANCELLED", "REJECTED":
+                return (Color(hex: "#FEECEB"), Color(hex: "#DC2626"))
+            default:
+                return (Color(hex: "#FEF4E6"), Color(hex: "#B87314"))
+            }
+        }()
+
+        Text(cleanStatus)
+            .font(.system(size: 10, weight: .heavy, design: .monospaced))
+            .foregroundColor(badgeColor.text)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3.5)
+            .background(badgeColor.bg)
+            .cornerRadius(5)
+    }
+
+    // MARK: - Date Formatter Helper
+    private func formatDate(_ raw: String?) -> String {
+        guard let raw = raw, !raw.isEmpty else { return "24 Aug 2026" }
+        let iso = DateFormatter()
+        iso.dateFormat = "yyyy-MM-dd"
+        if let d = iso.date(from: String(raw.prefix(10))) {
+            let out = DateFormatter()
+            out.dateFormat = "d MMM yyyy"
+            return out.string(from: d)
+        }
+        return raw
+    }
+
+    // MARK: - Load Orders
     private func loadOrders() {
         isLoading = true
         let headers = UserDefaultManager.shared.authHeader
@@ -340,16 +299,5 @@ struct OrdersScreen: View {
                 self.allOrders = response.orders ?? []
             }
             .store(in: &cancellables)
-    }
-
-    private func progressStepIndex(for status: String?) -> Int {
-        switch (status ?? "").lowercased() {
-        case "pending", "confirmed": return 1
-        case "processing": return 2
-        case "packed", "shipped": return 3
-        case "out_for_delivery", "out for delivery": return 4
-        case "delivered": return 5
-        default: return 1
-        }
     }
 }

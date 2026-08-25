@@ -1,274 +1,369 @@
+//
+//  AccountScreen.swift
+//  SpiceMontRetailer
+//
+//  Created on 24/08/26.
+//
+
 import SwiftUI
 import Combine
 
 struct AccountScreen: View {
+    @Environment(\.dismiss) private var dismiss
     @State private var showLogoutModal: Bool = false
-    @State private var showNotifications: Bool = false
+    @State private var showEditPersonalModal: Bool = false
+    @State private var showRequestBusinessUpdateModal: Bool = false
     @State private var cancellables = Set<AnyCancellable>()
+
     private let defaults = UserDefaultManager.shared
 
     var userName: String {
         let name = defaults.getUserDefaultsString(key: .userName)
-        return name.isEmpty ? "Rahul Sharma" : name
+        return name.isEmpty ? "Rahul h" : name
     }
 
     var userMobile: String {
         let mobile = defaults.getUserDefaultsString(key: .userMobile)
-        return mobile.isEmpty ? "98765 43210" : mobile
+        return mobile.isEmpty ? "+91 7737772424" : (mobile.hasPrefix("+91") ? mobile : "+91 \(mobile)")
     }
 
-    var retailerCode: String {
-        let sellerId = defaults.getUserDefaultsString(key: .sellerId)
-        return sellerId.isEmpty ? "RET-10245" : sellerId
+    var userEmail: String {
+        let email = defaults.getUserDefaultsString(key: .userEmail)
+        return email.isEmpty ? "empty5108@gmail.com" : email
+    }
+
+    var shopName: String {
+        let shop = defaults.getUserDefaultsString(key: .shopName)
+        return shop.isEmpty ? "Test Bill" : shop
+    }
+
+    var whatsappNumber: String {
+        let wa = defaults.getUserDefaultsString(key: .whatsappNumber)
+        return wa.isEmpty ? userMobile : (wa.hasPrefix("+91") ? wa : "+91 \(wa)")
     }
 
     var body: some View {
-        ZStack {
-            VStack(spacing: 0) {
-                // Top Bar
-                HStack {
-                    Text("Profile")
-                        .font(.system(size: 16, weight: .heavy))
-                        .foregroundColor(Color.spiceInk)
+        NavigationStack {
+            ZStack {
+                Color.spiceBackground.ignoresSafeArea()
 
-                    Spacer()
+                VStack(spacing: 0) {
+                    // MARK: - Top Bar
+                    HStack {
+                        Text("Profile")
+                            .font(.system(size: 22, weight: .heavy))
+                            .foregroundColor(Color.spiceInk)
 
-                    Button(action: { showNotifications = true }) {
-                        ZStack(alignment: .topTrailing) {
-                            Image(systemName: "bell.fill")
-                                .font(.system(size: 16))
-                                .foregroundColor(Color.spiceInk)
-                                .padding(6)
-
-                            Text("3")
-                                .font(.system(size: 9, weight: .heavy, design: .monospaced))
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 4)
-                                .padding(.vertical, 1)
-                                .background(Color.spiceDue)
-                                .clipShape(Capsule())
-                                .offset(x: 4, y: -2)
-                        }
+                        Spacer()
                     }
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .background(Color.white)
-                .overlay(Divider().background(Color.spiceDivider), alignment: .bottom)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 12)
+                    .padding(.bottom, 8)
 
-                ScrollView {
-                    VStack(spacing: 12) {
-                        // Profile Header Card
-                        SpiceCard {
-                            HStack(spacing: 12) {
-                                Circle()
-                                    .fill(LinearGradient(colors: [Color.spicePrimary, Color.spicePrimaryDark], startPoint: .topLeading, endPoint: .bottomTrailing))
-                                    .frame(width: 54, height: 54)
-                                    .overlay(Text("RS").font(.system(size: 16, weight: .heavy)).foregroundColor(.white))
+                    ScrollView(showsIndicators: false) {
+                        VStack(spacing: 14) {
+                            // MARK: - Card 1: Retailer Profile Header Card
+                            profileHeaderCard
 
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(userName)
-                                        .font(.system(size: 15, weight: .heavy))
-                                        .foregroundColor(Color.spiceInk)
-                                    Text("ABC General Store")
-                                        .font(.system(size: 12, weight: .bold))
-                                        .foregroundColor(Color.spiceInk.opacity(0.8))
-                                    Text(retailerCode)
-                                        .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                                        .foregroundColor(Color.spiceMuted)
-                                }
+                            // MARK: - Card 2: Personal Information Card
+                            personalInfoCard
 
-                                Spacer()
+                            // MARK: - Card 3: Business Information Card
+                            businessInfoCard
 
-                                VStack(alignment: .trailing, spacing: 6) {
-                                    SpiceStatusBadge(status: "APPROVED")
-                                    Text("Edit Profile")
-                                        .font(.system(size: 11, weight: .heavy))
-                                        .foregroundColor(Color.spicePrimary)
-                                }
-                            }
-                        }
+                            // MARK: - Card 4: Navigation Menu Card
+                            menuNavigationCard
 
-                        // Personal Information Card
-                        SpiceCard {
-                            VStack(alignment: .leading, spacing: 8) {
+                            // MARK: - Card 5: Logout Button
+                            Button(action: {
+                                showLogoutModal = true
+                            }) {
                                 HStack {
-                                    Text("Personal Information")
-                                        .font(.system(size: 12, weight: .heavy))
-                                        .foregroundColor(Color.spiceInk)
                                     Spacer()
-                                    Text("Edit")
-                                        .font(.system(size: 11, weight: .heavy))
-                                        .foregroundColor(Color.spicePrimary)
-                                }
-                                Divider()
-                                SpiceKVRow(key: "Name", value: userName)
-                                SpiceKVRow(key: "Email", value: "rahul.sharma@abcstore.in")
-                                SpiceKVRow(key: "Mobile", value: "+91 \(userMobile)", isMonoValue: true)
-                                SpiceKVRow(key: "WhatsApp", value: "+91 \(userMobile)", isMonoValue: true)
-                                Text("Mobile number changes require OTP verification.")
-                                    .font(.system(size: 10, weight: .medium))
-                                    .foregroundColor(Color.spiceMuted)
-                                    .padding(.top, 2)
-                            }
-                        }
-
-                        // Business Information Card
-                        SpiceCard {
-                            VStack(alignment: .leading, spacing: 8) {
-                                HStack {
-                                    Text("Business Information")
-                                        .font(.system(size: 12, weight: .heavy))
-                                        .foregroundColor(Color.spiceInk)
-                                    Spacer()
-                                    Text("Request Update")
-                                        .font(.system(size: 11, weight: .heavy))
-                                        .foregroundColor(Color.spicePrimary)
-                                }
-                                Divider()
-                                SpiceKVRow(key: "Shop Name", value: "ABC General Store")
-                                SpiceKVRow(key: "GST Number", value: "27ABCDE1234F1Z5", isMonoValue: true)
-                                SpiceKVRow(key: "Address", value: "Shop 14, Krishna Market, Andheri East")
-                                SpiceKVRow(key: "City / State", value: "Mumbai, Maharashtra")
-                                HStack {
-                                    Text("KYC Status").font(.system(size: 12, weight: .semibold)).foregroundColor(Color.spiceMuted)
-                                    Spacer()
-                                    SpiceStatusBadge(status: "VERIFIED")
-                                }
-                            }
-                        }
-
-                        // Assigned Salesman Card
-                        NavigationLink(destination: SalesmanScreen()) {
-                            SpiceCard {
-                                HStack(spacing: 12) {
-                                    Circle()
-                                        .fill(LinearGradient(colors: [Color(hex: "#1B57D6"), Color(hex: "#123A8E")], startPoint: .topLeading, endPoint: .bottomTrailing))
-                                        .frame(width: 40, height: 40)
-                                        .overlay(Text("AK").font(.system(size: 10, weight: .heavy)).foregroundColor(.white))
-
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text("Amit Kumar")
-                                            .font(.system(size: 12.5, weight: .heavy))
-                                            .foregroundColor(Color.spiceInk)
-                                        Text("Assigned Salesman · Andheri Beat 4")
-                                            .font(.system(size: 10, weight: .medium))
-                                            .foregroundColor(Color.spiceMuted)
-                                    }
-
-                                    Spacer()
-
-                                    Image(systemName: "chevron.right")
-                                        .font(.system(size: 12, weight: .bold))
-                                        .foregroundColor(Color.spiceMuted)
-                                }
-                            }
-                        }
-                        .buttonStyle(.plain)
-
-                        // Menu Links Card
-                        SpiceCard(padding: 0) {
-                            VStack(spacing: 0) {
-                                NavigationLink(destination: OrdersScreen()) {
-                                    menuRowItem(title: "My Orders")
-                                }
-                                Divider()
-                                NavigationLink(destination: LedgerScreen()) {
-                                    menuRowItem(title: "Outstanding Ledger")
-                                }
-                                Divider()
-                                NavigationLink(destination: AddressListScreen()) {
-                                    menuRowItem(title: "Delivery Addresses")
-                                }
-                                Divider()
-                                NavigationLink(destination: NotificationScreen()) {
-                                    menuRowItem(title: "Notifications")
-                                }
-                                Divider()
-                                NavigationLink(destination: CustomerSupportScreen()) {
-                                    menuRowItem(title: "Customer Support")
-                                }
-                            }
-                        }
-
-                        // Logout Button
-                        SpiceOutlinedButton(title: "Logout", color: Color.spiceDue, height: 48) {
-                            showLogoutModal = true
-                        }
-                        .padding(.top, 4)
-
-                        // Version text
-                        Text("SpiceMonk Retailer · v1.0.0")
-                            .font(.system(size: 10, weight: .medium, design: .monospaced))
-                            .foregroundColor(Color.spiceMuted)
-                            .padding(.vertical, 8)
-                    }
-                    .padding(16)
-                }
-                .background(Color.spiceBackground)
-            }
-
-            // Logout Confirmation Dialog
-            if showLogoutModal {
-                ZStack {
-                    Color.black.opacity(0.4).ignoresSafeArea()
-
-                    SpiceCard {
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text("Are you sure you want to logout?")
-                                .font(.system(size: 15, weight: .heavy))
-                                .foregroundColor(Color.spiceInk)
-
-                            Text("You will need to verify your mobile number with an OTP to login again.")
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundColor(Color.spiceMuted)
-                                .lineSpacing(2)
-
-                            HStack(spacing: 10) {
-                                SpiceGhostButton(title: "Cancel", height: 42) {
-                                    showLogoutModal = false
-                                }
-
-                                Button(action: {
-                                    showLogoutModal = false
-                                    performLogout()
-                                }) {
                                     Text("Logout")
-                                        .font(.system(size: 13, weight: .heavy))
-                                        .foregroundColor(.white)
-                                        .frame(maxWidth: .infinity)
-                                        .frame(height: 42)
-                                        .background(Color.spiceDue)
-                                        .cornerRadius(10)
+                                        .font(.system(size: 14, weight: .heavy))
+                                        .foregroundColor(Color.spiceInk)
+                                    Spacer()
                                 }
+                                .frame(height: 48)
+                                .background(Color.white)
+                                .cornerRadius(12)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.spiceCardBorder, lineWidth: 1)
+                                )
                             }
-                            .padding(.top, 6)
+                            .buttonStyle(.plain)
+
+                            // MARK: - Version Text
+                            Text("SpiceMonk Business · v1.0.0")
+                                .font(.system(size: 11.5, weight: .medium, design: .monospaced))
+                                .foregroundColor(Color.spiceMuted)
+                                .padding(.top, 2)
+                                .padding(.bottom, 24)
                         }
+                        .padding(.horizontal, 16)
+                        .padding(.top, 4)
                     }
-                    .padding(24)
+                }
+
+                // MARK: - Logout Confirmation Modal
+                if showLogoutModal {
+                    logoutConfirmationDialog
                 }
             }
-        }
-        .navigationBarHidden(true)
-        .sheet(isPresented: $showNotifications) {
-            NavigationStack { NotificationScreen() }
+            .navigationBarHidden(true)
         }
     }
 
-    private func menuRowItem(title: String) -> some View {
-        HStack {
-            Text(title)
-                .font(.system(size: 12.5, weight: .bold))
-                .foregroundColor(Color.spiceInk)
+    // MARK: - Card 1: Profile Header Card
+    private var profileHeaderCard: some View {
+        HStack(alignment: .center, spacing: 14) {
+            // Avatar Logo Box
+            ZStack {
+                Circle()
+                    .fill(Color(hex: "#E8F5EC"))
+                    .frame(width: 54, height: 54)
+
+                Image("spice_monk_logo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 44, height: 44)
+            }
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(userName)
+                    .font(.system(size: 17, weight: .heavy))
+                    .foregroundColor(Color.spiceInk)
+
+                Text(shopName)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(Color.spiceMuted)
+            }
+
             Spacer()
+
+            Text("APPROVED")
+                .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                .foregroundColor(Color(hex: "#167444"))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color(hex: "#EAF7EE"))
+                .cornerRadius(6)
+        }
+        .padding(16)
+        .background(Color.white)
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.spiceCardBorder.opacity(0.8), lineWidth: 1)
+        )
+    }
+
+    // MARK: - Card 2: Personal Information Card
+    private var personalInfoCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Personal Information")
+                    .font(.system(size: 14, weight: .heavy))
+                    .foregroundColor(Color.spiceInk)
+
+                Spacer()
+
+                Button(action: {
+                    showEditPersonalModal = true
+                }) {
+                    Text("Edit")
+                        .font(.system(size: 13.5, weight: .heavy))
+                        .foregroundColor(Color.spicePrimary)
+                }
+            }
+
+            VStack(spacing: 8) {
+                infoRow(key: "Name", value: userName)
+                infoRow(key: "Mobile", value: userMobile, isMono: true)
+                infoRow(key: "Email", value: userEmail)
+                infoRow(key: "WhatsApp", value: whatsappNumber, isMono: true)
+            }
+
+            Text("Mobile number changes require OTP verification.")
+                .font(.system(size: 11.5, weight: .medium))
+                .foregroundColor(Color.spiceMuted)
+                .padding(.top, 2)
+        }
+        .padding(16)
+        .background(Color.white)
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.spiceCardBorder.opacity(0.8), lineWidth: 1)
+        )
+    }
+
+    // MARK: - Card 3: Business Information Card
+    private var businessInfoCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Business Information")
+                    .font(.system(size: 14, weight: .heavy))
+                    .foregroundColor(Color.spiceInk)
+
+                Spacer()
+
+                Button(action: {
+                    showRequestBusinessUpdateModal = true
+                }) {
+                    Text("Request Update")
+                        .font(.system(size: 13.5, weight: .heavy))
+                        .foregroundColor(Color.spicePrimary)
+                }
+            }
+
+            infoRow(key: "Shop Name", value: shopName, isBoldValue: true)
+        }
+        .padding(16)
+        .background(Color.white)
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.spiceCardBorder.opacity(0.8), lineWidth: 1)
+        )
+    }
+
+    // MARK: - Card 4: Navigation Menu Card
+    private var menuNavigationCard: some View {
+        VStack(spacing: 0) {
+            NavigationLink(destination: OrdersScreen()) {
+                menuRow(icon: "doc.plaintext.fill", title: "My Orders")
+            }
+            Divider().background(Color.spiceDivider)
+
+            NavigationLink(destination: SchemesScreen()) {
+                menuRow(icon: "tag.fill", title: "Running Schemes")
+            }
+            Divider().background(Color.spiceDivider)
+
+            NavigationLink(destination: LedgerScreen()) {
+                menuRow(icon: "doc.text.fill", title: "Outstanding Ledger")
+            }
+            Divider().background(Color.spiceDivider)
+
+            NavigationLink(destination: SalesmanScreen()) {
+                menuRow(icon: "person.fill", title: "Assigned Salesman")
+            }
+            Divider().background(Color.spiceDivider)
+
+            NavigationLink(destination: NotificationScreen()) {
+                menuRow(icon: "bell.fill", title: "Notifications")
+            }
+            Divider().background(Color.spiceDivider)
+
+            NavigationLink(destination: CustomerSupportScreen()) {
+                menuRow(icon: "headphones", title: "Customer Support")
+            }
+        }
+        .background(Color.white)
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.spiceCardBorder.opacity(0.8), lineWidth: 1)
+        )
+    }
+
+    // MARK: - Menu Row Item
+    private func menuRow(icon: String, title: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(Color.spiceInk)
+                .frame(width: 22)
+
+            Text(title)
+                .font(.system(size: 13.5, weight: .bold))
+                .foregroundColor(Color.spiceInk)
+
+            Spacer()
+
             Image(systemName: "chevron.right")
                 .font(.system(size: 12, weight: .bold))
-                .foregroundColor(Color.spiceMuted)
+                .foregroundColor(Color.spiceMuted.opacity(0.7))
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 13)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .contentShape(Rectangle())
     }
 
+    // MARK: - Key-Value Info Row Helper
+    private func infoRow(key: String, value: String, isMono: Bool = false, isBoldValue: Bool = false) -> some View {
+        HStack {
+            Text(key)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(Color.spiceMuted)
+
+            Spacer()
+
+            Text(value)
+                .font(
+                    isMono ?
+                        .system(size: 13, weight: isBoldValue ? .heavy : .semibold, design: .monospaced) :
+                        .system(size: 13, weight: isBoldValue ? .heavy : .semibold)
+                )
+                .foregroundColor(Color.spiceInk)
+        }
+    }
+
+    // MARK: - Logout Confirmation Dialog
+    private var logoutConfirmationDialog: some View {
+        ZStack {
+            Color.black.opacity(0.4).ignoresSafeArea()
+
+            VStack(alignment: .leading, spacing: 14) {
+                Text("Are you sure you want to logout?")
+                    .font(.system(size: 16, weight: .heavy))
+                    .foregroundColor(Color.spiceInk)
+
+                Text("You will need to verify your mobile number with an OTP to login again.")
+                    .font(.system(size: 12.5, weight: .medium))
+                    .foregroundColor(Color.spiceMuted)
+                    .lineSpacing(2)
+
+                HStack(spacing: 12) {
+                    Button(action: {
+                        showLogoutModal = false
+                    }) {
+                        Text("Cancel")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundColor(Color.spiceInk)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 42)
+                            .background(Color.white)
+                            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.spiceCardBorder, lineWidth: 1))
+                            .cornerRadius(10)
+                    }
+
+                    Button(action: {
+                        showLogoutModal = false
+                        performLogout()
+                    }) {
+                        Text("Logout")
+                            .font(.system(size: 13, weight: .heavy))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 42)
+                            .background(Color.spiceDue)
+                            .cornerRadius(10)
+                    }
+                }
+                .padding(.top, 4)
+            }
+            .padding(20)
+            .background(Color.white)
+            .cornerRadius(18)
+            .padding(.horizontal, 24)
+        }
+    }
+
+    // MARK: - Logout Action
     private func performLogout() {
         let headers = defaults.authHeader
         LoginServiceManager().logoutRetailer(headers: headers)

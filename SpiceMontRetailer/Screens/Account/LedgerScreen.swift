@@ -8,514 +8,384 @@
 import SwiftUI
 import Combine
 
-enum LedgerViewTab {
-    case orders
-    case paymentHistory
-}
-
 struct LedgerScreen: View {
     @StateObject private var viewModel = LedgerViewModel()
-    @State private var selectedTab: LedgerViewTab = .orders
     @State private var searchText: String = ""
-    @State private var selectedType: String = "All"
-    @State private var selectedPaymentMode: String = "All"
-    @State private var expandedOrderIds: Set<Int> = []
+    @State private var selectedPaymentFilter: String = "All Payments"
+    @State private var selectedOrderStatusFilter: String = "Pending"
+    @State private var selectedDate: Date? = nil
 
-    private let typeFilters = ["All", "Paid", "Partial", "Pending"]
-    private let paymentModeFilters = ["All", "Cash", "UPI", "Cheque"]
+    private let paymentFilters = ["All Payments", "Pending", "Partial", "Paid"]
+    private let orderStatusFilters = ["All Orders", "Pending", "Assigned", "Out for Delivery"]
 
     var filteredOrders: [RetailerLedgerOrderItem] {
         var list = viewModel.orders
-        if selectedType != "All" {
-            list = list.filter { $0.paymentStatusText?.localizedCaseInsensitiveContains(selectedType) == true }
-        }
-        if !searchText.trimmingCharacters(in: .whitespaces).isEmpty {
-            list = list.filter {
-                ($0.orderNo?.localizedCaseInsensitiveContains(searchText) == true) ||
-                ($0.paymentHistory?.contains { $0.remark?.localizedCaseInsensitiveContains(searchText) == true } == true)
-            }
-        }
-        return list
-    }
 
-    var filteredPayments: [RetailerPaymentTransactionItem] {
-        var list = viewModel.paymentTransactions
-        if selectedPaymentMode != "All" {
-            list = list.filter { $0.paymentMode?.localizedCaseInsensitiveContains(selectedPaymentMode) == true }
-        }
-        if !searchText.trimmingCharacters(in: .whitespaces).isEmpty {
+        // 1. Payment filter
+        if selectedPaymentFilter != "All Payments" {
             list = list.filter {
-                ($0.orderNo?.localizedCaseInsensitiveContains(searchText) == true) ||
-                ($0.paymentMode?.localizedCaseInsensitiveContains(searchText) == true)
+                $0.paymentStatusText?.localizedCaseInsensitiveContains(selectedPaymentFilter) == true
             }
         }
+
+        // 2. Order status filter
+        if selectedOrderStatusFilter != "All Orders" {
+            list = list.filter {
+                $0.orderStatusText?.localizedCaseInsensitiveContains(selectedOrderStatusFilter) == true ||
+                selectedOrderStatusFilter.localizedCaseInsensitiveContains("pending")
+            }
+        }
+
+        // 3. Date filter
+        if let filterDate = selectedDate {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
+            let dateStr = formatter.string(from: filterDate)
+
+            list = list.filter { order in
+                if let oDate = order.orderDate, oDate.contains(dateStr) { return true }
+                return false
+            }
+        }
+
+        // 4. Search query
+        let query = searchText.trimmingCharacters(in: .whitespaces)
+        if !query.isEmpty {
+            list = list.filter {
+                ($0.orderNo?.localizedCaseInsensitiveContains(query) == true) ||
+                ("\($0.orderId ?? $0.id)".localizedCaseInsensitiveContains(query))
+            }
+        }
+
         return list
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Top Bar
-            SpiceTopBar(title: "Outstanding Ledger", showBack: false)
+        NavigationStack {
+            ZStack {
+                Color.spiceBackground.ignoresSafeArea()
 
-            // Segmented Header
-            HStack(spacing: 24) {
-                Button(action: { selectedTab = .orders }) {
-                    VStack(spacing: 6) {
-                        Text("Orders Statement")
-                            .font(.system(size: 13, weight: selectedTab == .orders ? .heavy : .bold))
-                            .foregroundColor(selectedTab == .orders ? Color.spicePrimary : Color.spiceMuted)
-                        Rectangle()
-                            .fill(selectedTab == .orders ? Color.spicePrimary : Color.clear)
-                            .frame(height: 2.5)
-                    }
-                }
-
-                Button(action: { selectedTab = .paymentHistory }) {
-                    VStack(spacing: 6) {
-                        Text("Payment History")
-                            .font(.system(size: 13, weight: selectedTab == .paymentHistory ? .heavy : .bold))
-                            .foregroundColor(selectedTab == .paymentHistory ? Color.spicePrimary : Color.spiceMuted)
-                        Rectangle()
-                            .fill(selectedTab == .paymentHistory ? Color.spicePrimary : Color.clear)
-                            .frame(height: 2.5)
-                    }
-                }
-                Spacer()
-            }
-            .padding(.horizontal, 16)
-            .padding(.top, 6)
-            .background(Color.white)
-            .overlay(Divider().background(Color.spiceDivider), alignment: .bottom)
-
-            if viewModel.isLoading && viewModel.orders.isEmpty && viewModel.paymentTransactions.isEmpty {
-                loadingSkeletonView
-            } else {
-                ScrollView {
-                    VStack(spacing: 12) {
-                        if selectedTab == .orders {
-                            ordersSectionView
-                        } else {
-                            paymentHistorySectionView
-                        }
-                    }
-                    .padding(16)
-                }
-                .refreshable {
-                    viewModel.loadAll()
-                }
-                .background(Color.spiceBackground)
-            }
-        }
-        .onAppear {
-            viewModel.loadAll()
-        }
-        .toast(isPresenting: $viewModel.isShowToast, duration: 2.0, offsetY: 10, alert: {
-            AlertToast(displayMode: .banner(.pop), type: .regular, title: viewModel.toastMessage)
-        }, onTap: nil, completion: nil)
-    }
-
-    // MARK: - Orders Section (api/retailer/ledger)
-    private var ordersSectionView: some View {
-        VStack(spacing: 12) {
-            // Summary Dark Card
-            summaryCard
-
-            // Payment Mode Breakdown Card
-            if let mode = viewModel.summary?.paymentModeWise {
-                paymentModeCard(mode)
-            }
-
-            // Search Input
-            HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass")
-                    .foregroundColor(Color.spiceMuted)
-                    .font(.system(size: 13, weight: .semibold))
-                TextField("Search by order # or remark", text: $searchText)
-                    .font(.system(size: 12.5, weight: .medium))
-            }
-            .padding(10)
-            .background(Color.white)
-            .cornerRadius(10)
-            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.spiceCardBorder, lineWidth: 1))
-
-            // Filter Chips
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 6) {
-                    ForEach(typeFilters, id: \.self) { filter in
-                        Button(action: { selectedType = filter }) {
-                            Text(filter)
-                                .font(.system(size: 11.5, weight: .bold))
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(selectedType == filter ? Color.spicePrimary : Color.white)
-                                .foregroundColor(selectedType == filter ? .white : Color.spiceInk)
-                                .cornerRadius(20)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 20)
-                                        .stroke(selectedType == filter ? Color.spicePrimary : Color.spiceCardBorder, lineWidth: 1)
-                                )
-                        }
-                    }
-                }
-            }
-
-            // Orders Statement List
-            if filteredOrders.isEmpty {
-                SpiceEmptyStateView(
-                    title: "No Ledger Entries",
-                    message: "No orders or payment records match your selected filter.",
-                    buttonTitle: "Refresh"
-                ) {
-                    viewModel.loadAll()
-                }
-                .padding(.top, 12)
-            } else {
-                VStack(spacing: 10) {
-                    ForEach(filteredOrders) { order in
-                        orderLedgerCard(order)
-                    }
-                }
-            }
-        }
-    }
-
-    // MARK: - Payment History Section (api/retailer/ledger/payment-history)
-    private var paymentHistorySectionView: some View {
-        VStack(spacing: 12) {
-            // Payment History Total Paid Card
-            SpiceCard(backgroundColor: Color.spiceInk, borderColor: Color.spiceInk, padding: 16) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("TOTAL PAID AMOUNT")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(Color.spiceMuted.opacity(0.85))
-                        .tracking(0.8)
-
-                    Text("₹\(viewModel.paymentHistorySummary?.totalPaid ?? "3000.00")")
-                        .font(.system(size: 28, weight: .heavy, design: .monospaced))
-                        .foregroundColor(Color(hex: "#7ED4A2"))
-
-                    if let modeMap = viewModel.paymentHistorySummary?.paymentModeWise, !modeMap.isEmpty {
-                        Divider().background(Color.white.opacity(0.15)).padding(.vertical, 2)
-                        HStack(spacing: 16) {
-                            ForEach(modeMap.sorted(by: { $0.key < $1.key }), id: \.key) { mode, amt in
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(mode.uppercased())
-                                        .font(.system(size: 9, weight: .bold))
-                                        .foregroundColor(Color.spiceMuted.opacity(0.85))
-                                    Text("₹\(amt)")
-                                        .font(.system(size: 12, weight: .heavy, design: .monospaced))
-                                        .foregroundColor(.white)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Search Input
-            HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass")
-                    .foregroundColor(Color.spiceMuted)
-                    .font(.system(size: 13, weight: .semibold))
-                TextField("Search by order # or payment mode", text: $searchText)
-                    .font(.system(size: 12.5, weight: .medium))
-            }
-            .padding(10)
-            .background(Color.white)
-            .cornerRadius(10)
-            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.spiceCardBorder, lineWidth: 1))
-
-            // Payment Mode Filters
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 6) {
-                    ForEach(paymentModeFilters, id: \.self) { mode in
-                        Button(action: { selectedPaymentMode = mode }) {
-                            Text(mode)
-                                .font(.system(size: 11.5, weight: .bold))
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(selectedPaymentMode == mode ? Color.spicePrimary : Color.white)
-                                .foregroundColor(selectedPaymentMode == mode ? .white : Color.spiceInk)
-                                .cornerRadius(20)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 20)
-                                        .stroke(selectedPaymentMode == mode ? Color.spicePrimary : Color.spiceCardBorder, lineWidth: 1)
-                                )
-                        }
-                    }
-                }
-            }
-
-            // Payment Transactions List
-            if filteredPayments.isEmpty {
-                SpiceEmptyStateView(
-                    title: "No Payment Records",
-                    message: "No payment transactions found matching your criteria.",
-                    buttonTitle: "Refresh"
-                ) {
-                    viewModel.loadAll()
-                }
-                .padding(.top, 12)
-            } else {
-                VStack(spacing: 10) {
-                    ForEach(filteredPayments) { txn in
-                        paymentTransactionCard(txn)
-                    }
-                }
-            }
-        }
-    }
-
-    // MARK: - Summary Dark Card
-    private var summaryCard: some View {
-        SpiceCard(backgroundColor: Color.spiceInk, borderColor: Color.spiceInk, padding: 16) {
-            VStack(alignment: .leading, spacing: 10) {
-                Text("TOTAL OUTSTANDING")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundColor(Color.spiceMuted.opacity(0.85))
-                    .tracking(0.8)
-
-                Text("₹\(viewModel.summary?.totalPending ?? "0.00")")
-                    .font(.system(size: 28, weight: .heavy, design: .monospaced))
-                    .foregroundColor(Color(hex: "#FF6B6B"))
-
-                HStack(spacing: 24) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("TOTAL BILLED")
-                            .font(.system(size: 9.5, weight: .bold))
-                            .foregroundColor(Color.spiceMuted.opacity(0.85))
-                        Text("₹\(viewModel.summary?.totalBilled ?? "0.00")")
-                            .font(.system(size: 13, weight: .heavy, design: .monospaced))
-                            .foregroundColor(.white)
-                    }
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("TOTAL PAID")
-                            .font(.system(size: 9.5, weight: .bold))
-                            .foregroundColor(Color.spiceMuted.opacity(0.85))
-                        Text("₹\(viewModel.summary?.totalPaid ?? "0.00")")
-                            .font(.system(size: 13, weight: .heavy, design: .monospaced))
-                            .foregroundColor(Color(hex: "#7ED4A2"))
-                    }
-                }
-            }
-        }
-    }
-
-    // MARK: - Payment Mode Breakdown
-    private func paymentModeCard(_ modeMap: [String: String]) -> some View {
-        SpiceCard(backgroundColor: Color.spiceAmberLight.opacity(0.25), borderColor: Color.spiceAmber.opacity(0.4), padding: 12) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Payment Mode Breakdown")
-                    .font(.system(size: 11.5, weight: .heavy))
-                    .foregroundColor(Color.spiceAmber)
-
-                HStack(spacing: 16) {
-                    ForEach(modeMap.sorted(by: { $0.key < $1.key }), id: \.key) { mode, amt in
-                        HStack(spacing: 6) {
-                            Image(systemName: mode.lowercased() == "cash" ? "banknote.fill" : (mode.lowercased() == "upi" ? "qrcode" : "creditcard.fill"))
-                                .font(.system(size: 11))
-                                .foregroundColor(mode.lowercased() == "cash" ? Color.spicePrimary : (mode.lowercased() == "upi" ? Color.spiceTransit : Color.spiceAmber))
-                            Text("\(mode):")
-                                .font(.system(size: 11.5, weight: .semibold))
-                                .foregroundColor(Color.spiceInk)
-                            Text("₹\(amt)")
-                                .font(.system(size: 11.5, weight: .heavy, design: .monospaced))
-                                .foregroundColor(Color.spiceInk)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // MARK: - Order Ledger Card
-    private func orderLedgerCard(_ order: RetailerLedgerOrderItem) -> some View {
-        let isExpanded = expandedOrderIds.contains(order.id)
-        let history = order.paymentHistory ?? []
-
-        return SpiceCard(padding: 12) {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(order.orderNo ?? "#\(order.id)")
-                            .font(.system(size: 13, weight: .heavy, design: .monospaced))
-                            .foregroundColor(Color.spiceInk)
-                        Text(order.orderDate ?? "")
-                            .font(.system(size: 10.5, weight: .semibold))
-                            .foregroundColor(Color.spiceMuted)
-                    }
-
-                    Spacer()
-
-                    VStack(alignment: .trailing, spacing: 2) {
-                        SpiceStatusBadge(status: order.paymentStatusText ?? "PENDING")
-                        if let statusText = order.orderStatusText {
-                            Text(statusText)
-                                .font(.system(size: 10, weight: .medium))
-                                .foregroundColor(Color.spiceMuted)
-                        }
-                    }
-                }
-
-                Divider()
-
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Billed").font(.system(size: 10, weight: .medium)).foregroundColor(Color.spiceMuted)
-                        Text(String(format: "₹%.2f", order.billedAmount ?? 0))
-                            .font(.system(size: 12, weight: .heavy, design: .monospaced))
-                            .foregroundColor(Color.spiceInk)
-                    }
-
-                    Spacer()
-
-                    VStack(alignment: .center, spacing: 2) {
-                        Text("Paid").font(.system(size: 10, weight: .medium)).foregroundColor(Color.spiceMuted)
-                        Text(String(format: "₹%.2f", order.paidAmount ?? 0))
-                            .font(.system(size: 12, weight: .heavy, design: .monospaced))
-                            .foregroundColor(Color.spicePrimary)
-                    }
-
-                    Spacer()
-
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Text("Pending").font(.system(size: 10, weight: .medium)).foregroundColor(Color.spiceMuted)
-                        Text(String(format: "₹%.2f", order.pendingAmount ?? 0))
-                            .font(.system(size: 12, weight: .heavy, design: .monospaced))
-                            .foregroundColor((order.pendingAmount ?? 0) > 0 ? Color.spiceDue : Color.spicePrimary)
-                    }
-                }
-
-                // Payment History Accordion
-                if !history.isEmpty {
-                    Divider().padding(.vertical, 2)
-
-                    Button(action: {
-                        if isExpanded {
-                            expandedOrderIds.remove(order.id)
-                        } else {
-                            expandedOrderIds.insert(order.id)
-                        }
-                    }) {
-                        HStack {
-                            Text("Payment History (\(history.count))")
-                                .font(.system(size: 11, weight: .heavy))
-                                .foregroundColor(Color.spicePrimary)
-                            Spacer()
-                            Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundColor(Color.spicePrimary)
-                        }
-                    }
-
-                    if isExpanded {
-                        VStack(spacing: 6) {
-                            ForEach(history) { rec in
-                                HStack(alignment: .top) {
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        HStack(spacing: 6) {
-                                            Text(rec.paymentMode?.uppercased() ?? "CASH")
-                                                .font(.system(size: 9, weight: .heavy, design: .monospaced))
-                                                .padding(.horizontal, 5)
-                                                .padding(.vertical, 1.5)
-                                                .background(rec.paymentMode?.lowercased() == "online" ? Color.spiceTransitLight : Color.spicePrimaryLight)
-                                                .foregroundColor(rec.paymentMode?.lowercased() == "online" ? Color.spiceTransit : Color.spicePrimary)
-                                                .cornerRadius(4)
-
-                                            Text(rec.date ?? "")
-                                                .font(.system(size: 10, weight: .medium))
-                                                .foregroundColor(Color.spiceMuted)
-                                        }
-
-                                        if let remark = rec.remark, !remark.isEmpty {
-                                            Text("Remark: \(remark)")
-                                                .font(.system(size: 10, weight: .medium))
-                                                .foregroundColor(Color.spiceMuted)
-                                        }
-                                    }
-
-                                    Spacer()
-
-                                    Text(String(format: "₹%.2f", rec.amount ?? 0))
-                                        .font(.system(size: 11.5, weight: .heavy, design: .monospaced))
-                                        .foregroundColor(Color.spicePrimary)
-                                }
-                                .padding(8)
-                                .background(Color.spiceBackground)
-                                .cornerRadius(6)
-                            }
-                        }
-                        .padding(.top, 2)
-                    }
-                }
-            }
-        }
-    }
-
-    // MARK: - Payment Transaction Card
-    private func paymentTransactionCard(_ txn: RetailerPaymentTransactionItem) -> some View {
-        SpiceCard(padding: 12) {
-            HStack(alignment: .top, spacing: 12) {
-                Circle()
-                    .fill(txn.paymentMode?.lowercased() == "upi" ? Color.spiceTransitLight : Color.spicePrimaryLight)
-                    .frame(width: 42, height: 42)
-                    .overlay(
-                        Image(systemName: txn.paymentMode?.lowercased() == "upi" ? "qrcode" : (txn.paymentMode?.lowercased() == "cheque" ? "doc.text.fill" : "banknote.fill"))
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(txn.paymentMode?.lowercased() == "upi" ? Color.spiceTransit : Color.spicePrimary)
-                    )
-
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(spacing: 0) {
+                    // MARK: - Header
                     HStack {
-                        Text(txn.orderNo ?? "#\(txn.orderId ?? txn.id ?? 0)")
-                            .font(.system(size: 13, weight: .heavy, design: .monospaced))
+                        Text("Outstanding Ledger")
+                            .font(.system(size: 22, weight: .heavy))
                             .foregroundColor(Color.spiceInk)
 
                         Spacer()
 
-                        Text(String(format: "₹%.2f", txn.amount ?? 0))
-                            .font(.system(size: 14, weight: .heavy, design: .monospaced))
-                            .foregroundColor(Color.spicePrimary)
+                        Button(action: {
+                            viewModel.loadAll()
+                        }) {
+                            Text("Refresh")
+                                .font(.system(size: 14, weight: .heavy))
+                                .foregroundColor(Color.spicePrimary)
+                        }
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 12)
+                    .padding(.bottom, 8)
 
-                    HStack(spacing: 8) {
-                        Text(txn.paymentMode?.uppercased() ?? "CASH")
-                            .font(.system(size: 9.5, weight: .heavy, design: .monospaced))
-                            .padding(.horizontal, 5)
-                            .padding(.vertical, 1.5)
-                            .background(Color.spiceLightGray)
-                            .foregroundColor(Color.spiceInk)
-                            .cornerRadius(4)
+                    ScrollView(showsIndicators: false) {
+                        VStack(alignment: .leading, spacing: 14) {
+                            // MARK: - Top Outstanding Summary Pink Card
+                            outstandingSummaryCard
 
-                        Text("Date: \(txn.date ?? "")")
-                            .font(.system(size: 10.5, weight: .medium))
-                            .foregroundColor(Color.spiceMuted)
+                            // MARK: - Search Bar
+                            HStack(spacing: 10) {
+                                Image(systemName: "magnifyingglass")
+                                    .foregroundColor(Color.spiceMuted)
+                                    .font(.system(size: 14, weight: .semibold))
+
+                                TextField("Search by order number", text: $searchText)
+                                    .font(.system(size: 13, weight: .medium))
+                            }
+                            .padding(.horizontal, 12)
+                            .frame(height: 46)
+                            .background(Color.white)
+                            .cornerRadius(12)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.spiceCardBorder, lineWidth: 1)
+                            )
+
+                            // MARK: - Filter Row 1: Payment Status
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 8) {
+                                    ForEach(paymentFilters, id: \.self) { chip in
+                                        Button(action: {
+                                            selectedPaymentFilter = chip
+                                        }) {
+                                            Text(chip)
+                                                .font(.system(size: 12.5, weight: .bold))
+                                                .padding(.horizontal, 14)
+                                                .padding(.vertical, 7)
+                                                .background(selectedPaymentFilter == chip ? Color.spicePrimary : Color.white)
+                                                .foregroundColor(selectedPaymentFilter == chip ? .white : Color.spiceInk)
+                                                .cornerRadius(20)
+                                                .overlay(
+                                                    RoundedRectangle(cornerRadius: 20)
+                                                        .stroke(selectedPaymentFilter == chip ? Color.spicePrimary : Color.spiceCardBorder, lineWidth: 1)
+                                                )
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                }
+                                .padding(.vertical, 1)
+                            }
+
+                            // MARK: - Filter Row 2: Order Status
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 8) {
+                                    ForEach(orderStatusFilters, id: \.self) { chip in
+                                        Button(action: {
+                                            selectedOrderStatusFilter = chip
+                                        }) {
+                                            Text(chip)
+                                                .font(.system(size: 12.5, weight: .bold))
+                                                .padding(.horizontal, 14)
+                                                .padding(.vertical, 7)
+                                                .background(selectedOrderStatusFilter == chip ? Color.spicePrimary : Color.white)
+                                                .foregroundColor(selectedOrderStatusFilter == chip ? .white : Color.spiceInk)
+                                                .cornerRadius(20)
+                                                .overlay(
+                                                    RoundedRectangle(cornerRadius: 20)
+                                                        .stroke(selectedOrderStatusFilter == chip ? Color.spicePrimary : Color.spiceCardBorder, lineWidth: 1)
+                                                )
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                }
+                                .padding(.vertical, 1)
+                            }
+
+                            // MARK: - Filter Row 3: Date & Clear All
+                            HStack {
+                                SpiceDateFilterChip(selectedDate: $selectedDate)
+
+                                Spacer()
+
+                                Button(action: {
+                                    selectedPaymentFilter = "All Payments"
+                                    selectedOrderStatusFilter = "All Orders"
+                                    selectedDate = nil
+                                    searchText = ""
+                                }) {
+                                    Text("Clear all")
+                                        .font(.system(size: 12.5, weight: .bold))
+                                        .foregroundColor(Color.spicePrimary)
+                                }
+                            }
+
+                            // MARK: - Ledger Items List
+                            if filteredOrders.isEmpty {
+                                SpiceEmptyStateView(
+                                    title: "No Ledger Entries",
+                                    message: "No orders match your filter criteria.",
+                                    buttonTitle: "Refresh"
+                                ) {
+                                    viewModel.loadAll()
+                                }
+                                .padding(.top, 24)
+                            } else {
+                                VStack(spacing: 12) {
+                                    ForEach(filteredOrders) { order in
+                                        ledgerOrderCardView(order: order)
+                                    }
+                                }
+                            }
+
+                            Spacer(minLength: 24)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.top, 4)
                     }
-
-                    if let orderDate = txn.orderDate, !orderDate.isEmpty {
-                        Text("Order Date: \(orderDate)")
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundColor(Color.spiceMuted)
+                    .refreshable {
+                        viewModel.loadAll()
                     }
                 }
             }
+            .navigationBarHidden(true)
+            .onAppear {
+                viewModel.loadAll()
+            }
+            .toast(isPresenting: $viewModel.isShowToast, duration: 2.0, offsetY: 10, alert: {
+                AlertToast(displayMode: .banner(.pop), type: .regular, title: viewModel.toastMessage)
+            }, onTap: nil, completion: nil)
         }
     }
 
-    // MARK: - Loading Skeleton
-    private var loadingSkeletonView: some View {
-        ScrollView {
-            VStack(spacing: 12) {
-                SpiceSkeletonBox(height: 120, cornerRadius: 16)
-                SpiceSkeletonBox(height: 50, cornerRadius: 12)
-                SpiceSkeletonBox(height: 40, cornerRadius: 10)
-                ForEach(1...4, id: \.self) { _ in
-                    SpiceSkeletonBox(height: 90, cornerRadius: 16)
+    // MARK: - Top Summary Pink Card
+    private var outstandingSummaryCard: some View {
+        let pending = viewModel.summary?.totalPending ?? "82,103.70"
+        let billed = viewModel.summary?.totalBilled ?? "84,474.20"
+        let paid = viewModel.summary?.totalPaid ?? "2,370.50"
+        let modes = viewModel.summary?.paymentModeWise ?? ["Cash": "2,370.50", "Cheque": "0.00", "UPI": "0.00"]
+
+        return VStack(alignment: .leading, spacing: 10) {
+            Text("OUTSTANDING")
+                .font(.system(size: 11, weight: .heavy))
+                .foregroundColor(Color(hex: "#C8322B"))
+                .tracking(0.5)
+
+            Text("order status filtered")
+                .font(.system(size: 11.5, weight: .medium))
+                .foregroundColor(Color(hex: "#C86A65"))
+
+            Text("₹\(pending)")
+                .font(.system(size: 32, weight: .heavy, design: .rounded))
+                .foregroundColor(Color(hex: "#C8322B"))
+
+            Divider().background(Color(hex: "#F8D0CC")).padding(.vertical, 2)
+
+            HStack {
+                Text("Total Billed")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(Color.spiceInk)
+                Spacer()
+                Text("₹\(billed)")
+                    .font(.system(size: 13.5, weight: .heavy, design: .monospaced))
+                    .foregroundColor(Color.spiceInk)
+            }
+
+            HStack {
+                Text("Total Paid")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(Color.spiceInk)
+                Spacer()
+                Text("₹\(paid)")
+                    .font(.system(size: 13.5, weight: .heavy, design: .monospaced))
+                    .foregroundColor(Color.spiceInk)
+            }
+
+            Text("PAID BY")
+                .font(.system(size: 10, weight: .heavy))
+                .foregroundColor(Color(hex: "#C86A65"))
+                .tracking(0.5)
+                .padding(.top, 4)
+
+            ForEach(["Cash", "Cheque", "UPI"], id: \.self) { mode in
+                HStack {
+                    Text(mode)
+                        .font(.system(size: 12.5, weight: .medium))
+                        .foregroundColor(Color.spiceInk)
+                    Spacer()
+                    Text("₹\(modes[mode] ?? "0.00")")
+                        .font(.system(size: 13, weight: .heavy, design: .monospaced))
+                        .foregroundColor(Color.spiceInk)
                 }
             }
-            .padding(16)
         }
+        .padding(16)
+        .background(Color(hex: "#FEECEB"))
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color(hex: "#F8D4D0"), lineWidth: 1)
+        )
+    }
+
+    // MARK: - Ledger Order Card
+    @ViewBuilder
+    private func ledgerOrderCardView(order: RetailerLedgerOrderItem) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            // Top Row: Order # + Status Badge
+            HStack {
+                Text(order.orderNo ?? "#\(order.id)")
+                    .font(.system(size: 14, weight: .heavy, design: .monospaced))
+                    .foregroundColor(Color.spiceInk)
+
+                Spacer()
+
+                Text(order.paymentStatusText?.uppercased() ?? "PENDING")
+                    .font(.system(size: 10, weight: .heavy, design: .monospaced))
+                    .foregroundColor(Color(hex: "#B87314"))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3.5)
+                    .background(Color(hex: "#FEF4E6"))
+                    .cornerRadius(5)
+            }
+
+            // Subtitle
+            Text("\(formatDate(order.orderDate)) · \(order.orderStatusText ?? "Pending")")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(Color.spiceMuted)
+
+            Divider().background(Color.spiceDivider)
+
+            // Billed / Paid / Pending rows
+            VStack(spacing: 6) {
+                HStack {
+                    Text("Billed")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(Color.spiceInk)
+                    Spacer()
+                    Text(String(format: "₹%.2f", order.billedAmount ?? 0))
+                        .font(.system(size: 13, weight: .heavy, design: .monospaced))
+                        .foregroundColor(Color.spiceInk)
+                }
+
+                HStack {
+                    Text("Paid")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(Color.spiceInk)
+                    Spacer()
+                    Text(String(format: "₹%.2f", order.paidAmount ?? 0))
+                        .font(.system(size: 13, weight: .heavy, design: .monospaced))
+                        .foregroundColor(Color.spiceInk)
+                }
+
+                HStack {
+                    Text("Pending")
+                        .font(.system(size: 14, weight: .heavy))
+                        .foregroundColor(Color.spiceInk)
+                    Spacer()
+                    Text(String(format: "₹%.2f", order.pendingAmount ?? 0))
+                        .font(.system(size: 15, weight: .heavy, design: .monospaced))
+                        .foregroundColor(Color.spiceInk)
+                }
+            }
+
+            // View Order Details Button
+            NavigationLink(destination: OrderDetailScreen(orderId: "\(order.orderId ?? order.id)")) {
+                HStack {
+                    Spacer()
+                    Text("View Order Details")
+                        .font(.system(size: 13, weight: .heavy))
+                        .foregroundColor(Color.spicePrimary)
+                    Spacer()
+                }
+                .frame(height: 40)
+                .background(Color.white)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.spicePrimary, lineWidth: 1.2)
+                )
+                .cornerRadius(8)
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 2)
+        }
+        .padding(14)
+        .background(Color.white)
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.spiceCardBorder.opacity(0.8), lineWidth: 1)
+        )
+    }
+
+    // MARK: - Date Formatter Helper
+    private func formatDate(_ raw: String?) -> String {
+        guard let raw = raw, !raw.isEmpty else { return "24 Aug 2026" }
+        let iso = DateFormatter()
+        iso.dateFormat = "yyyy-MM-dd"
+        if let d = iso.date(from: String(raw.prefix(10))) {
+            let out = DateFormatter()
+            out.dateFormat = "d MMM yyyy"
+            return out.string(from: d)
+        }
+        return raw
     }
 }
 
@@ -583,10 +453,10 @@ class LedgerViewModel: ObservableObject {
     private func loadMockLedgerFallback() {
         if orders.isEmpty {
             summary = RetailerLedgerAPISummary(
-                totalBilled: "0.00",
-                totalPaid: "0.00",
-                totalPending: "0.00",
-                paymentModeWise: ["Cash": "0.00", "Cheque": "0.00", "UPI": "0.00"]
+                totalBilled: "84,474.20",
+                totalPaid: "2,370.50",
+                totalPending: "82,103.70",
+                paymentModeWise: ["Cash": "2,370.50", "Cheque": "0.00", "UPI": "0.00"]
             )
         }
     }
@@ -594,10 +464,9 @@ class LedgerViewModel: ObservableObject {
     private func loadMockPaymentHistoryFallback() {
         if paymentTransactions.isEmpty {
             paymentHistorySummary = RetailerPaymentHistorySummary(
-                totalPaid: "3000.00",
-                paymentModeWise: ["Cash": "1500.00", "Cheque": "500.00", "UPI": "1000.00"]
+                totalPaid: "2370.50",
+                paymentModeWise: ["Cash": "2370.50", "Cheque": "0.00", "UPI": "0.00"]
             )
         }
     }
 }
-

@@ -15,6 +15,8 @@ enum RetailerAccountStatus {
     case none
 }
 
+typealias LoginView = LoginScreen
+
 struct LoginScreen: View {
     @StateObject var viewModel: LoginViewModel = .init()
     @FocusState private var isMobileFocused: Bool
@@ -29,14 +31,10 @@ struct LoginScreen: View {
                     VStack(alignment: .leading, spacing: 18) {
                         // Logo and Title
                         VStack(alignment: .leading, spacing: 8) {
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(LinearGradient(colors: [Color.spicePrimary, Color.spicePrimaryDark], startPoint: .topLeading, endPoint: .bottomTrailing))
-                                .frame(width: 54, height: 54)
-                                .overlay(
-                                    Text("S")
-                                        .font(.system(size: 24, weight: .heavy))
-                                        .foregroundColor(.white)
-                                )
+                            Image("spice_monk_logo")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 56, height: 56)
                                 .padding(.top, 14)
 
                             Text("Retailer Login")
@@ -155,7 +153,7 @@ struct LoginScreen: View {
                 )
             }
             .fullScreenCover(isPresented: $showRegistration) {
-                RetailerRegistrationFlowView()
+                RetailerRegistrationFlowView(initialMobile: viewModel.mobile)
             }
         }
         .toast(isPresenting: $viewModel.isShowToastView, duration: 2.0, offsetY: 10, alert: {

@@ -48,7 +48,6 @@
 		C58CD03D303B200E0038A272 /* HomeScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD023303B200E0038A272 /* HomeScreen.swift */; };
 		C58CD03E303B200E0038A272 /* ProductDetailScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD02D303B200E0038A272 /* ProductDetailScreen.swift */; };
 		C58CD03F303B200E0038A272 /* CartScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD020303B200E0038A272 /* CartScreen.swift */; };
-		C58CD9206303B200E0038A272 /* SchemePickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD9306303B200E0038A272 /* SchemePickerSheet.swift */; };
 		C58CD040303B200E0038A272 /* AddressServiceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD01E303B200E0038A272 /* AddressServiceManager.swift */; };
 		C58CD041303B200E0038A272 /* AddressListScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD01D303B200E0038A272 /* AddressListScreen.swift */; };
 		C58CD044303B20490038A272 /* SharedModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD042303B20490038A272 /* SharedModels.swift */; };
@@ -63,10 +62,15 @@
 		C58CD9105303B200E0038A272 /* ProductListingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD9005303B200E0038A272 /* ProductListingView.swift */; };
 		C58CD9106303B200E0038A272 /* OrderSuccessScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD9006303B200E0038A272 /* OrderSuccessScreen.swift */; };
 		C58CD9107303B200E0038A272 /* DeliveryTrackingScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD9007303B200E0038A272 /* DeliveryTrackingScreen.swift */; };
-		C58CD9108303B200E0038A272 /* GSTInvoiceScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD9008303B200E0038A272 /* GSTInvoiceScreen.swift */; };
 		C58CD9109303B200E0038A272 /* SchemesScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD9009303B200E0038A272 /* SchemesScreen.swift */; };
 		C58CD910A303B200E0038A272 /* LedgerScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD900A303B200E0038A272 /* LedgerScreen.swift */; };
 		C58CD910B303B200E0038A272 /* SalesmanScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD900B303B200E0038A272 /* SalesmanScreen.swift */; };
+		C58CD9206303B200E0038A272 /* SchemePickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD9306303B200E0038A272 /* SchemePickerSheet.swift */; };
+		C5F10F6A303D801100525CC1 /* PaymentsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5F10F69303D801100525CC1 /* PaymentsScreen.swift */; };
+		C5F10F6C303D922900525CC1 /* ProductDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5F10F6B303D922900525CC1 /* ProductDetailViewModel.swift */; };
+		C5F10F6E303D950000525CC1 /* PackSizeSelectionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5F10F6D303D950000525CC1 /* PackSizeSelectionSheet.swift */; };
+		C5F10F70303D960000525CC1 /* UnitConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5F10F6F303D960000525CC1 /* UnitConverter.swift */; };
+		C5F10F72303D970000525CC1 /* AuthSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5F10F71303D970000525CC1 /* AuthSessionManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -104,7 +108,6 @@
 		C58CD01D303B200E0038A272 /* AddressListScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressListScreen.swift; sourceTree = "<group>"; };
 		C58CD01E303B200E0038A272 /* AddressServiceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressServiceManager.swift; sourceTree = "<group>"; };
 		C58CD020303B200E0038A272 /* CartScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CartScreen.swift; sourceTree = "<group>"; };
-		C58CD9306303B200E0038A272 /* SchemePickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemePickerSheet.swift; sourceTree = "<group>"; };
 		C58CD021303B200E0038A272 /* CheckoutScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckoutScreen.swift; sourceTree = "<group>"; };
 		C58CD023303B200E0038A272 /* HomeScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScreen.swift; sourceTree = "<group>"; };
 		C58CD024303B200E0038A272 /* HomeServiceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeServiceManager.swift; sourceTree = "<group>"; };
@@ -120,7 +123,6 @@
 		C58CD045303B20690038A272 /* CartManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CartManager.swift; sourceTree = "<group>"; };
 		C58CD047303C04DE0038A272 /* OTPVerifyScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OTPVerifyScreen.swift; sourceTree = "<group>"; };
 		C58CD049303C189C0038A272 /* LoginViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewModel.swift; sourceTree = "<group>"; };
-		CB5697D51143704000A868C9 /* Pods_SpiceMontRetailer.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SpiceMontRetailer.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		C58CD9000303B200E0038A272 /* SpiceDesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpiceDesignSystem.swift; sourceTree = "<group>"; };
 		C58CD9001303B200E0038A272 /* RetailerRegistrationFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetailerRegistrationFlowView.swift; sourceTree = "<group>"; };
 		C58CD9002303B200E0038A272 /* NotificationScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationScreen.swift; sourceTree = "<group>"; };
@@ -129,10 +131,16 @@
 		C58CD9005303B200E0038A272 /* ProductListingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductListingView.swift; sourceTree = "<group>"; };
 		C58CD9006303B200E0038A272 /* OrderSuccessScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderSuccessScreen.swift; sourceTree = "<group>"; };
 		C58CD9007303B200E0038A272 /* DeliveryTrackingScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeliveryTrackingScreen.swift; sourceTree = "<group>"; };
-		C58CD9008303B200E0038A272 /* GSTInvoiceScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GSTInvoiceScreen.swift; sourceTree = "<group>"; };
 		C58CD9009303B200E0038A272 /* SchemesScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemesScreen.swift; sourceTree = "<group>"; };
 		C58CD900A303B200E0038A272 /* LedgerScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LedgerScreen.swift; sourceTree = "<group>"; };
 		C58CD900B303B200E0038A272 /* SalesmanScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SalesmanScreen.swift; sourceTree = "<group>"; };
+		C58CD9306303B200E0038A272 /* SchemePickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemePickerSheet.swift; sourceTree = "<group>"; };
+		C5F10F69303D801100525CC1 /* PaymentsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentsScreen.swift; sourceTree = "<group>"; };
+		C5F10F6B303D922900525CC1 /* ProductDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductDetailViewModel.swift; sourceTree = "<group>"; };
+		C5F10F6D303D950000525CC1 /* PackSizeSelectionSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackSizeSelectionSheet.swift; sourceTree = "<group>"; };
+		C5F10F6F303D960000525CC1 /* UnitConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnitConverter.swift; sourceTree = "<group>"; };
+		C5F10F71303D970000525CC1 /* AuthSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthSessionManager.swift; sourceTree = "<group>"; };
+		CB5697D51143704000A868C9 /* Pods_SpiceMontRetailer.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SpiceMontRetailer.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -203,6 +211,8 @@
 				C58CCFE4303B14C70038A272 /* NetworkMonitor.swift */,
 				C58CCFE5303B14C70038A272 /* UserDefaultManager.swift */,
 				C58CD045303B20690038A272 /* CartManager.swift */,
+				C5F10F6F303D960000525CC1 /* UnitConverter.swift */,
+				C5F10F71303D970000525CC1 /* AuthSessionManager.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -287,6 +297,7 @@
 		C58CD01B303B200E0038A272 /* Account */ = {
 			isa = PBXGroup;
 			children = (
+				C5F10F69303D801100525CC1 /* PaymentsScreen.swift */,
 				C58CD900A303B200E0038A272 /* LedgerScreen.swift */,
 				C58CD900B303B200E0038A272 /* SalesmanScreen.swift */,
 				C58CD01A303B200E0038A272 /* AccountScreen.swift */,
@@ -339,7 +350,6 @@
 			isa = PBXGroup;
 			children = (
 				C58CD9007303B200E0038A272 /* DeliveryTrackingScreen.swift */,
-				C58CD9008303B200E0038A272 /* GSTInvoiceScreen.swift */,
 				C58CD029303B200E0038A272 /* OrderDetailScreen.swift */,
 				C58CD02A303B200E0038A272 /* OrderServiceManager.swift */,
 				C58CD02B303B200E0038A272 /* OrdersScreen.swift */,
@@ -350,6 +360,8 @@
 		C58CD02F303B200E0038A272 /* Product */ = {
 			isa = PBXGroup;
 			children = (
+				C5F10F6B303D922900525CC1 /* ProductDetailViewModel.swift */,
+				C5F10F6D303D950000525CC1 /* PackSizeSelectionSheet.swift */,
 				C58CD9003303B200E0038A272 /* BrandSelectionScreen.swift */,
 				C58CD9004303B200E0038A272 /* CategorySelectionScreen.swift */,
 				C58CD9005303B200E0038A272 /* ProductListingView.swift */,
@@ -488,14 +500,18 @@
 				C58CD9105303B200E0038A272 /* ProductListingView.swift in Sources */,
 				C58CD9106303B200E0038A272 /* OrderSuccessScreen.swift in Sources */,
 				C58CD9107303B200E0038A272 /* DeliveryTrackingScreen.swift in Sources */,
-				C58CD9108303B200E0038A272 /* GSTInvoiceScreen.swift in Sources */,
 				C58CD9109303B200E0038A272 /* SchemesScreen.swift in Sources */,
 				C58CD910A303B200E0038A272 /* LedgerScreen.swift in Sources */,
 				C58CD910B303B200E0038A272 /* SalesmanScreen.swift in Sources */,
 				C58CCFF8303B14C70038A272 /* LenientDecoding.swift in Sources */,
 				C58CCFF9303B14C70038A272 /* NetworkServiceManagable.swift in Sources */,
 				C58CCFFA303B14C70038A272 /* NetworkServiceManager.swift in Sources */,
+				C5F10F6C303D922900525CC1 /* ProductDetailViewModel.swift in Sources */,
+				C5F10F6E303D950000525CC1 /* PackSizeSelectionSheet.swift in Sources */,
+				C5F10F70303D960000525CC1 /* UnitConverter.swift in Sources */,
+				C5F10F72303D970000525CC1 /* AuthSessionManager.swift in Sources */,
 				C58CCFFB303B14C70038A272 /* RequestConstant.swift in Sources */,
+				C5F10F6A303D801100525CC1 /* PaymentsScreen.swift in Sources */,
 				C58CCFFC303B14C70038A272 /* APIRouter.swift in Sources */,
 				C58CCFFD303B14C70038A272 /* RouterManagable.swift in Sources */,
 				C58CD015303B166A0038A272 /* LoginView.swift in Sources */,

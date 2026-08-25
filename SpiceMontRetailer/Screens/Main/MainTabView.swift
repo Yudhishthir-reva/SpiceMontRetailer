@@ -32,7 +32,7 @@ struct MainTabView: View {
                 OrdersScreen()
             }
             .tabItem {
-                Image(systemName: selectedTab == 2 ? "bag.fill" : "bag")
+                Image(systemName: selectedTab == 2 ? "list.bullet.clipboard.fill" : "list.bullet.clipboard")
                 Text("ORDERS")
             }
             .tag(2)
@@ -41,17 +41,17 @@ struct MainTabView: View {
                 LedgerScreen()
             }
             .tabItem {
-                Image(systemName: selectedTab == 3 ? "doc.text.fill" : "doc.text")
+                Image(systemName: selectedTab == 3 ? "doc.plaintext.fill" : "doc.plaintext")
                 Text("LEDGER")
             }
             .tag(3)
 
             NavigationStack {
-                AccountScreen()
+                PaymentsScreen()
             }
             .tabItem {
-                Image(systemName: selectedTab == 4 ? "person.crop.circle.fill" : "person.crop.circle")
-                Text("PROFILE")
+                Image(systemName: selectedTab == 4 ? "creditcard.fill" : "creditcard")
+                Text("PAYMENTS")
             }
             .tag(4)
         }

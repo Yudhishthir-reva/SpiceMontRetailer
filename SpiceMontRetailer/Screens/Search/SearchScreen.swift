@@ -111,7 +111,7 @@ struct SearchScreen: View {
             ], spacing: 14) {
                 ForEach(viewModel.products) { product in
                     NavigationLink {
-                        ProductDetailScreen(productId: product.id ?? 0)
+                        ProductDetailScreen(productId: product.id ?? 0, initialProduct: product)
                     } label: {
                         searchResultCard(product)
                     }

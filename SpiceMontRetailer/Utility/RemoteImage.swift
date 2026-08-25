@@ -111,15 +111,10 @@ struct RemoteImage: View {
     /// never sit empty.
     private var imagePlaceholder: some View {
         ZStack {
-            AppTheme.imageTile
-            GeometryReader { geo in
-                let side = min(geo.size.width, geo.size.height)
-                Image("AppLogo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: side * 0.62, height: side * 0.62)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
+            Color(hex: "#EEF2EF")
+            Image(systemName: "photo")
+                .font(.system(size: 26, weight: .light))
+                .foregroundColor(Color.spiceMuted.opacity(0.35))
         }
     }
 

@@ -352,3 +352,156 @@ struct SpiceDivider: View {
             .frame(height: 1)
     }
 }
+
+// MARK: - Interactive Date Filter Chip & Sheet
+
+struct SpiceDateFilterChip: View {
+    @Binding var selectedDate: Date?
+    var placeholder: String = "Any Date"
+    @State private var showSheet: Bool = false
+
+    var label: String {
+        guard let date = selectedDate else { return placeholder }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "d MMM yyyy"
+        return formatter.string(from: date)
+    }
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Button(action: { showSheet = true }) {
+                HStack(spacing: 6) {
+                    Image(systemName: "calendar")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(selectedDate != nil ? Color.spicePrimary : Color.spiceMuted)
+
+                    Text(label)
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(selectedDate != nil ? Color.spicePrimary : Color.spiceInk)
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 6)
+                .background(selectedDate != nil ? Color.spicePrimaryLight : Color.white)
+                .cornerRadius(16)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(selectedDate != nil ? Color.spicePrimary : Color.spiceCardBorder, lineWidth: 1)
+                )
+            }
+            .buttonStyle(.plain)
+
+            if selectedDate != nil {
+                Button(action: {
+                    selectedDate = nil
+                }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(Color.spiceMuted)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .sheet(isPresented: $showSheet) {
+            SpiceDatePickerSheet(selectedDate: $selectedDate)
+        }
+    }
+}
+
+struct SpiceDatePickerSheet: View {
+    @Binding var selectedDate: Date?
+    @Environment(\.dismiss) private var dismiss
+    @State private var tempDate: Date = Date()
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 16) {
+                // Quick Preset Chips
+                HStack(spacing: 8) {
+                    Button(action: {
+                        selectedDate = nil
+                        dismiss()
+                    }) {
+                        Text("Any Date")
+                            .font(.system(size: 12, weight: .bold))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 7)
+                            .background(selectedDate == nil ? Color.spicePrimary : Color.spiceBackground)
+                            .foregroundColor(selectedDate == nil ? .white : Color.spiceInk)
+                            .cornerRadius(10)
+                    }
+
+                    Button(action: {
+                        selectedDate = Date()
+                        dismiss()
+                    }) {
+                        Text("Today")
+                            .font(.system(size: 12, weight: .bold))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 7)
+                            .background(Color.spiceBackground)
+                            .foregroundColor(Color.spiceInk)
+                            .cornerRadius(10)
+                    }
+
+                    Button(action: {
+                        if let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date()) {
+                            selectedDate = yesterday
+                        }
+                        dismiss()
+                    }) {
+                        Text("Yesterday")
+                            .font(.system(size: 12, weight: .bold))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 7)
+                            .background(Color.spiceBackground)
+                            .foregroundColor(Color.spiceInk)
+                            .cornerRadius(10)
+                    }
+                }
+                .padding(.top, 12)
+
+                Divider()
+
+                // Graphical DatePicker
+                DatePicker(
+                    "Select Date",
+                    selection: $tempDate,
+                    displayedComponents: [.date]
+                )
+                .datePickerStyle(.graphical)
+                .accentColor(Color.spicePrimary)
+                .padding(.horizontal, 12)
+
+                Spacer()
+
+                // Actions
+                HStack(spacing: 12) {
+                    SpiceOutlinedButton(title: "Reset", height: 44) {
+                        selectedDate = nil
+                        dismiss()
+                    }
+
+                    SpicePrimaryButton(title: "Apply Date", height: 44) {
+                        selectedDate = tempDate
+                        dismiss()
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 16)
+            }
+            .navigationTitle("Filter by Date")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") { dismiss() }
+                }
+            }
+            .onAppear {
+                if let s = selectedDate {
+                    tempDate = s
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+    }
+}

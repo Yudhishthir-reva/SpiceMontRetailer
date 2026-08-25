@@ -160,6 +160,26 @@ struct ProductVariant: Decodable, Identifiable, Hashable {
         minOrderQuantity = c.decodeIntLeniently(forKey: .minOrderQuantity)
         maxOrderQuantity = c.decodeIntLeniently(forKey: .maxOrderQuantity)
     }
+
+    init(
+        id: Int? = nil,
+        unit: String? = nil,
+        price: String? = nil,
+        mrp: String? = nil,
+        gst: String? = nil,
+        availableQuantity: Int? = nil,
+        minOrderQuantity: Int? = nil,
+        maxOrderQuantity: Int? = nil
+    ) {
+        self.id = id
+        self.unit = unit
+        self.price = price
+        self.mrp = mrp
+        self.gst = gst
+        self.availableQuantity = availableQuantity
+        self.minOrderQuantity = minOrderQuantity
+        self.maxOrderQuantity = maxOrderQuantity
+    }
 }
 
 // MARK: - Banner
@@ -193,7 +213,10 @@ struct Brand: Decodable, Identifiable, Hashable {
     var productsCount: Int?
 
     enum CodingKeys: String, CodingKey {
-        case id, name, image
+        case id, name, image, logo
+        case brandName = "brand_name"
+        case brandImage = "brand_image"
+        case brandLogo = "brand_logo"
         case productsCount = "products_count"
         case productCount = "product_count"
     }
@@ -201,12 +224,22 @@ struct Brand: Decodable, Identifiable, Hashable {
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = c.decodeIntLeniently(forKey: .id)
-        name = c.decodeStringLeniently(forKey: .name)
-        image = c.decodeStringLeniently(forKey: .image)
+        name = c.decodeStringLeniently(forKey: .name) ?? c.decodeStringLeniently(forKey: .brandName)
+        image = c.decodeStringLeniently(forKey: .image) ??
+                c.decodeStringLeniently(forKey: .brandImage) ??
+                c.decodeStringLeniently(forKey: .logo) ??
+                c.decodeStringLeniently(forKey: .brandLogo)
 
         let pCount = c.decodeIntLeniently(forKey: .productsCount)
         let prodCount = c.decodeIntLeniently(forKey: .productCount)
         productsCount = pCount ?? prodCount
+    }
+
+    init(id: Int? = nil, name: String? = nil, image: String? = nil, productsCount: Int? = nil) {
+        self.id = id
+        self.name = name
+        self.image = image
+        self.productsCount = productsCount
     }
 }
 
@@ -218,13 +251,16 @@ struct BrandListResponse: Decodable {
     enum CodingKeys: String, CodingKey {
         case status, message
         case brands = "data"
+        case brandList = "brands"
     }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         status = c.decodeBoolLeniently(forKey: .status)
         message = c.decodeStringLeniently(forKey: .message)
-        brands = try? c.decodeIfPresent([Brand].self, forKey: .brands)
+        let d = try? c.decodeIfPresent([Brand].self, forKey: .brands)
+        let b = try? c.decodeIfPresent([Brand].self, forKey: .brandList)
+        brands = d ?? b
     }
 }
 
@@ -260,6 +296,22 @@ struct SpiceCategory: Decodable, Identifiable, Hashable {
         let pic = c.decodeStringLeniently(forKey: .categoryPic)
         let img = c.decodeStringLeniently(forKey: .image)
         image = (pic != nil && !pic!.isEmpty) ? pic : img
+    }
+
+    init(
+        id: Int? = nil,
+        name: String? = nil,
+        image: String? = nil,
+        brandId: Int? = nil,
+        slug: String? = nil,
+        productsCount: Int? = nil
+    ) {
+        self.id = id
+        self.name = name
+        self.image = image
+        self.brandId = brandId
+        self.slug = slug
+        self.productsCount = productsCount
     }
 }
 
@@ -460,17 +512,23 @@ struct RetailerLedgerData: Decodable, Hashable {
 
 struct RetailerSalesmanData: Decodable, Hashable {
     var salesmanId: Int?
+    var name: String?
     var contact: String?
+    var phone: String?
+    var mobile: String?
 
     enum CodingKeys: String, CodingKey {
-        case contact
+        case name, contact, phone, mobile
         case salesmanId = "salesman_id"
     }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         salesmanId = c.decodeIntLeniently(forKey: .salesmanId)
+        name = c.decodeStringLeniently(forKey: .name)
         contact = c.decodeStringLeniently(forKey: .contact)
+        phone = c.decodeStringLeniently(forKey: .phone)
+        mobile = c.decodeStringLeniently(forKey: .mobile)
     }
 }
 
@@ -701,19 +759,27 @@ struct RetailerOfferApplyData: Decodable {
         case offerTitle = "offer_title"
         case slabId = "slab_id"
         case slabTitle = "slab_title"
+        case promotionId = "promotion_id"
+        case title
+        case type
     }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
+        let pId = c.decodeIntLeniently(forKey: .promotionId)
         let oId = c.decodeIntLeniently(forKey: .offerId)
         let sId = c.decodeIntLeniently(forKey: .slabId)
-        offerId = oId ?? sId
+        offerId = pId ?? oId ?? sId
 
+        let title1 = c.decodeStringLeniently(forKey: .title)
         let oTitle = c.decodeStringLeniently(forKey: .offerTitle)
         let sTitle = c.decodeStringLeniently(forKey: .slabTitle)
-        offerTitle = (oTitle != nil && !oTitle!.isEmpty) ? oTitle : sTitle
+        offerTitle = (title1 != nil && !title1!.isEmpty) ? title1 : ((oTitle != nil && !oTitle!.isEmpty) ? oTitle : sTitle)
 
-        rewardType = c.decodeStringLeniently(forKey: .rewardType)
+        let type1 = c.decodeStringLeniently(forKey: .type)
+        let rType = c.decodeStringLeniently(forKey: .rewardType)
+        rewardType = (type1 != nil && !type1!.isEmpty) ? type1 : rType
+
         discountAmount = try? c.decodeIfPresent(Double.self, forKey: .discountAmount)
         giftDescription = c.decodeStringLeniently(forKey: .giftDescription)
         finalAmount = try? c.decodeIfPresent(Double.self, forKey: .finalAmount)
@@ -857,7 +923,13 @@ struct CartItem: Decodable, Identifiable, Hashable {
     var gst: String?
     var perPrice: String?
     var totalPrice: String?
+    var availableQuantity: Int?
     var product: Product?
+
+    var identifier: String {
+        if let id = id, id > 0 { return "\(id)" }
+        return "\(productId ?? 0)_\(variantId ?? 0)_\(variantName ?? "")"
+    }
 
     enum CodingKeys: String, CodingKey {
         case id, price, mrp, gst, product
@@ -871,6 +943,10 @@ struct CartItem: Decodable, Identifiable, Hashable {
         case qty = "qty"
         case perPrice = "per_price"
         case totalPrice = "total_price"
+        case availableQuantity = "avl_qty"
+        case avlQuantity = "avl_quantity"
+        case availableQty = "available_qty"
+        case stock = "stock"
     }
 
     init(from decoder: Decoder) throws {
@@ -894,7 +970,39 @@ struct CartItem: Decodable, Identifiable, Hashable {
         gst = c.decodeStringLeniently(forKey: .gst)
         perPrice = c.decodeStringLeniently(forKey: .perPrice)
         totalPrice = c.decodeStringLeniently(forKey: .totalPrice)
+        availableQuantity = c.decodeIntLeniently(forKey: .availableQuantity) ??
+            c.decodeIntLeniently(forKey: .avlQuantity) ??
+            c.decodeIntLeniently(forKey: .availableQty) ??
+            c.decodeIntLeniently(forKey: .stock)
         product = try? c.decodeIfPresent(Product.self, forKey: .product)
+    }
+
+    init(
+        id: Int? = nil,
+        productId: Int? = nil,
+        productName: String? = nil,
+        productImage: String? = nil,
+        variantId: Int? = nil,
+        variantName: String? = nil,
+        quantity: Int? = 1,
+        price: String? = nil,
+        perPrice: String? = nil,
+        totalPrice: String? = nil,
+        availableQuantity: Int? = nil,
+        product: Product? = nil
+    ) {
+        self.id = id
+        self.productId = productId
+        self.productName = productName
+        self.productImage = productImage
+        self.variantId = variantId
+        self.variantName = variantName
+        self.quantity = quantity
+        self.price = price
+        self.perPrice = perPrice ?? price
+        self.totalPrice = totalPrice
+        self.availableQuantity = availableQuantity
+        self.product = product
     }
 
     func hash(into hasher: inout Hasher) { hasher.combine(id) }
@@ -1108,6 +1216,24 @@ struct Order: Decodable, Identifiable, Hashable {
         appliedOffer = try? c.decodeIfPresent(RetailerAppliedOffer.self, forKey: .appliedOffer)
     }
 
+    init(
+        id: Int? = nil,
+        orderNumber: String? = nil,
+        status: String? = nil,
+        total: String? = nil,
+        orderDate: String? = nil,
+        createdAt: String? = nil,
+        itemsCount: Int? = nil
+    ) {
+        self.id = id
+        self.orderNumber = orderNumber
+        self.status = status
+        self.total = total
+        self.orderDate = orderDate
+        self.createdAt = createdAt ?? orderDate
+        self.itemsCount = itemsCount
+    }
+
     func hash(into hasher: inout Hasher) { hasher.combine(id) }
     static func == (lhs: Order, rhs: Order) -> Bool { lhs.id == rhs.id }
 
@@ -1117,6 +1243,14 @@ struct Order: Decodable, Identifiable, Hashable {
             return d
         }
         return createdAt ?? ""
+    }
+
+    var displayDateOnly: String {
+        if let d = orderDate, !d.isEmpty { return d }
+        if let created = createdAt, !created.isEmpty {
+            return String(created.prefix(10))
+        }
+        return "2026-08-24"
     }
 
     var statusColor: String {
@@ -1168,6 +1302,20 @@ struct RetailerRiderInfo: Decodable, Hashable {
         longitude = c.decodeStringLeniently(forKey: .longitude)
         address = c.decodeStringLeniently(forKey: .address)
     }
+
+    init(
+        name: String? = nil,
+        mobile: String? = nil,
+        latitude: String? = nil,
+        longitude: String? = nil,
+        address: String? = nil
+    ) {
+        self.name = name
+        self.mobile = mobile
+        self.latitude = latitude
+        self.longitude = longitude
+        self.address = address
+    }
 }
 
 struct RetailerTimelineItem: Decodable, Identifiable, Hashable {
@@ -1200,6 +1348,20 @@ struct RetailerTimelineItem: Decodable, Identifiable, Hashable {
 
         isActive = c.decodeBoolLeniently(forKey: .isActive)
     }
+
+    init(
+        key: String? = nil,
+        label: String? = nil,
+        isDone: Bool? = nil,
+        isActive: Bool? = nil,
+        date: String? = nil
+    ) {
+        self.key = key
+        self.label = label
+        self.isDone = isDone
+        self.isActive = isActive
+        self.date = date
+    }
 }
 
 struct RetailerOrderTrackResponse: Decodable {
@@ -1223,7 +1385,10 @@ struct RetailerOrderTrackData: Decodable {
     var status: Int?
     var statusText: String?
     var statusColorHex: String?
+    var orderDate: String?
+    var deliveryDate: String?
     var rider: RetailerRiderInfo?
+    var riderLocation: String?
     var timeline: [RetailerTimelineItem]?
 
     enum CodingKeys: String, CodingKey {
@@ -1232,6 +1397,9 @@ struct RetailerOrderTrackData: Decodable {
         case orderNo = "order_no"
         case statusText = "status_text"
         case statusColorHex = "status_color"
+        case orderDate = "order_date"
+        case deliveryDate = "delivery_date"
+        case riderLocation = "rider_location"
     }
 
     init(from decoder: Decoder) throws {
@@ -1241,8 +1409,35 @@ struct RetailerOrderTrackData: Decodable {
         status = c.decodeIntLeniently(forKey: .status)
         statusText = c.decodeStringLeniently(forKey: .statusText)
         statusColorHex = c.decodeStringLeniently(forKey: .statusColorHex)
+        orderDate = c.decodeStringLeniently(forKey: .orderDate)
+        deliveryDate = c.decodeStringLeniently(forKey: .deliveryDate)
+        riderLocation = c.decodeStringLeniently(forKey: .riderLocation)
         rider = try? c.decodeIfPresent(RetailerRiderInfo.self, forKey: .rider)
         timeline = try? c.decodeIfPresent([RetailerTimelineItem].self, forKey: .timeline)
+    }
+
+    init(
+        orderId: Int? = nil,
+        orderNo: String? = nil,
+        status: Int? = nil,
+        statusText: String? = nil,
+        statusColorHex: String? = nil,
+        orderDate: String? = nil,
+        deliveryDate: String? = nil,
+        rider: RetailerRiderInfo? = nil,
+        riderLocation: String? = nil,
+        timeline: [RetailerTimelineItem]? = nil
+    ) {
+        self.orderId = orderId
+        self.orderNo = orderNo
+        self.status = status
+        self.statusText = statusText
+        self.statusColorHex = statusColorHex
+        self.orderDate = orderDate
+        self.deliveryDate = deliveryDate
+        self.rider = rider
+        self.riderLocation = riderLocation
+        self.timeline = timeline
     }
 }
 
@@ -1269,6 +1464,14 @@ struct RetailerAppliedOffer: Decodable, Hashable {
         discountType = c.decodeStringLeniently(forKey: .discountType)
         discountValue = try? c.decodeIfPresent(Double.self, forKey: .discountValue)
         discountAmount = try? c.decodeIfPresent(Double.self, forKey: .discountAmount)
+    }
+
+    var schemeTitle: String? { title }
+    var discountText: String? {
+        if let amt = discountAmount, amt > 0 {
+            return "₹\(String(format: "%.2f", amt)) saved on this order"
+        }
+        return nil
     }
 }
 
@@ -1325,6 +1528,34 @@ struct OrderItem: Decodable, Identifiable, Hashable {
         totalPrice = c.decodeStringLeniently(forKey: .totalPrice)
         mrp = c.decodeStringLeniently(forKey: .mrp)
         gst = c.decodeStringLeniently(forKey: .gst)
+    }
+
+    init(
+        id: Int? = nil,
+        productId: Int? = nil,
+        productName: String? = nil,
+        productImage: String? = nil,
+        variantId: Int? = nil,
+        variantName: String? = nil,
+        unit: String? = nil,
+        quantity: Int? = nil,
+        price: String? = nil,
+        totalPrice: String? = nil,
+        mrp: String? = nil,
+        gst: String? = nil
+    ) {
+        self.id = id
+        self.productId = productId
+        self.productName = productName
+        self.productImage = productImage
+        self.variantId = variantId
+        self.variantName = variantName
+        self.unit = unit
+        self.quantity = quantity
+        self.price = price
+        self.totalPrice = totalPrice
+        self.mrp = mrp
+        self.gst = gst
     }
 }
 
@@ -1706,6 +1937,32 @@ struct RetailerLedgerOrderItem: Decodable, Identifiable, Hashable {
         paymentStatusText = c.decodeStringLeniently(forKey: .paymentStatusText)
         paymentHistory = try? c.decodeIfPresent([RetailerPaymentHistoryRecord].self, forKey: .paymentHistory)
     }
+
+    init(
+        orderId: Int? = nil,
+        orderNo: String? = nil,
+        orderDate: String? = nil,
+        orderStatus: Int? = nil,
+        orderStatusText: String? = nil,
+        billedAmount: Double? = nil,
+        paidAmount: Double? = nil,
+        pendingAmount: Double? = nil,
+        paymentStatus: Int? = nil,
+        paymentStatusText: String? = nil,
+        paymentHistory: [RetailerPaymentHistoryRecord]? = []
+    ) {
+        self.orderId = orderId
+        self.orderNo = orderNo
+        self.orderDate = orderDate
+        self.orderStatus = orderStatus
+        self.orderStatusText = orderStatusText
+        self.billedAmount = billedAmount
+        self.paidAmount = paidAmount
+        self.pendingAmount = pendingAmount
+        self.paymentStatus = paymentStatus
+        self.paymentStatusText = paymentStatusText
+        self.paymentHistory = paymentHistory
+    }
 }
 
 struct RetailerPaymentHistoryRecord: Decodable, Identifiable, Hashable {
@@ -1831,6 +2088,28 @@ struct RetailerPaymentTransactionItem: Decodable, Identifiable, Hashable {
         orderId = c.decodeIntLeniently(forKey: .orderId)
         orderNo = c.decodeStringLeniently(forKey: .orderNo)
         orderDate = c.decodeStringLeniently(forKey: .orderDate)
+    }
+
+    init(
+        id: Int? = nil,
+        orderId: Int? = nil,
+        orderNo: String? = nil,
+        amount: Double? = nil,
+        paymentMode: String? = nil,
+        date: String? = nil,
+        orderDate: String? = nil,
+        discount: Double? = nil,
+        image: String? = nil
+    ) {
+        self.id = id
+        self.orderId = orderId
+        self.orderNo = orderNo
+        self.amount = amount
+        self.paymentMode = paymentMode
+        self.date = date
+        self.orderDate = orderDate
+        self.discount = discount
+        self.image = image
     }
 }
 
