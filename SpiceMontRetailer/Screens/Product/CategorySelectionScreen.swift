@@ -31,10 +31,7 @@ struct CategorySelectionScreen: View {
     ]
 
     var displayCategories: [SpiceCategory] {
-        if !categories.isEmpty {
-            return categories
-        }
-        return sampleCategories
+        categories
     }
 
     var body: some View {
@@ -77,6 +74,18 @@ struct CategorySelectionScreen: View {
                             }
                         }
                         .padding(16)
+                    }
+                } else if displayCategories.isEmpty {
+                    VStack {
+                        Spacer()
+                        SpiceEmptyStateView(
+                            title: "No Categories Found",
+                            message: "No spice categories are available right now.",
+                            buttonTitle: "Refresh"
+                        ) {
+                            loadCategories()
+                        }
+                        Spacer()
                     }
                 } else {
                     ScrollView(showsIndicators: false) {
@@ -230,15 +239,5 @@ struct CategorySelectionScreen: View {
                 self.categories = response.categories ?? []
             }
             .store(in: &cancellables)
-    }
-
-    // Fallback sample categories matching reference screenshot
-    private var sampleCategories: [SpiceCategory] {
-        [
-            SpiceCategory(id: 1, name: "DHANIA POWDER", image: ""),
-            SpiceCategory(id: 2, name: "HALDI POWDER", image: ""),
-            SpiceCategory(id: 3, name: "Masala-FL", image: ""),
-            SpiceCategory(id: 4, name: "MIRCH POWDER", image: "")
-        ]
     }
 }

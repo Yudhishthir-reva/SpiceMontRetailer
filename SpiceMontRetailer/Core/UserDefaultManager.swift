@@ -12,13 +12,20 @@ class UserDefaultManager {
     enum PersistenceKeys: String {
         case sellerId
         case userMobile
+        case userPhone
         case userName
         case userEmail
         case shopName
+        case shopAddress
         case whatsappNumber
         case authToken
         case refreshToken
         case tokenExpiry
+        case salesmanName
+        case salesmanPhone
+        case customerSupportPhone
+        case profilePic
+        case greeting
     }
 
     func setUserDefaultsString(value: String, key: PersistenceKeys) {

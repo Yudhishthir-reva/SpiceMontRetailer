@@ -100,6 +100,8 @@ struct Product: Decodable, Identifiable, Hashable {
     func hash(into hasher: inout Hasher) { hasher.combine(id) }
     static func == (lhs: Product, rhs: Product) -> Bool { lhs.id == rhs.id }
 
+    var title: String? { name }
+
     var displayPrice: String { price?.priceLabel ?? "₹0" }
     var displayMRP: String { mrp?.priceLabel ?? "" }
 
@@ -376,14 +378,49 @@ struct HomeResponse: Decodable {
 
 // MARK: - Retailer Home Models
 
+struct RetailerUser: Decodable, Hashable {
+    var greeting: String?
+    var sellerId: String?
+    var name: String?
+    var shopName: String?
+    var address: String?
+    var mobile: String?
+    var profilePic: String?
+
+    enum CodingKeys: String, CodingKey {
+        case greeting, name, address, mobile
+        case sellerId = "seller_id"
+        case shopName = "shop_name"
+        case profilePic = "profile_pic"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        greeting = c.decodeStringLeniently(forKey: .greeting)
+        sellerId = c.decodeStringLeniently(forKey: .sellerId)
+        name = c.decodeStringLeniently(forKey: .name)
+        shopName = c.decodeStringLeniently(forKey: .shopName)
+        address = c.decodeStringLeniently(forKey: .address)
+        mobile = c.decodeStringLeniently(forKey: .mobile)
+        profilePic = c.decodeStringLeniently(forKey: .profilePic)
+    }
+}
+
 struct RetailerHomeResponse: Decodable {
     var status: Bool?
+    var greeting: String?
+    var sellerName: String?
+    var shopName: String?
+    var address: String?
+    var user: RetailerUser?
     var accountStatus: String?
     var message: String?
     var widgets: [RetailerWidget]?
 
     enum CodingKeys: String, CodingKey {
-        case status, message
+        case status, greeting, address, user, message
+        case sellerName = "seller_name"
+        case shopName = "shop_name"
         case accountStatus = "account_status"
         case widgets = "data"
     }
@@ -391,9 +428,37 @@ struct RetailerHomeResponse: Decodable {
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         status = c.decodeBoolLeniently(forKey: .status)
+        greeting = c.decodeStringLeniently(forKey: .greeting)
+        sellerName = c.decodeStringLeniently(forKey: .sellerName)
+        shopName = c.decodeStringLeniently(forKey: .shopName)
+        address = c.decodeStringLeniently(forKey: .address)
+        user = try? c.decodeIfPresent(RetailerUser.self, forKey: .user)
         accountStatus = c.decodeStringLeniently(forKey: .accountStatus)
         message = c.decodeStringLeniently(forKey: .message)
         widgets = try? c.decodeIfPresent([RetailerWidget].self, forKey: .widgets)
+    }
+}
+
+struct RetailerQuickActionItem: Decodable, Identifiable, Hashable {
+    var actionType: String?
+    var label: String?
+    var image: String?
+    var sortOrder: Int?
+
+    var id: String { actionType ?? label ?? UUID().uuidString }
+
+    enum CodingKeys: String, CodingKey {
+        case label, image
+        case actionType = "action_type"
+        case sortOrder = "sort_order"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        actionType = c.decodeStringLeniently(forKey: .actionType)
+        label = c.decodeStringLeniently(forKey: .label)
+        image = c.decodeStringLeniently(forKey: .image)
+        sortOrder = c.decodeIntLeniently(forKey: .sortOrder)
     }
 }
 
@@ -402,9 +467,11 @@ struct RetailerWidget: Decodable, Identifiable {
     var type: String?
     var layout: String?
     var title: String?
+    var sortOrder: Int?
 
     // Typed data holders for dynamic widget response payloads
     var banners: [RetailerBannerItem]?
+    var quickActions: [RetailerQuickActionItem]?
     var runningOrder: RetailerOrderData?
     var recentOrders: [RetailerOrderData]?
     var ledgerSummary: RetailerLedgerData?
@@ -417,6 +484,7 @@ struct RetailerWidget: Decodable, Identifiable {
     enum CodingKeys: String, CodingKey {
         case type, layout, title, data
         case widgetId = "widget_id"
+        case sortOrder = "sort_order"
     }
 
     init(from decoder: Decoder) throws {
@@ -425,10 +493,13 @@ struct RetailerWidget: Decodable, Identifiable {
         type = c.decodeStringLeniently(forKey: .type)
         layout = c.decodeStringLeniently(forKey: .layout)
         title = c.decodeStringLeniently(forKey: .title)
+        sortOrder = c.decodeIntLeniently(forKey: .sortOrder)
 
         switch type {
         case "banner":
             banners = try? c.decodeIfPresent([RetailerBannerItem].self, forKey: .data)
+        case "quick_action":
+            quickActions = try? c.decodeIfPresent([RetailerQuickActionItem].self, forKey: .data)
         case "running_order":
             runningOrder = try? c.decodeIfPresent(RetailerOrderData.self, forKey: .data)
         case "recent_order":
@@ -451,10 +522,11 @@ struct RetailerBannerItem: Decodable, Identifiable, Hashable {
     var id: Int?
     var image: String?
     var actionUrl: String?
+    var description: String?
     var sortOrder: Int?
 
     enum CodingKeys: String, CodingKey {
-        case id, image
+        case id, image, description
         case actionUrl = "action_url"
         case sortOrder = "sort_order"
     }
@@ -464,26 +536,29 @@ struct RetailerBannerItem: Decodable, Identifiable, Hashable {
         id = c.decodeIntLeniently(forKey: .id)
         image = c.decodeStringLeniently(forKey: .image)
         actionUrl = c.decodeStringLeniently(forKey: .actionUrl)
+        description = c.decodeStringLeniently(forKey: .description)
         sortOrder = c.decodeIntLeniently(forKey: .sortOrder)
     }
 }
 
 struct RetailerOrderData: Decodable, Identifiable, Hashable {
+    var idNum: Int?
     var orderId: String?
     var totalPrice: String?
     var status: String?
     var date: String?
 
-    var id: String { orderId ?? UUID().uuidString }
+    var id: String { orderId ?? "\(idNum ?? UUID().hashValue)" }
 
     enum CodingKeys: String, CodingKey {
-        case status, date
+        case id, status, date
         case orderId = "order_id"
         case totalPrice = "total_price"
     }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
+        idNum = c.decodeIntLeniently(forKey: .id)
         orderId = c.decodeStringLeniently(forKey: .orderId)
         totalPrice = c.decodeStringLeniently(forKey: .totalPrice)
         status = c.decodeStringLeniently(forKey: .status)
@@ -1145,6 +1220,7 @@ struct Order: Decodable, Identifiable, Hashable {
     var rider: RetailerRiderInfo?
     var timeline: [RetailerTimelineItem]?
     var appliedOffer: RetailerAppliedOffer?
+    var freeGift: String?
 
     enum CodingKeys: String, CodingKey {
         case id, total, subtotal, discount, items, address, remark, rider, timeline
@@ -1169,6 +1245,7 @@ struct Order: Decodable, Identifiable, Hashable {
         case itemsCount = "items_count"
         case orderItems = "order_items"
         case appliedOffer = "applied_offer"
+        case freeGift = "free_gift"
     }
 
     init(from decoder: Decoder) throws {
@@ -1214,6 +1291,7 @@ struct Order: Decodable, Identifiable, Hashable {
         rider = try? c.decodeIfPresent(RetailerRiderInfo.self, forKey: .rider)
         timeline = try? c.decodeIfPresent([RetailerTimelineItem].self, forKey: .timeline)
         appliedOffer = try? c.decodeIfPresent(RetailerAppliedOffer.self, forKey: .appliedOffer)
+        freeGift = c.decodeStringLeniently(forKey: .freeGift)
     }
 
     init(
@@ -1250,7 +1328,7 @@ struct Order: Decodable, Identifiable, Hashable {
         if let created = createdAt, !created.isEmpty {
             return String(created.prefix(10))
         }
-        return "2026-08-24"
+        return ""
     }
 
     var statusColor: String {
@@ -1283,6 +1361,16 @@ struct Order: Decodable, Identifiable, Hashable {
         let num = orderNumber ?? "\(id ?? 0)"
         return num.hasPrefix("#") ? num : "#\(num)"
     }
+
+    var totalPriceFormatted: String {
+        let amt = (total?.isEmpty == false ? total : subtotal) ?? "0.00"
+        return amt.priceLabel
+    }
+
+    var subtotalFormatted: String {
+        let amt = (subtotal?.isEmpty == false ? subtotal : total) ?? "0.00"
+        return amt.priceLabel
+    }
 }
 
 struct RetailerRiderInfo: Decodable, Hashable {
@@ -1291,8 +1379,12 @@ struct RetailerRiderInfo: Decodable, Hashable {
     var latitude: String?
     var longitude: String?
     var address: String?
+    var vehicleNo: String?
 
-    enum CodingKeys: String, CodingKey { case name, mobile, latitude, longitude, address }
+    enum CodingKeys: String, CodingKey {
+        case name, mobile, latitude, longitude, address
+        case vehicleNo = "vehicle_no"
+    }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -1301,6 +1393,7 @@ struct RetailerRiderInfo: Decodable, Hashable {
         latitude = c.decodeStringLeniently(forKey: .latitude)
         longitude = c.decodeStringLeniently(forKey: .longitude)
         address = c.decodeStringLeniently(forKey: .address)
+        vehicleNo = c.decodeStringLeniently(forKey: .vehicleNo)
     }
 
     init(
@@ -1308,19 +1401,25 @@ struct RetailerRiderInfo: Decodable, Hashable {
         mobile: String? = nil,
         latitude: String? = nil,
         longitude: String? = nil,
-        address: String? = nil
+        address: String? = nil,
+        vehicleNo: String? = nil
     ) {
         self.name = name
         self.mobile = mobile
         self.latitude = latitude
         self.longitude = longitude
         self.address = address
+        self.vehicleNo = vehicleNo
     }
 }
+
+typealias RetailerRiderData = RetailerRiderInfo
 
 struct RetailerTimelineItem: Decodable, Identifiable, Hashable {
     var key: String?
     var label: String?
+    var title: String?
+    var description: String?
     var isDone: Bool?
     var isActive: Bool?
     var date: String?
@@ -1328,7 +1427,7 @@ struct RetailerTimelineItem: Decodable, Identifiable, Hashable {
     var id: String { key ?? UUID().uuidString }
 
     enum CodingKeys: String, CodingKey {
-        case key, label, date, step, done
+        case key, label, title, description, date, step, done
         case isDone = "is_done"
         case isActive = "is_active"
     }
@@ -1339,7 +1438,12 @@ struct RetailerTimelineItem: Decodable, Identifiable, Hashable {
         let k2 = c.decodeStringLeniently(forKey: .step)
         key = k1 ?? k2
 
-        label = c.decodeStringLeniently(forKey: .label)
+        let l1 = c.decodeStringLeniently(forKey: .label)
+        let t1 = c.decodeStringLeniently(forKey: .title)
+        label = l1 ?? t1
+        title = t1 ?? l1
+
+        description = c.decodeStringLeniently(forKey: .description)
         date = c.decodeStringLeniently(forKey: .date)
 
         let d1 = c.decodeBoolLeniently(forKey: .isDone)
@@ -1352,12 +1456,16 @@ struct RetailerTimelineItem: Decodable, Identifiable, Hashable {
     init(
         key: String? = nil,
         label: String? = nil,
+        title: String? = nil,
+        description: String? = nil,
         isDone: Bool? = nil,
         isActive: Bool? = nil,
         date: String? = nil
     ) {
         self.key = key
         self.label = label
+        self.title = title ?? label
+        self.description = description
         self.isDone = isDone
         self.isActive = isActive
         self.date = date
@@ -1448,22 +1556,51 @@ struct RetailerAppliedOffer: Decodable, Hashable {
     var discountType: String?
     var discountValue: Double?
     var discountAmount: Double?
+    var giftDescription: String?
+    var finalAmount: Double?
+
+    init(
+        type: String? = nil,
+        id: Int? = nil,
+        title: String? = nil,
+        discountType: String? = nil,
+        discountValue: Double? = nil,
+        discountAmount: Double? = nil,
+        giftDescription: String? = nil,
+        finalAmount: Double? = nil
+    ) {
+        self.type = type
+        self.id = id
+        self.title = title
+        self.discountType = discountType
+        self.discountValue = discountValue
+        self.discountAmount = discountAmount
+        self.giftDescription = giftDescription
+        self.finalAmount = finalAmount
+    }
 
     enum CodingKeys: String, CodingKey {
         case type, id, title
+        case promotionId = "promotion_id"
         case discountType = "discount_type"
         case discountValue = "discount_value"
         case discountAmount = "discount_amount"
+        case giftDescription = "gift_description"
+        case finalAmount = "final_amount"
     }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         type = c.decodeStringLeniently(forKey: .type)
-        id = c.decodeIntLeniently(forKey: .id)
+        let pId = c.decodeIntLeniently(forKey: .promotionId)
+        let dId = c.decodeIntLeniently(forKey: .id)
+        id = pId ?? dId
         title = c.decodeStringLeniently(forKey: .title)
         discountType = c.decodeStringLeniently(forKey: .discountType)
         discountValue = try? c.decodeIfPresent(Double.self, forKey: .discountValue)
         discountAmount = try? c.decodeIfPresent(Double.self, forKey: .discountAmount)
+        giftDescription = c.decodeStringLeniently(forKey: .giftDescription)
+        finalAmount = try? c.decodeIfPresent(Double.self, forKey: .finalAmount)
     }
 
     var schemeTitle: String? { title }
@@ -1471,9 +1608,14 @@ struct RetailerAppliedOffer: Decodable, Hashable {
         if let amt = discountAmount, amt > 0 {
             return "₹\(String(format: "%.2f", amt)) saved on this order"
         }
+        if let gift = giftDescription, !gift.isEmpty {
+            return "Free Gift: \(gift)"
+        }
         return nil
     }
 }
+
+typealias CartAppliedOffer = RetailerAppliedOffer
 
 struct OrderItem: Decodable, Identifiable, Hashable {
     var id: Int?
@@ -1898,6 +2040,7 @@ struct RetailerLedgerOrderItem: Decodable, Identifiable, Hashable {
     var pendingAmount: Double?
     var paymentStatus: Int?
     var paymentStatusText: String?
+    var paymentMode: String?
     var paymentHistory: [RetailerPaymentHistoryRecord]?
 
     var id: Int { orderId ?? UUID().hashValue }
@@ -1913,6 +2056,7 @@ struct RetailerLedgerOrderItem: Decodable, Identifiable, Hashable {
         case pendingAmount = "pending_amount"
         case paymentStatus = "payment_status"
         case paymentStatusText = "payment_status_text"
+        case paymentMode = "payment_mode"
         case paymentHistory = "payment_history"
     }
 
@@ -1923,6 +2067,7 @@ struct RetailerLedgerOrderItem: Decodable, Identifiable, Hashable {
         orderDate = c.decodeStringLeniently(forKey: .orderDate)
         orderStatus = c.decodeIntLeniently(forKey: .orderStatus)
         orderStatusText = c.decodeStringLeniently(forKey: .orderStatusText)
+        paymentMode = c.decodeStringLeniently(forKey: .paymentMode)
 
         billedAmount = try? c.decodeIfPresent(Double.self, forKey: .billedAmount)
         if billedAmount == nil, let val = c.decodeIntLeniently(forKey: .billedAmount) { billedAmount = Double(val) }
@@ -1949,6 +2094,7 @@ struct RetailerLedgerOrderItem: Decodable, Identifiable, Hashable {
         pendingAmount: Double? = nil,
         paymentStatus: Int? = nil,
         paymentStatusText: String? = nil,
+        paymentMode: String? = nil,
         paymentHistory: [RetailerPaymentHistoryRecord]? = []
     ) {
         self.orderId = orderId
@@ -1961,6 +2107,7 @@ struct RetailerLedgerOrderItem: Decodable, Identifiable, Hashable {
         self.pendingAmount = pendingAmount
         self.paymentStatus = paymentStatus
         self.paymentStatusText = paymentStatusText
+        self.paymentMode = paymentMode
         self.paymentHistory = paymentHistory
     }
 }

@@ -19,6 +19,15 @@ struct CartScreen: View {
     @State private var isShowToast: Bool = false
     @State private var toastMessage: String = ""
 
+    // Dynamic Schemes from API
+    @State private var availableSchemes: [RetailerOfferScheme] = []
+    @State private var availableSlabs: [RetailerQuantitySlab] = []
+    @State private var isLoadingOffers: Bool = false
+
+    private let defaults = UserDefaultManager.shared
+    private let orderService = OrderServiceManager()
+    @State private var cancellables = Set<AnyCancellable>()
+
     var totalProductsCount: Int {
         cartManager.items.count
     }
@@ -41,7 +50,25 @@ struct CartScreen: View {
         if let fin = Double(cartManager.finalAmount), fin > 0 {
             return fin
         }
+        if let offer = cartManager.appliedOffer, let discount = offer.discountAmount, discount > 0 {
+            return max(0.0, productTotal - discount)
+        }
         return productTotal
+    }
+
+    // User address cached properties
+    var userName: String {
+        defaults.getUserDefaultsString(key: .userName)
+    }
+
+    var userAddress: String {
+        defaults.getUserDefaultsString(key: .shopAddress)
+    }
+
+    var userPhone: String {
+        let phone = defaults.getUserDefaultsString(key: .userPhone)
+        if !phone.isEmpty { return phone }
+        return defaults.getUserDefaultsString(key: .userMobile)
     }
 
     var body: some View {
@@ -75,7 +102,7 @@ struct CartScreen: View {
                             showClearAlert = true
                         }) {
                             Text("Clear")
-                                .font(.system(size: 14, weight: .heavy))
+                                .font(.system(size: 13, weight: .heavy))
                                 .foregroundColor(Color.spicePrimary)
                         }
                     }
@@ -97,8 +124,8 @@ struct CartScreen: View {
                                 cartItemCard(item)
                             }
 
-                            // Offers Card
-                            offersCard
+                            // Dynamic Scheme Available Card (Rendered only if schemes exist or applied)
+                            schemeAvailableCard
 
                             // Delivery Address Card
                             deliveryAddressCard
@@ -111,6 +138,7 @@ struct CartScreen: View {
                                 .font(.system(size: 11.5, weight: .medium))
                                 .foregroundColor(Color.spiceMuted)
                                 .lineSpacing(2)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(.horizontal, 4)
                                 .padding(.top, 2)
 
@@ -129,12 +157,23 @@ struct CartScreen: View {
         .navigationBarHidden(true)
         .onAppear {
             cartManager.fetchCart()
+            loadAvailableOffers()
+        }
+        .onChange(of: cartManager.items.count) { _, _ in
+            loadAvailableOffers()
         }
         .sheet(isPresented: $showSchemeSheet) {
             SchemePickerSheet(
                 cartTotal: productTotal,
-                appliedSchemeId: cartManager.appliedOffer?.id
+                appliedSchemeId: cartManager.appliedOffer?.id,
+                onSchemeSelected: { _ in
+                    loadAvailableOffers()
+                },
+                onSchemeRemoved: {
+                    loadAvailableOffers()
+                }
             )
+            .presentationDetents([.medium, .large])
         }
         .alert(isPresented: $showClearAlert) {
             Alert(
@@ -142,6 +181,8 @@ struct CartScreen: View {
                 message: Text("Are you sure you want to remove all items from your cart?"),
                 primaryButton: .destructive(Text("Clear")) {
                     cartManager.clearCart()
+                    availableSchemes = []
+                    availableSlabs = []
                 },
                 secondaryButton: .cancel()
             )
@@ -149,8 +190,8 @@ struct CartScreen: View {
         .fullScreenCover(isPresented: $orderPlacedSuccess) {
             NavigationStack {
                 OrderSuccessScreen(
-                    orderId: placedOrderData?.orderId ?? 6434,
-                    orderNumber: placedOrderData?.orderNo ?? "#2026-27/2968",
+                    orderId: placedOrderData?.orderId,
+                    orderNumber: placedOrderData?.orderNo ?? "",
                     totalAmount: finalAmount,
                     totalItems: totalProductsCount,
                     totalUnits: totalUnitsCount
@@ -166,161 +207,127 @@ struct CartScreen: View {
     private var emptyCartView: some View {
         VStack(spacing: 16) {
             Spacer()
-
-            Circle()
-                .fill(Color(hex: "#F2F5F3"))
-                .frame(width: 88, height: 88)
-                .overlay(
-                    Image(systemName: "cart")
-                        .font(.system(size: 36, weight: .semibold))
-                        .foregroundColor(Color.spicePrimary)
-                )
-
-            Text("Your Cart is Empty")
-                .font(.system(size: 18, weight: .heavy))
-                .foregroundColor(Color.spiceInk)
-
-            Text("Browse our products and add packs of spices to your cart.")
-                .font(.system(size: 13, weight: .medium))
-                .foregroundColor(Color.spiceMuted)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
-
-            Button(action: {
+            SpiceEmptyStateView(
+                title: "Your Cart is Empty",
+                message: "Looks like you haven't added any products to your cart yet.",
+                buttonTitle: "Start Shopping"
+            ) {
                 dismiss()
-            }) {
-                Text("Start Shopping")
-                    .font(.system(size: 14, weight: .heavy))
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 24)
-                    .frame(height: 44)
-                    .background(Color.spicePrimary)
-                    .cornerRadius(10)
             }
-            .padding(.top, 8)
-
             Spacer()
         }
-        .padding(20)
     }
 
-    // MARK: - Cart Item Card
+    // MARK: - Cart Item Card (with dynamic thumbnail & stepper pill)
     private func cartItemCard(_ item: CartItem) -> some View {
-        let price = Double(item.price ?? item.perPrice ?? item.product?.price ?? "0") ?? 0.0
+        let title = item.productName ?? item.product?.name ?? item.product?.title ?? "Spice Product"
+        let unitText = item.variantName ?? item.product?.unit ?? "100 gms"
+        let unitPriceVal = Double(item.price ?? item.perPrice ?? item.product?.price ?? "0") ?? 0.0
+        let unitPriceText = String(format: "₹%.2f / unit", unitPriceVal)
         let qty = item.quantity ?? 1
-        let lineTotal = price * Double(qty)
-        let name = item.productName ?? item.product?.name ?? "Product"
-        let unit = item.variantName ?? item.product?.unit ?? "100 gms"
-        let pId = item.productId ?? item.id ?? 1
+        let lineTotal = unitPriceVal * Double(qty)
+        let maxAvailable = item.availableQuantity ?? 9999
 
-        return VStack(alignment: .leading, spacing: 10) {
+        return VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top, spacing: 12) {
                 // Product Thumbnail
-                ZStack {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color(hex: "#F2F4F2"))
+                RemoteImage(url: item.productImage ?? item.product?.image ?? item.product?.images?.first?.image, contentMode: .fit)
+                    .frame(width: 54, height: 54)
+                    .background(Color.white)
+                    .cornerRadius(8)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.spiceCardBorder.opacity(0.8), lineWidth: 1)
+                    )
 
-                    if let img = item.productImage ?? item.product?.image, !img.isEmpty {
-                        RemoteImage(url: img)
-                            .scaledToFit()
-                            .frame(width: 48, height: 48)
-                            .padding(2)
-                    } else {
-                        Image("spice_monk_logo")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 38, height: 38)
-                    }
-                }
-                .frame(width: 54, height: 54)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.spiceCardBorder, lineWidth: 0.8)
-                )
-
+                // Title and Unit Details
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(name)
-                        .font(.system(size: 13.5, weight: .bold))
+                    Text(title)
+                        .font(.system(size: 14.5, weight: .heavy))
                         .foregroundColor(Color.spiceInk)
-                        .lineLimit(1)
+                        .lineLimit(2)
 
-                    Text("\(unit) · ₹\(String(format: "%.2f", price)) / unit")
-                        .font(.system(size: 11.5, weight: .medium))
+                    Text("\(unitText) · \(unitPriceText)")
+                        .font(.system(size: 12, weight: .medium))
                         .foregroundColor(Color.spiceMuted)
                 }
 
                 Spacer()
 
+                // Remove Button
                 Button(action: {
-                    cartManager.removeProduct(productId: pId, variantId: item.variantId, variantName: item.variantName)
+                    if let pId = item.productId ?? item.id {
+                        cartManager.setQuantity(
+                            productId: pId,
+                            variantId: item.variantId,
+                            variantName: item.variantName,
+                            quantity: 0
+                        )
+                    }
                 }) {
                     Text("Remove")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.system(size: 12, weight: .bold))
                         .foregroundColor(Color.spiceMuted)
+                        .padding(.top, 2)
                 }
+                .buttonStyle(.plain)
             }
 
+            Divider().background(Color.spiceDivider.opacity(0.8))
+
+            // Bottom Row: Stepper Pill + Line Total
             HStack {
                 // Green Stepper Pill
-                HStack(spacing: 12) {
+                HStack(spacing: 0) {
                     Button(action: {
-                        if qty <= 1 {
-                            cartManager.removeProduct(productId: pId, variantId: item.variantId, variantName: item.variantName)
-                        } else {
-                            cartManager.setQuantity(productId: pId, variantId: item.variantId, variantName: item.variantName, quantity: qty - 1)
-                        }
-                    }) {
-                        if qty <= 1 {
-                            Image(systemName: "trash")
-                                .font(.system(size: 13, weight: .bold))
-                                .foregroundColor(.white)
-                                .frame(width: 24, height: 28)
-                        } else {
-                            Text("−")
-                                .font(.system(size: 16, weight: .heavy))
-                                .foregroundColor(.white)
-                                .frame(width: 24, height: 28)
-                        }
-                    }
-
-                    Text("\(qty)")
-                        .font(.system(size: 13, weight: .heavy, design: .monospaced))
-                        .foregroundColor(.white)
-
-                    Button(action: {
-                        let maxStock = item.availableQuantity ?? item.product?.variants?.first(where: {
-                            ($0.id != nil && item.variantId != nil && $0.id == item.variantId) ||
-                            ($0.unit != nil && item.variantName != nil && $0.unit == item.variantName)
-                        })?.availableQuantity
-
-                        if let maxStock = maxStock, qty >= maxStock {
-                            toastMessage = "Maximum available stock reached (\(maxStock) units)."
-                            isShowToast = true
-                        } else {
+                        if let pId = item.productId ?? item.id {
+                            let newQty = max(0, qty - 1)
                             cartManager.setQuantity(
                                 productId: pId,
                                 variantId: item.variantId,
                                 variantName: item.variantName,
-                                quantity: qty + 1,
-                                availableQuantity: maxStock
+                                quantity: newQty
                             )
                         }
                     }) {
-                        Text("+")
-                            .font(.system(size: 16, weight: .heavy))
+                        Image(systemName: "minus")
+                            .font(.system(size: 11, weight: .bold))
                             .foregroundColor(.white)
-                            .frame(width: 24, height: 28)
+                            .frame(width: 32, height: 32)
                     }
+                    .buttonStyle(.plain)
+
+                    Text("\(qty)")
+                        .font(.system(size: 13, weight: .heavy, design: .monospaced))
+                        .foregroundColor(.white)
+                        .frame(minWidth: 32)
+
+                    Button(action: {
+                        if let pId = item.productId ?? item.id {
+                            let newQty = min(maxAvailable, qty + 1)
+                            cartManager.setQuantity(
+                                productId: pId,
+                                variantId: item.variantId,
+                                variantName: item.variantName,
+                                quantity: newQty
+                            )
+                        }
+                    }) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(width: 32, height: 32)
+                    }
+                    .buttonStyle(.plain)
                 }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
                 .background(Color.spicePrimary)
-                .cornerRadius(8)
+                .cornerRadius(18)
 
                 Spacer()
 
+                // Line Total Price
                 Text(String(format: "₹%.2f", lineTotal))
-                    .font(.system(size: 15, weight: .heavy, design: .monospaced))
+                    .font(.system(size: 15.5, weight: .heavy, design: .monospaced))
                     .foregroundColor(Color.spiceInk)
             }
         }
@@ -329,58 +336,208 @@ struct CartScreen: View {
         .cornerRadius(16)
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.spiceCardBorder.opacity(0.8), lineWidth: 1)
+                .stroke(Color.spiceCardBorder, lineWidth: 1)
         )
     }
 
-    // MARK: - Offers Card
-    private var offersCard: some View {
-        Button(action: {
-            showSchemeSheet = true
-        }) {
-            HStack(alignment: .center) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(cartManager.appliedOffer?.schemeTitle ?? "Offers & Wholesale Schemes")
-                        .font(.system(size: 13.5, weight: .heavy))
-                        .foregroundColor(Color.spiceInk)
+    // MARK: - Scheme Available Card (Rendered ONLY if offers exist or applied)
+    @ViewBuilder
+    private var schemeAvailableCard: some View {
+        if let applied = cartManager.appliedOffer {
+            // State 1: Applied Scheme State (Mint Green)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text("Applied Scheme")
+                        .font(.system(size: 14, weight: .heavy))
+                        .foregroundColor(Color(hex: "#167444"))
 
-                    Text(cartManager.appliedOffer?.discountText ?? "View available order schemes and quantity slabs")
-                        .font(.system(size: 11.5, weight: .medium))
+                    Spacer()
+
+                    Button(action: {
+                        handleRemoveOffer()
+                    }) {
+                        Text("Remove")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(Color.spicePrimary)
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                Text(applied.schemeTitle ?? "Offer Applied")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(Color.spiceInk)
+
+                if let desc = applied.discountText, !desc.isEmpty {
+                    Text(desc)
+                        .font(.system(size: 12, weight: .medium))
                         .foregroundColor(Color.spiceMuted)
                 }
-
-                Spacer()
-
-                HStack(spacing: 4) {
-                    Text(cartManager.appliedOffer != nil ? "Change" : "View All")
-                        .font(.system(size: 12.5, weight: .heavy))
-                        .foregroundColor(Color.spicePrimary)
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(Color.spicePrimary)
-                }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(14)
-            .background(Color(hex: "#F2F8F4"))
-            .cornerRadius(14)
+            .background(Color(hex: "#EBF7EE"))
+            .cornerRadius(16)
             .overlay(
-                RoundedRectangle(cornerRadius: 14)
+                RoundedRectangle(cornerRadius: 16)
                     .stroke(Color(hex: "#D2EBD9"), lineWidth: 1)
             )
+        } else if !availableSchemes.isEmpty || !availableSlabs.isEmpty {
+            // State 2: Available schemes exist from API
+            let eligibleScheme = availableSchemes.first { $0.eligible == true || (productTotal >= ($0.minOrderValue ?? 0) && ($0.minOrderValue ?? 0) > 0) }
+            let eligibleSlab = availableSlabs.first { $0.eligible == true || (totalUnitsCount >= ($0.minQty ?? 0) && ($0.minQty ?? 0) > 0) }
+
+            if let scheme = eligibleScheme {
+                // Eligible Scheme Card
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Scheme Available")
+                        .font(.system(size: 14, weight: .heavy))
+                        .foregroundColor(Color(hex: "#167444"))
+
+                    Text(scheme.title ?? "Special Offer")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(Color.spiceInk)
+
+                    if let desc = scheme.description, !desc.isEmpty {
+                        Text(desc)
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(Color.spiceMuted)
+                    }
+
+                    Button(action: {
+                        showSchemeSheet = true
+                    }) {
+                        Text("Apply Scheme")
+                            .font(.system(size: 13, weight: .heavy))
+                            .foregroundColor(Color(hex: "#167444"))
+                            .padding(.top, 2)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(14)
+                .background(Color(hex: "#EBF7EE"))
+                .cornerRadius(16)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color(hex: "#D2EBD9"), lineWidth: 1)
+                )
+            } else if let slab = eligibleSlab {
+                // Eligible Quantity Slab Card
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Scheme Available")
+                        .font(.system(size: 14, weight: .heavy))
+                        .foregroundColor(Color(hex: "#167444"))
+
+                    Text(slab.title ?? "Quantity Offer")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(Color.spiceInk)
+
+                    if let desc = slab.description ?? slab.giftDescription, !desc.isEmpty {
+                        Text(desc)
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(Color.spiceMuted)
+                    }
+
+                    Button(action: {
+                        showSchemeSheet = true
+                    }) {
+                        Text("Apply Scheme")
+                            .font(.system(size: 13, weight: .heavy))
+                            .foregroundColor(Color(hex: "#167444"))
+                            .padding(.top, 2)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(14)
+                .background(Color(hex: "#EBF7EE"))
+                .cornerRadius(16)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color(hex: "#D2EBD9"), lineWidth: 1)
+                )
+            } else if let firstScheme = availableSchemes.first, let target = firstScheme.minOrderValue, target > 0 {
+                // Locked / In-Progress Scheme
+                let progress = min(1.0, productTotal / target)
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("Scheme Available")
+                            .font(.system(size: 14, weight: .heavy))
+                            .foregroundColor(Color(hex: "#8B5014"))
+
+                        Spacer()
+
+                        Text("₹\(Int(productTotal)) / ₹\(Int(target))")
+                            .font(.system(size: 12.5, weight: .heavy, design: .monospaced))
+                            .foregroundColor(Color(hex: "#8B5014"))
+                    }
+
+                    // Progress Bar
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(Color(hex: "#F0DFC9"))
+                                .frame(height: 4)
+
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(Color(hex: "#8B5014"))
+                                .frame(width: geo.size.width * progress, height: 4)
+                        }
+                    }
+                    .frame(height: 4)
+                    .padding(.vertical, 2)
+
+                    Text(firstScheme.title ?? firstScheme.description ?? "Add more items to unlock offer")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(Color.spiceInk.opacity(0.85))
+
+                    Button(action: {
+                        showSchemeSheet = true
+                    }) {
+                        Text("View All Schemes")
+                            .font(.system(size: 13, weight: .heavy))
+                            .foregroundColor(Color(hex: "#8B5014"))
+                            .padding(.top, 2)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(14)
+                .background(Color(hex: "#FEF7EF"))
+                .cornerRadius(16)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color(hex: "#F0DFC9"), lineWidth: 1)
+                )
+            }
         }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Delivery Address Card
     private var deliveryAddressCard: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 6) {
             Text("Delivery Address")
-                .font(.system(size: 14, weight: .heavy))
+                .font(.system(size: 14.5, weight: .heavy))
                 .foregroundColor(Color.spiceInk)
 
-            Text("Your registered shop address will be used for this delivery.")
-                .font(.system(size: 11.5, weight: .medium))
-                .foregroundColor(Color.spiceMuted)
+            if !userName.isEmpty {
+                Text(userName)
+                    .font(.system(size: 13.5, weight: .bold))
+                    .foregroundColor(Color.spiceInk)
+            }
+
+            if !userAddress.isEmpty {
+                Text(userAddress)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(Color.spiceMuted)
+                    .lineSpacing(2)
+            }
+
+            if !userPhone.isEmpty {
+                Text(userPhone)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(Color.spiceMuted)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
@@ -388,7 +545,7 @@ struct CartScreen: View {
         .cornerRadius(16)
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.spiceCardBorder.opacity(0.8), lineWidth: 1)
+                .stroke(Color.spiceCardBorder, lineWidth: 1)
         )
     }
 
@@ -396,17 +553,29 @@ struct CartScreen: View {
     private var orderSummaryCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Order Summary")
-                .font(.system(size: 14, weight: .heavy))
+                .font(.system(size: 14.5, weight: .heavy))
                 .foregroundColor(Color.spiceInk)
 
             HStack {
                 Text("Product Total")
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(Color.spiceInk)
+                    .foregroundColor(Color.spiceMuted)
                 Spacer()
                 Text(String(format: "₹%.2f", productTotal))
                     .font(.system(size: 13.5, weight: .heavy, design: .monospaced))
                     .foregroundColor(Color.spiceInk)
+            }
+
+            if let offer = cartManager.appliedOffer, let discount = offer.discountAmount, discount > 0 {
+                HStack {
+                    Text("Scheme Discount")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(Color.spicePrimary)
+                    Spacer()
+                    Text(String(format: "-₹%.2f", discount))
+                        .font(.system(size: 13.5, weight: .heavy, design: .monospaced))
+                        .foregroundColor(Color.spicePrimary)
+                }
             }
 
             Divider().background(Color.spiceDivider).padding(.vertical, 2)
@@ -417,7 +586,7 @@ struct CartScreen: View {
                     .foregroundColor(Color.spiceInk)
                 Spacer()
                 Text(String(format: "₹%.2f", finalAmount))
-                    .font(.system(size: 15, weight: .heavy, design: .monospaced))
+                    .font(.system(size: 15.5, weight: .heavy, design: .monospaced))
                     .foregroundColor(Color.spiceInk)
             }
         }
@@ -426,11 +595,11 @@ struct CartScreen: View {
         .cornerRadius(16)
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.spiceCardBorder.opacity(0.8), lineWidth: 1)
+                .stroke(Color.spiceCardBorder, lineWidth: 1)
         )
     }
 
-    // MARK: - Floating Bottom Checkout Bar
+    // MARK: - Sticky Bottom Checkout Bar
     private var bottomCheckoutBar: some View {
         VStack(spacing: 0) {
             Divider().background(Color.spiceDivider)
@@ -450,39 +619,119 @@ struct CartScreen: View {
                 Spacer()
 
                 Button(action: {
-                    isPlacingOrder = true
-                    cartManager.placeOrder { result in
-                        isPlacingOrder = false
-                        switch result {
-                        case .success(let data):
-                            placedOrderData = data
-                            orderPlacedSuccess = true
-                        case .failure(let error):
-                            toastMessage = error.localizedDescription
-                            isShowToast = true
-                        }
-                    }
+                    handlePlaceOrder()
                 }) {
-                    HStack(spacing: 8) {
+                    HStack(spacing: 6) {
                         if isPlacingOrder {
                             ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                .tint(.white)
+                        } else {
+                            Text("Place Order")
+                                .font(.system(size: 14, weight: .heavy))
                         }
-                        Text("Place Order")
-                            .font(.system(size: 15, weight: .heavy))
-                            .foregroundColor(.white)
                     }
-                    .padding(.horizontal, 28)
-                    .frame(height: 48)
+                    .foregroundColor(.white)
+                    .frame(width: 160, height: 46)
                     .background(Color.spicePrimary)
-                    .cornerRadius(10)
+                    .cornerRadius(12)
                 }
+                .buttonStyle(.plain)
                 .disabled(isPlacingOrder)
             }
             .padding(.horizontal, 16)
-            .padding(.top, 10)
-            .padding(.bottom, 12)
+            .padding(.vertical, 10)
             .background(Color.white)
         }
+    }
+
+    // MARK: - Load Available Offers from API
+    private func loadAvailableOffers() {
+        isLoadingOffers = true
+        let headers = defaults.authHeader
+
+        orderService.fetchAvailableOffers(headers: headers)
+            .receive(on: DispatchQueue.main)
+            .sink { [self] _ in
+                self.isLoadingOffers = false
+            } receiveValue: { [self] response in
+                self.availableSchemes = response.data?.schemes ?? []
+                self.availableSlabs = response.data?.slabs ?? []
+            }
+            .store(in: &cancellables)
+    }
+
+    // MARK: - Remove Applied Offer API
+    private func handleRemoveOffer() {
+        let headers = defaults.authHeader
+        orderService.removeOffer(headers: headers)
+            .receive(on: DispatchQueue.main)
+            .sink { _ in } receiveValue: { [self] response in
+                cartManager.appliedOffer = nil
+                toastMessage = response.message ?? "Promotion remove ho gayi"
+                isShowToast = true
+                loadAvailableOffers()
+            }
+            .store(in: &cancellables)
+    }
+
+    // MARK: - Place Order Action
+    private func handlePlaceOrder() {
+        guard !cartManager.items.isEmpty else { return }
+        isPlacingOrder = true
+
+        let itemsPayload: [[String: Any]] = cartManager.items.compactMap { item in
+            guard let pId = item.productId ?? item.id else { return nil }
+            var dict: [String: Any] = [
+                "product_id": pId,
+                "quantity": item.quantity ?? 1
+            ]
+            if let vId = item.variantId {
+                dict["variant_id"] = vId
+            }
+            if let unit = item.variantName {
+                dict["variant_name"] = unit
+            }
+            return dict
+        }
+
+        var params: [String: Any] = [
+            "items": itemsPayload,
+            "subtotal": productTotal,
+            "final_amount": finalAmount
+        ]
+
+        if let appliedOffer = cartManager.appliedOffer {
+            if let offerId = appliedOffer.id {
+                params["offer_id"] = offerId
+            }
+        }
+
+        let headers = defaults.authHeader
+
+        orderService.placeOrder(params: params, headers: headers)
+            .receive(on: DispatchQueue.main)
+            .sink { completion in
+                isPlacingOrder = false
+                if case .failure(let error) = completion {
+                    toastMessage = (error as? RequestError)?.errorString ?? error.localizedDescription
+                    isShowToast = true
+                }
+            } receiveValue: { response in
+                if response.status == true {
+                    placedOrderData = response.data
+                    cartManager.clearCart()
+                    orderPlacedSuccess = true
+                } else {
+                    toastMessage = response.message ?? "Failed to place order"
+                    isShowToast = true
+                }
+            }
+            .store(in: &cancellables)
+    }
+}
+
+#Preview {
+    NavigationStack {
+        CartScreen()
     }
 }

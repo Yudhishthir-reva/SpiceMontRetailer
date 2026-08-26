@@ -17,7 +17,6 @@ struct ProductDetailScreen: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var showCart: Bool = false
-    @State private var selectedVariantIndex: Int = 0
     @State private var kgValues: [String: String] = [:]
     @State private var pktValues: [String: String] = [:]
     @State private var isShowToast: Bool = false
@@ -29,45 +28,29 @@ struct ProductDetailScreen: View {
         return "\(vId)_\(unit)"
     }
 
-    var displayProduct: Product {
-        viewModel.product ?? initialProduct ?? sampleProduct
+    var displayProduct: Product? {
+        viewModel.product ?? initialProduct
     }
 
     var variants: [ProductVariant] {
-        if let v = displayProduct.variants, !v.isEmpty {
+        guard let prod = displayProduct else { return [] }
+        if let v = prod.variants, !v.isEmpty {
             return v
         }
-        if let singleUnit = displayProduct.unit, !singleUnit.isEmpty {
+        if let singleUnit = prod.unit, !singleUnit.isEmpty {
             return [
                 ProductVariant(
-                    id: displayProduct.id ?? productId,
+                    id: prod.id ?? productId,
                     unit: singleUnit,
-                    price: displayProduct.price,
-                    mrp: displayProduct.mrp,
-                    availableQuantity: 100
+                    price: prod.price,
+                    mrp: prod.mrp,
+                    gst: "5%",
+                    availableQuantity: 100,
+                    minOrderQuantity: 1
                 )
             ]
         }
         return []
-    }
-
-    var selectedVariant: ProductVariant? {
-        if variants.indices.contains(selectedVariantIndex) {
-            return variants[selectedVariantIndex]
-        }
-        return variants.first
-    }
-
-    var currentPrice: String {
-        selectedVariant?.price ?? displayProduct.price ?? "26.00"
-    }
-
-    var currentMRP: String {
-        selectedVariant?.mrp ?? displayProduct.mrp ?? "52.00"
-    }
-
-    var currentUnit: String {
-        selectedVariant?.unit ?? displayProduct.unit ?? "200 gms"
     }
 
     var body: some View {
@@ -75,7 +58,7 @@ struct ProductDetailScreen: View {
             Color.spiceBackground.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // MARK: - Top Bar
+                // MARK: - Top Navigation Bar
                 HStack(alignment: .center, spacing: 12) {
                     Button(action: { dismiss() }) {
                         Image(systemName: "chevron.left")
@@ -85,12 +68,12 @@ struct ProductDetailScreen: View {
                     }
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text((displayProduct.name ?? "PRODUCT").uppercased())
+                        Text(displayProduct?.name ?? "Product Details")
                             .font(.system(size: 16.5, weight: .heavy))
                             .foregroundColor(Color.spiceInk)
                             .lineLimit(1)
 
-                        Text(displayProduct.brandName ?? "Spice Monk")
+                        Text(displayProduct?.brandName ?? "Spice Monk")
                             .font(.system(size: 12, weight: .medium))
                             .foregroundColor(Color.spiceMuted)
                     }
@@ -123,49 +106,81 @@ struct ProductDetailScreen: View {
                 .background(Color.white)
                 .overlay(Divider().background(Color.spiceDivider), alignment: .bottom)
 
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 16) {
-                        // MARK: - Hero Image Box
-                        heroImageBox
+                if let prod = displayProduct {
+                    ScrollView(showsIndicators: false) {
+                        VStack(alignment: .leading, spacing: 16) {
+                            // MARK: - Product Hero Image Card
+                            heroImageBox(product: prod)
 
-                        // MARK: - Product Title & Subtitle
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text((displayProduct.name ?? "PRODUCT").uppercased())
-                                .font(.system(size: 20, weight: .heavy))
-                                .foregroundColor(Color.spiceInk)
+                            // MARK: - Product Title & Subtitle
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(prod.name ?? "")
+                                    .font(.system(size: 20, weight: .heavy))
+                                    .foregroundColor(Color.spiceInk)
 
-                            Text("\(displayProduct.brandName ?? "Spice Monk") · \((displayProduct.name ?? "").uppercased())")
-                                .font(.system(size: 13, weight: .medium))
-                                .foregroundColor(Color.spiceMuted)
+                                let brand = prod.brandName ?? "Spice Monk"
+                                let category = prod.categoryName ?? "Blended Spices"
+                                Text("\(brand) · \(category)")
+                                    .font(.system(size: 13, weight: .medium))
+                                    .foregroundColor(Color.spiceMuted)
+                            }
+                            .padding(.top, 2)
+
+                            // MARK: - Pack Size Section
+                            if !variants.isEmpty {
+                                VStack(alignment: .leading, spacing: 14) {
+                                    Text("Pack Size")
+                                        .font(.system(size: 14.5, weight: .heavy))
+                                        .foregroundColor(Color.spiceInk)
+
+                                    VStack(spacing: 16) {
+                                        ForEach(Array(variants.enumerated()), id: \.offset) { index, variant in
+                                            variantItemView(variant: variant, index: index, product: prod)
+                                        }
+                                    }
+                                }
+                                .padding(.top, 4)
+                            }
+
+                            // MARK: - Description Card
+                            if let desc = prod.description, !desc.isEmpty {
+                                descriptionCard(description: desc)
+                            }
+
+                            // MARK: - Specifications Card
+                            specificationsCard(product: prod)
+
+                            Spacer(minLength: 90)
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 4)
-
-                        // MARK: - Price Card
-                        priceCard
-
-                        // MARK: - Pack Size Selector Pills
-                        packSizeSelectorPills
-
-                        // MARK: - Variant-Wise Ordering Section
-                        variantOrderingSection
-
-                        // MARK: - Stock Status Card
-                        stockStatusCard
-
-                        // MARK: - Description Card
-                        descriptionCard
-
-                        // MARK: - Specifications Card
-                        specificationsCard
-
-                        Spacer(minLength: 90)
+                        .padding(16)
                     }
-                    .padding(16)
+                } else if viewModel.isLoading {
+                    VStack(spacing: 12) {
+                        Spacer()
+                        ProgressView()
+                            .tint(Color.spicePrimary)
+                        Text("Loading product details...")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(Color.spiceMuted)
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    VStack {
+                        Spacer()
+                        SpiceEmptyStateView(
+                            title: "Product Not Found",
+                            message: "This product details are currently unavailable.",
+                            buttonTitle: "Go Back"
+                        ) {
+                            dismiss()
+                        }
+                        Spacer()
+                    }
                 }
             }
 
-            // MARK: - Floating Bottom Cart Pill Bar
+            // MARK: - Floating Bottom Cart Bar
             floatingCartBar
         }
         .navigationBarHidden(true)
@@ -197,7 +212,7 @@ struct ProductDetailScreen: View {
     }
 
     private func populateExistingQuantities() {
-        let pId = displayProduct.id ?? productId
+        guard let pId = displayProduct?.id ?? productId as Int? else { return }
         for (index, variant) in variants.enumerated() {
             let key = variantKey(variant: variant, index: index)
             let count = cartManager.quantityForProduct(pId, variantId: variant.id, variantName: variant.unit)
@@ -209,281 +224,75 @@ struct ProductDetailScreen: View {
     }
 
     // MARK: - Hero Image Box
-    private var heroImageBox: some View {
+    private func heroImageBox(product: Product) -> some View {
         ZStack {
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color.white)
+                .fill(Color(hex: "#F8F9FA"))
 
-            if let img = displayProduct.image, !img.isEmpty {
+            if let img = product.image, !img.isEmpty {
                 RemoteImage(url: img)
                     .scaledToFit()
-                    .frame(maxHeight: 250)
+                    .frame(maxHeight: 280)
                     .padding(16)
             } else {
                 Image("spice_monk_logo")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 140, height: 140)
+                    .frame(width: 150, height: 150)
                     .padding(24)
             }
         }
-        .frame(height: 260)
+        .frame(height: 300)
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.spiceCardBorder.opacity(0.8), lineWidth: 1)
+                .stroke(Color.spiceCardBorder.opacity(0.6), lineWidth: 1)
         )
     }
 
-    // MARK: - Price Card
-    private var priceCard: some View {
+    // MARK: - Variant Item View
+    @ViewBuilder
+    private func variantItemView(variant: ProductVariant, index: Int, product: Product) -> some View {
+        let key = variantKey(variant: variant, index: index)
+        let isUnavailable = (variant.availableQuantity ?? 100) == 0
+        let pId = product.id ?? productId
+
         VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .center, spacing: 10) {
-                Text("₹\(currentPrice)")
-                    .font(.system(size: 24, weight: .heavy, design: .monospaced))
+            // Row 1: Unit Name (Left) + Stock Status (Right)
+            HStack {
+                Text(variant.unit ?? "100 gms")
+                    .font(.system(size: 15, weight: .heavy))
                     .foregroundColor(Color.spiceInk)
 
-                if !currentMRP.isEmpty {
-                    Text("₹\(currentMRP)")
-                        .font(.system(size: 14.5, weight: .semibold, design: .monospaced))
+                Spacer()
+
+                Text(isUnavailable ? "Out of stock" : "In stock")
+                    .font(.system(size: 12.5, weight: .bold))
+                    .foregroundColor(isUnavailable ? Color(hex: "#C8322B") : Color(hex: "#167E46"))
+            }
+
+            // Row 2: Price & Strikethrough MRP
+            HStack(spacing: 6) {
+                Text("₹\(variant.price ?? "0.00")")
+                    .font(.system(size: 14, weight: .heavy, design: .monospaced))
+                    .foregroundColor(Color.spiceInk)
+
+                if let mrp = variant.mrp, !mrp.isEmpty {
+                    Text("₹\(mrp)")
+                        .font(.system(size: 13, weight: .medium, design: .monospaced))
                         .foregroundColor(Color.spiceMuted)
                         .strikethrough()
                 }
-
-                if let discount = displayProduct.discountPercentage, !discount.isEmpty, discount != "0" {
-                    Text("\(discount)% OFF")
-                        .font(.system(size: 11, weight: .heavy, design: .monospaced))
-                        .foregroundColor(Color(hex: "#C8322B"))
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 3.5)
-                        .background(Color(hex: "#FDECEB"))
-                        .cornerRadius(5)
-                }
-
-                Spacer()
             }
 
-            Text("Retailer price for \(currentUnit). MRP shown for reference.")
+            // Row 3: "Order" Label
+            Text("Order")
                 .font(.system(size: 12, weight: .medium))
                 .foregroundColor(Color.spiceMuted)
-        }
-        .padding(14)
-        .background(Color.white)
-        .cornerRadius(16)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.spiceCardBorder.opacity(0.8), lineWidth: 1)
-        )
-    }
+                .padding(.top, 2)
 
-    // MARK: - Pack Size Selector Pills
-    private var packSizeSelectorPills: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Select Pack Size")
-                .font(.system(size: 13.5, weight: .heavy))
-                .foregroundColor(Color.spiceInk)
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(Array(variants.enumerated()), id: \.offset) { index, variant in
-                        let isSelected = selectedVariantIndex == index
-                        let unit = variant.unit ?? "200 gms"
-
-                        Button(action: {
-                            selectedVariantIndex = index
-                        }) {
-                            Text(unit)
-                                .font(.system(size: 13, weight: .bold))
-                                .foregroundColor(isSelected ? .white : Color.spiceInk)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 8)
-                                .background(isSelected ? Color.spicePrimary : Color.white)
-                                .cornerRadius(20)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 20)
-                                        .stroke(isSelected ? Color.spicePrimary : Color.spiceCardBorder, lineWidth: 1)
-                                )
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    // MARK: - Variant-Wise Ordering Section
-    private var variantOrderingSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Pack Sizes & Quantities")
-                .font(.system(size: 14.5, weight: .heavy))
-                .foregroundColor(Color.spiceInk)
-
-            VStack(spacing: 12) {
-                ForEach(Array(variants.enumerated()), id: \.offset) { index, variant in
-                    variantOrderRow(variant: variant, index: index)
-                }
-            }
-        }
-        .padding(16)
-        .background(Color.white)
-        .cornerRadius(16)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.spiceCardBorder.opacity(0.8), lineWidth: 1)
-        )
-    }
-
-    // MARK: - Single Variant Order Row
-    private func variantOrderRow(variant: ProductVariant, index: Int) -> some View {
-        let key = variantKey(variant: variant, index: index)
-        let isUnavailable = variant.availableQuantity == 0
-        let currentPkt = Int(pktValues[key] ?? "") ?? 0
-        let pId = displayProduct.id ?? productId
-
-        return VStack(alignment: .leading, spacing: 10) {
-            // Top Row: Unit, Price, and Action (ADD / Stepper)
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(variant.unit ?? "100 gms")
-                        .font(.system(size: 14.5, weight: .heavy))
-                        .foregroundColor(Color.spiceInk)
-
-                    HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        Text("₹\(variant.price ?? currentPrice)")
-                            .font(.system(size: 13.5, weight: .heavy, design: .monospaced))
-                            .foregroundColor(Color.spiceInk)
-
-                        if let mrp = variant.mrp, !mrp.isEmpty {
-                            Text("₹\(mrp)")
-                                .font(.system(size: 11.5, weight: .medium, design: .monospaced))
-                                .foregroundColor(Color.spiceMuted)
-                                .strikethrough()
-                        }
-                    }
-
-                    if isUnavailable {
-                        Text("Currently unavailable")
-                            .font(.system(size: 11.5, weight: .medium))
-                            .foregroundColor(Color(hex: "#C8322B"))
-                            .padding(.top, 1)
-                    }
-                }
-
-                Spacer()
-
-                // Action: Disabled / Mint ADD / Green Stepper
-                if isUnavailable {
-                    Text("ADD")
-                        .font(.system(size: 12, weight: .heavy))
-                        .foregroundColor(Color(hex: "#9CA3AF"))
-                        .frame(width: 72, height: 34)
-                        .background(Color(hex: "#F3F4F6"))
-                        .cornerRadius(8)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color(hex: "#E5E7EB"), lineWidth: 1)
-                        )
-                } else if currentPkt == 0 {
-                    Button(action: {
-                        if let avl = variant.availableQuantity, avl < 1 {
-                            toastMessage = "Item is currently out of stock."
-                            isShowToast = true
-                            return
-                        }
-                        let pktCount = 1
-                        pktValues[key] = "\(pktCount)"
-                        kgValues[key] = UnitConverter.pktToKg(pkt: pktCount, unit: variant.unit)
-                        cartManager.setQuantity(
-                            productId: pId,
-                            variantId: variant.id,
-                            variantName: variant.unit,
-                            quantity: pktCount,
-                            product: displayProduct,
-                            price: variant.price,
-                            availableQuantity: variant.availableQuantity
-                        )
-                    }) {
-                        Text("ADD")
-                            .font(.system(size: 12, weight: .heavy))
-                            .foregroundColor(Color(hex: "#167444"))
-                            .frame(width: 72, height: 34)
-                            .background(Color(hex: "#EBF7EE"))
-                            .cornerRadius(8)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color(hex: "#D2EBD9"), lineWidth: 1)
-                            )
-                    }
-                    .buttonStyle(.plain)
-                } else {
-                    // Green Stepper Pill
-                    HStack(spacing: 8) {
-                        Button(action: {
-                            if currentPkt <= 1 {
-                                pktValues[key] = ""
-                                kgValues[key] = ""
-                                cartManager.removeProduct(productId: pId, variantId: variant.id, variantName: variant.unit)
-                            } else {
-                                let newQty = currentPkt - 1
-                                pktValues[key] = "\(newQty)"
-                                kgValues[key] = UnitConverter.pktToKg(pkt: newQty, unit: variant.unit)
-                                cartManager.setQuantity(
-                                    productId: pId,
-                                    variantId: variant.id,
-                                    variantName: variant.unit,
-                                    quantity: newQty,
-                                    product: displayProduct,
-                                    price: variant.price,
-                                    availableQuantity: variant.availableQuantity
-                                )
-                            }
-                        }) {
-                            Text("−")
-                                .font(.system(size: 15, weight: .heavy))
-                                .foregroundColor(.white)
-                                .frame(width: 24, height: 32)
-                        }
-
-                        Text("\(currentPkt)")
-                            .font(.system(size: 13, weight: .heavy, design: .monospaced))
-                            .foregroundColor(.white)
-                            .frame(minWidth: 20)
-
-                        Button(action: {
-                            if let avl = variant.availableQuantity, currentPkt >= avl {
-                                toastMessage = "Only \(avl) units available in stock."
-                                isShowToast = true
-                                return
-                            }
-                            let newQty = currentPkt + 1
-                            pktValues[key] = "\(newQty)"
-                            kgValues[key] = UnitConverter.pktToKg(pkt: newQty, unit: variant.unit)
-                            cartManager.setQuantity(
-                                productId: pId,
-                                variantId: variant.id,
-                                variantName: variant.unit,
-                                quantity: newQty,
-                                product: displayProduct,
-                                price: variant.price,
-                                availableQuantity: variant.availableQuantity
-                            )
-                        }) {
-                            Text("+")
-                                .font(.system(size: 15, weight: .heavy))
-                                .foregroundColor(.white)
-                                .frame(width: 24, height: 32)
-                        }
-                    }
-                    .padding(.horizontal, 6)
-                    .frame(height: 34)
-                    .background(Color.spicePrimary)
-                    .cornerRadius(8)
-                }
-            }
-
-            // Bottom Row: Kg & Pkt Inputs with Live Two-Way Binding & Stock Guard
+            // Row 4: Kg & Pkt Inputs Side by Side
             HStack(spacing: 12) {
-                // Kg Box
+                // Kg Input Field
                 HStack {
                     TextField("0", text: Binding(
                         get: { kgValues[key] ?? "" },
@@ -505,7 +314,7 @@ struct ProductDetailScreen: View {
                                         variantId: variant.id,
                                         variantName: variant.unit,
                                         quantity: calculatedPkt,
-                                        product: displayProduct,
+                                        product: product,
                                         price: variant.price,
                                         availableQuantity: variant.availableQuantity
                                     )
@@ -517,27 +326,31 @@ struct ProductDetailScreen: View {
                                     variantId: variant.id,
                                     variantName: variant.unit,
                                     quantity: 0,
-                                    product: displayProduct,
+                                    product: product,
                                     price: variant.price
                                 )
                             }
                         }
                     ))
-                    .font(.system(size: 13, weight: .bold))
+                    .font(.system(size: 13.5, weight: .bold))
                     .foregroundColor(Color.spiceInk)
                     .keyboardType(.decimalPad)
                     .disabled(isUnavailable)
 
                     Text("Kg")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.system(size: 12.5, weight: .medium))
                         .foregroundColor(Color.spiceMuted)
                 }
                 .padding(.horizontal, 12)
-                .frame(height: 40)
-                .background(Color(hex: "#F3F4F6"))
+                .frame(height: 44)
+                .background(Color(hex: "#F4F6F4"))
                 .cornerRadius(8)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.spiceCardBorder.opacity(0.5), lineWidth: 1)
+                )
 
-                // Pkt Box
+                // Pkt Input Field
                 HStack {
                     TextField("0", text: Binding(
                         get: { pktValues[key] ?? "" },
@@ -560,7 +373,7 @@ struct ProductDetailScreen: View {
                                         variantId: variant.id,
                                         variantName: variant.unit,
                                         quantity: finalPkt,
-                                        product: displayProduct,
+                                        product: product,
                                         price: variant.price,
                                         availableQuantity: variant.availableQuantity
                                     )
@@ -572,95 +385,74 @@ struct ProductDetailScreen: View {
                                     variantId: variant.id,
                                     variantName: variant.unit,
                                     quantity: 0,
-                                    product: displayProduct,
+                                    product: product,
                                     price: variant.price
                                 )
                             }
                         }
                     ))
-                    .font(.system(size: 13, weight: .bold))
+                    .font(.system(size: 13.5, weight: .bold))
                     .foregroundColor(Color.spiceInk)
                     .keyboardType(.numberPad)
                     .disabled(isUnavailable)
 
                     Text("Pkt")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.system(size: 12.5, weight: .medium))
                         .foregroundColor(Color.spiceMuted)
                 }
                 .padding(.horizontal, 12)
-                .frame(height: 40)
-                .background(Color(hex: "#F3F4F6"))
+                .frame(height: 44)
+                .background(Color(hex: "#F4F6F4"))
                 .cornerRadius(8)
-            }
-
-            if index < variants.count - 1 {
-                Divider().background(Color.spiceDivider.opacity(0.6)).padding(.top, 6)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.spiceCardBorder.opacity(0.5), lineWidth: 1)
+                )
             }
         }
-    }
-
-    // MARK: - Stock Status Card
-    private var stockStatusCard: some View {
-        HStack {
-            Text(displayProduct.inStock == false ? "Out of stock" : "In stock")
-                .font(.system(size: 13.5, weight: .bold))
-                .foregroundColor(displayProduct.inStock == false ? Color(hex: "#C8322B") : Color(hex: "#167444"))
-
-            Spacer()
-
-            Text("Max 97 pkt per order")
-                .font(.system(size: 12, weight: .bold, design: .monospaced))
-                .foregroundColor(Color(hex: "#5B8A6E"))
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .background(Color(hex: "#EBF7EE"))
-        .cornerRadius(12)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color(hex: "#D2EBD9"), lineWidth: 1)
-        )
     }
 
     // MARK: - Description Card
-    private var descriptionCard: some View {
+    private func descriptionCard(description: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Description")
-                .font(.system(size: 14, weight: .heavy))
+                .font(.system(size: 15, weight: .heavy))
                 .foregroundColor(Color.spiceInk)
 
-            Text(displayProduct.description ?? (displayProduct.name ?? "PRODUCT").uppercased())
+            Text(description)
                 .font(.system(size: 13, weight: .medium))
-                .foregroundColor(Color.spiceInk.opacity(0.8))
+                .foregroundColor(Color.spiceInk.opacity(0.85))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
         .background(Color.white)
-        .cornerRadius(16)
+        .cornerRadius(14)
         .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.spiceCardBorder.opacity(0.8), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color.spiceCardBorder, lineWidth: 1)
         )
     }
 
     // MARK: - Specifications Card
-    private var specificationsCard: some View {
+    private func specificationsCard(product: Product) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Specifications")
-                .font(.system(size: 14, weight: .heavy))
+                .font(.system(size: 15, weight: .heavy))
                 .foregroundColor(Color.spiceInk)
 
-            specRow(key: "Pack Size", value: currentUnit)
-            specRow(key: "GST", value: "5%")
-            specRow(key: "Minimum Order", value: "1 units")
-            specRow(key: "HSN Code", value: displayProduct.hsnCode ?? "09109912", isMono: true)
+            specRow(key: "Pack Size", value: variants.first?.unit ?? product.unit ?? "100 gms")
+            specRow(key: "GST", value: variants.first?.gst ?? "5%")
+            specRow(key: "Minimum Order", value: "\(variants.first?.minOrderQuantity ?? 1) units")
+            if let hsn = product.hsnCode, !hsn.isEmpty {
+                specRow(key: "HSN Code", value: hsn, isMono: true)
+            }
         }
         .padding(14)
         .background(Color.white)
-        .cornerRadius(16)
+        .cornerRadius(14)
         .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.spiceCardBorder.opacity(0.8), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color.spiceCardBorder, lineWidth: 1)
         )
     }
 
@@ -724,32 +516,10 @@ struct ProductDetailScreen: View {
             .transition(.move(edge: .bottom).combined(with: .opacity))
         }
     }
+}
 
-    // Fallback sample product matching reference screenshot
-    private var sampleProduct: Product {
-        Product(
-            id: productId,
-            name: "DANA METHI",
-            slug: "dana-methi",
-            image: "",
-            price: "26.00",
-            mrp: "52.00",
-            discountPercentage: "50",
-            unit: "200 gms",
-            description: "DANA METHI",
-            hsnCode: "09109912",
-            inStock: true,
-            isNew: false,
-            categoryId: 1,
-            categoryName: "Spices",
-            brandId: 3,
-            brandName: "Spice Monk",
-            variants: [
-                ProductVariant(id: 1, unit: "100 gms", price: "14.00", mrp: "28.00"),
-                ProductVariant(id: 2, unit: "200 gms", price: "26.00", mrp: "52.00"),
-                ProductVariant(id: 3, unit: "500 gms", price: "62.00", mrp: "124.00"),
-                ProductVariant(id: 4, unit: "1 KG", price: "120.00", mrp: "240.00")
-            ]
-        )
+#Preview {
+    NavigationStack {
+        ProductDetailScreen(productId: 1)
     }
 }

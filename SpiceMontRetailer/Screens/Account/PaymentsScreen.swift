@@ -11,7 +11,7 @@ import Combine
 struct PaymentsScreen: View {
     @StateObject private var viewModel = PaymentsViewModel()
     @State private var selectedModeFilter: String = "All Modes"
-    @State private var selectedDate: Date? = nil
+    @State private var selectedDateRange: DateRange? = DateRange.today
 
     private let modeFilters = ["All Modes", "Cash", "Cheque", "UPI"]
 
@@ -24,14 +24,10 @@ struct PaymentsScreen: View {
             }
         }
 
-        if let filterDate = selectedDate {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy-MM-dd"
-            let dateStr = formatter.string(from: filterDate)
-
+        if let range = selectedDateRange, range.isActive {
             list = list.filter { txn in
-                if let tDate = txn.date, tDate.contains(dateStr) { return true }
-                if let oDate = txn.orderDate, oDate.contains(dateStr) { return true }
+                if let tDate = txn.date, range.contains(dateString: tDate) { return true }
+                if let oDate = txn.orderDate, range.contains(dateString: oDate) { return true }
                 return false
             }
         }
@@ -97,7 +93,7 @@ struct PaymentsScreen: View {
 
                             // MARK: - Date Filter Chip
                             HStack {
-                                SpiceDateFilterChip(selectedDate: $selectedDate)
+                                SpiceDateRangeFilterChip(selectedRange: $selectedDateRange)
                                 Spacer()
                             }
 
@@ -141,8 +137,8 @@ struct PaymentsScreen: View {
 
     // MARK: - Top Summary Mint Card
     private var totalPaidSummaryCard: some View {
-        let totalPaid = viewModel.summary?.totalPaid ?? "2,370.50"
-        let modes = viewModel.summary?.paymentModeWise ?? ["Cash": "2,370.50", "Cheque": "0.00", "UPI": "0.00"]
+        let totalPaid = viewModel.summary?.totalPaid ?? "0.00"
+        let modes = viewModel.summary?.paymentModeWise ?? ["Cash": "0.00", "Cheque": "0.00", "UPI": "0.00"]
 
         return VStack(alignment: .leading, spacing: 10) {
             Text("TOTAL PAID")
@@ -311,26 +307,14 @@ class PaymentsViewModel: ObservableObject {
             .sink { [weak self] completion in
                 self?.isLoading = false
                 if case .failure(let error) = completion {
-                    self?.loadMockFallback()
                     self?.toastMessage = (error as? RequestError)?.errorString ?? error.localizedDescription
                 }
             } receiveValue: { [weak self] response in
                 if response.status == true {
                     self?.summary = response.summary
                     self?.transactions = response.data?.items ?? []
-                } else {
-                    self?.loadMockFallback()
                 }
             }
             .store(in: &cancellables)
-    }
-
-    private func loadMockFallback() {
-        if transactions.isEmpty {
-            summary = RetailerPaymentHistorySummary(
-                totalPaid: "2,370.50",
-                paymentModeWise: ["Cash": "2,370.50", "Cheque": "0.00", "UPI": "0.00"]
-            )
-        }
     }
 }

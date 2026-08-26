@@ -505,3 +505,492 @@ struct SpiceDatePickerSheet: View {
         .presentationDetents([.medium, .large])
     }
 }
+
+// MARK: - Date Range Model
+public struct DateRange: Equatable, Hashable {
+    public var start: Date?
+    public var end: Date?
+
+    public var startDate: Date { start ?? Date() }
+    public var endDate: Date { end ?? start ?? Date() }
+
+    public init(start: Date? = nil, end: Date? = nil) {
+        self.start = start
+        self.end = end
+    }
+
+    public init(startDate: Date, endDate: Date) {
+        self.start = startDate
+        self.end = endDate
+    }
+
+    public static var today: DateRange {
+        let today = Calendar.current.startOfDay(for: Date())
+        return DateRange(start: today, end: today)
+    }
+
+    public var isComplete: Bool {
+        start != nil && end != nil
+    }
+
+    public var isActive: Bool {
+        start != nil
+    }
+
+    public func contains(_ date: Date) -> Bool {
+        guard let s = start else { return true }
+        let cal = Calendar.current
+        let startOfDay = cal.startOfDay(for: s)
+
+        if let e = end {
+            let endOfDay = cal.date(bySettingHour: 23, minute: 59, second: 59, of: e) ?? e
+            return (startOfDay...endOfDay).contains(date)
+        } else {
+            let endOfDay = cal.date(bySettingHour: 23, minute: 59, second: 59, of: s) ?? s
+            return (startOfDay...endOfDay).contains(date)
+        }
+    }
+
+    public func contains(dateString: String) -> Bool {
+        guard start != nil else { return true }
+        let clean = String(dateString.prefix(10))
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        if let d = formatter.date(from: clean) {
+            return contains(d)
+        }
+        return false
+    }
+
+    public var displayString: String {
+        guard let s = start else { return "All time" }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "d MMM yyyy"
+        if let e = end, !Calendar.current.isDate(s, inSameDayAs: e) {
+            return "\(formatter.string(from: s)) → \(formatter.string(from: e))"
+        } else {
+            return formatter.string(from: s)
+        }
+    }
+}
+
+// MARK: - Date Range Filter Chip
+public struct SpiceDateRangeFilterChip: View {
+    @Binding var selectedRange: DateRange?
+    var placeholder: String = "Select Date"
+    @State private var showModal: Bool = false
+
+    public init(selectedRange: Binding<DateRange?>, placeholder: String = "Select Date") {
+        self._selectedRange = selectedRange
+        self.placeholder = placeholder
+    }
+
+    var label: String {
+        guard let range = selectedRange, range.isActive else { return placeholder }
+        return range.displayString
+    }
+
+    public var body: some View {
+        HStack(spacing: 6) {
+            Button(action: { showModal = true }) {
+                HStack(spacing: 6) {
+                    Image(systemName: "calendar")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(selectedRange?.isActive == true ? Color.spicePrimary : Color.spiceMuted)
+
+                    Text(label)
+                        .font(.system(size: 12.5, weight: .bold))
+                        .foregroundColor(selectedRange?.isActive == true ? Color.spicePrimary : Color.spiceInk)
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 7)
+                .background(selectedRange?.isActive == true ? Color(hex: "#E8F5EC") : Color.white)
+                .cornerRadius(20)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(selectedRange?.isActive == true ? Color.spicePrimary : Color.spiceCardBorder, lineWidth: 1)
+                )
+            }
+            .buttonStyle(.plain)
+
+            if selectedRange?.isActive == true {
+                Button(action: {
+                    selectedRange = nil
+                }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(Color.spiceMuted)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .fullScreenCover(isPresented: $showModal) {
+            SpiceDateRangeModal(selectedRange: $selectedRange, isPresented: $showModal)
+                .background(BackgroundCleanerView())
+        }
+    }
+}
+
+// MARK: - Background Cleaner for Transparent Modal
+public struct BackgroundCleanerView: UIViewRepresentable {
+    public init() {}
+    public func makeUIView(context: Context) -> UIView {
+        let view = UIView()
+        DispatchQueue.main.async {
+            view.superview?.superview?.backgroundColor = .clear
+        }
+        return view
+    }
+
+    public func updateUIView(_ uiView: UIView, context: Context) {}
+}
+
+// MARK: - Select Date Range Modal (Exact Visual Match to Screenshot)
+public struct SpiceDateRangeModal: View {
+    @Binding var selectedRange: DateRange?
+    @Binding var isPresented: Bool
+
+    @State private var tempStart: Date?
+    @State private var tempEnd: Date?
+    @State private var displayedMonth: Date = Date()
+
+    private let calendar = Calendar.current
+    private let weekdays = ["S", "M", "T", "W", "T", "F", "S"]
+
+    public init(selectedRange: Binding<DateRange?>, isPresented: Binding<Bool>) {
+        self._selectedRange = selectedRange
+        self._isPresented = isPresented
+    }
+
+    var rangePreviewText: String {
+        guard let s = tempStart else { return "Select dates" }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "d MMM yyyy"
+        if let e = tempEnd, !calendar.isDate(s, inSameDayAs: e) {
+            return "\(formatter.string(from: s)) → \(formatter.string(from: e))"
+        } else {
+            return formatter.string(from: s)
+        }
+    }
+
+    var monthTitle: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM yyyy"
+        return formatter.string(from: displayedMonth)
+    }
+
+    public var body: some View {
+        ZStack {
+            // Backdrop Scrim
+            Color.black.opacity(0.4)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    isPresented = false
+                }
+
+            // Modal Card
+            VStack(alignment: .leading, spacing: 14) {
+                // Title
+                Text("Select Date Range")
+                    .font(.system(size: 17, weight: .heavy))
+                    .foregroundColor(Color.spiceInk)
+
+                // Subtitle / Selected Range
+                Text(rangePreviewText)
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(Color.spicePrimary)
+
+                // 4 Preset Filter Chips
+                HStack(spacing: 8) {
+                    presetButton(title: "7 days") {
+                        applyPreset(days: 7)
+                    }
+
+                    presetButton(title: "30 days") {
+                        applyPreset(days: 30)
+                    }
+
+                    presetButton(title: "This month") {
+                        applyThisMonth()
+                    }
+
+                    presetButton(title: "Last month") {
+                        applyLastMonth()
+                    }
+                }
+
+                // Month Navigation Header
+                HStack {
+                    HStack(spacing: 4) {
+                        Text(monthTitle)
+                            .font(.system(size: 14.5, weight: .heavy))
+                            .foregroundColor(Color.spiceInk)
+
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(Color.spiceInk)
+                    }
+
+                    Spacer()
+
+                    HStack(spacing: 6) {
+                        Button(action: { changeMonth(by: -1) }) {
+                            Circle()
+                                .fill(Color(hex: "#F1F5F2"))
+                                .frame(width: 32, height: 32)
+                                .overlay(
+                                    Image(systemName: "chevron.left")
+                                        .font(.system(size: 11, weight: .bold))
+                                        .foregroundColor(Color.spiceInk)
+                                )
+                        }
+
+                        Button(action: { changeMonth(by: 1) }) {
+                            Circle()
+                                .fill(Color(hex: "#F1F5F2"))
+                                .frame(width: 32, height: 32)
+                                .overlay(
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 11, weight: .bold))
+                                        .foregroundColor(Color.spiceInk)
+                                )
+                        }
+                    }
+                }
+                .padding(.top, 4)
+
+                // Weekdays Header
+                HStack(spacing: 0) {
+                    ForEach(weekdays, id: \.self) { day in
+                        Text(day)
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(Color.spiceMuted)
+                            .frame(maxWidth: .infinity)
+                    }
+                }
+                .padding(.top, 2)
+
+                // Calendar Days Grid
+                calendarGridView
+
+                // Bottom Action Buttons
+                HStack(spacing: 12) {
+                    // Clear Button
+                    Button(action: {
+                        tempStart = nil
+                        tempEnd = nil
+                    }) {
+                        Text("Clear")
+                            .font(.system(size: 14, weight: .heavy))
+                            .foregroundColor(Color.spiceInk)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 44)
+                            .background(Color.white)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.spiceCardBorder, lineWidth: 1)
+                            )
+                            .cornerRadius(12)
+                    }
+                    .buttonStyle(.plain)
+
+                    // Apply Button
+                    Button(action: {
+                        if tempStart != nil {
+                            selectedRange = DateRange(start: tempStart, end: tempEnd ?? tempStart)
+                        } else {
+                            selectedRange = nil
+                        }
+                        isPresented = false
+                    }) {
+                        Text("Apply")
+                            .font(.system(size: 14, weight: .heavy))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 44)
+                            .background(Color.spicePrimary)
+                            .cornerRadius(12)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.top, 8)
+            }
+            .padding(20)
+            .background(Color.white)
+            .cornerRadius(20)
+            .shadow(color: Color.black.opacity(0.18), radius: 24, x: 0, y: 8)
+            .padding(.horizontal, 20)
+        }
+        .onAppear {
+            if let current = selectedRange {
+                tempStart = current.start
+                tempEnd = current.end
+                if let s = current.start {
+                    displayedMonth = s
+                }
+            } else {
+                let today = calendar.startOfDay(for: Date())
+                tempStart = today
+                tempEnd = today
+                displayedMonth = today
+            }
+        }
+    }
+
+    // MARK: - Calendar Grid View
+    private var calendarGridView: some View {
+        let days = daysInMonth(for: displayedMonth)
+        let firstWeekday = firstWeekdayOffset(for: displayedMonth)
+        let totalCells = (days + firstWeekday <= 35) ? 35 : 42
+
+        return LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 7), spacing: 4) {
+            ForEach(0..<totalCells, id: \.self) { index in
+                let dayNumber = index - firstWeekday + 1
+                if dayNumber >= 1 && dayNumber <= days {
+                    let cellDate = dateForDay(dayNumber, in: displayedMonth)
+                    dayCellView(date: cellDate, dayNumber: dayNumber)
+                } else {
+                    Text("")
+                        .frame(height: 38)
+                }
+            }
+        }
+    }
+
+    // MARK: - Day Cell View
+    @ViewBuilder
+    private func dayCellView(date: Date, dayNumber: Int) -> some View {
+        let isStart = tempStart != nil && calendar.isDate(date, inSameDayAs: tempStart!)
+        let isEnd = tempEnd != nil && calendar.isDate(date, inSameDayAs: tempEnd!)
+        let isRangeActive = tempStart != nil && tempEnd != nil && !calendar.isDate(tempStart!, inSameDayAs: tempEnd!)
+        let isInBetween = isRangeActive && date > tempStart! && date < tempEnd!
+
+        ZStack {
+            // In-between connector bands
+            if isInBetween {
+                Rectangle()
+                    .fill(Color(hex: "#E6F4EC"))
+                    .frame(height: 38)
+            } else if isStart && isRangeActive {
+                HStack(spacing: 0) {
+                    Spacer()
+                    Rectangle()
+                        .fill(Color(hex: "#E6F4EC"))
+                        .frame(width: 22, height: 38)
+                }
+            } else if isEnd && isRangeActive {
+                HStack(spacing: 0) {
+                    Rectangle()
+                        .fill(Color(hex: "#E6F4EC"))
+                        .frame(width: 22, height: 38)
+                    Spacer()
+                }
+            }
+
+            // Start / End circle highlight
+            if isStart || isEnd {
+                Circle()
+                    .fill(Color.spicePrimary)
+                    .frame(width: 36, height: 36)
+            }
+
+            Text("\(dayNumber)")
+                .font(.system(size: 13.5, weight: (isStart || isEnd) ? .heavy : .medium))
+                .foregroundColor(
+                    (isStart || isEnd) ? .white :
+                    isInBetween ? Color.spicePrimary : Color.spiceInk
+                )
+        }
+        .frame(height: 38)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            selectDate(date)
+        }
+    }
+
+    // MARK: - Date Selection Logic
+    private func selectDate(_ date: Date) {
+        if tempStart == nil || (tempStart != nil && tempEnd != nil) {
+            tempStart = date
+            tempEnd = nil
+        } else if let s = tempStart {
+            if date < s {
+                tempStart = date
+                tempEnd = s
+            } else {
+                tempEnd = date
+            }
+        }
+    }
+
+    // MARK: - Preset Handlers
+    private func presetButton(title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 12, weight: .bold))
+                .foregroundColor(Color.spicePrimary)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(Color(hex: "#E8F5EC"))
+                .cornerRadius(10)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func applyPreset(days: Int) {
+        let today = calendar.startOfDay(for: Date())
+        if let past = calendar.date(byAdding: .day, value: -(days - 1), to: today) {
+            tempStart = past
+            tempEnd = today
+            displayedMonth = past
+        }
+    }
+
+    private func applyThisMonth() {
+        let components = calendar.dateComponents([.year, .month], from: Date())
+        if let startOfMonth = calendar.date(from: components),
+           let range = calendar.range(of: .day, in: .month, for: startOfMonth),
+           let endOfMonth = calendar.date(byAdding: .day, value: range.count - 1, to: startOfMonth) {
+            tempStart = startOfMonth
+            tempEnd = endOfMonth
+            displayedMonth = startOfMonth
+        }
+    }
+
+    private func applyLastMonth() {
+        if let lastMonthDate = calendar.date(byAdding: .month, value: -1, to: Date()) {
+            let components = calendar.dateComponents([.year, .month], from: lastMonthDate)
+            if let startOfMonth = calendar.date(from: components),
+               let range = calendar.range(of: .day, in: .month, for: startOfMonth),
+               let endOfMonth = calendar.date(byAdding: .day, value: range.count - 1, to: startOfMonth) {
+                tempStart = startOfMonth
+                tempEnd = endOfMonth
+                displayedMonth = startOfMonth
+            }
+        }
+    }
+
+    private func changeMonth(by amount: Int) {
+        if let next = calendar.date(byAdding: .month, value: amount, to: displayedMonth) {
+            displayedMonth = next
+        }
+    }
+
+    // MARK: - Calendar Helpers
+    private func daysInMonth(for date: Date) -> Int {
+        calendar.range(of: .day, in: .month, for: date)?.count ?? 30
+    }
+
+    private func firstWeekdayOffset(for date: Date) -> Int {
+        let components = calendar.dateComponents([.year, .month], from: date)
+        guard let firstDay = calendar.date(from: components) else { return 0 }
+        let weekday = calendar.component(.weekday, from: firstDay)
+        return weekday - 1
+    }
+
+    private func dateForDay(_ day: Int, in monthDate: Date) -> Date {
+        var components = calendar.dateComponents([.year, .month], from: monthDate)
+        components.day = day
+        return calendar.date(from: components) ?? monthDate
+    }
+}

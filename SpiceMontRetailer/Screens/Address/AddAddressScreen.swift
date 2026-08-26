@@ -75,6 +75,8 @@ struct AddAddressScreen: View {
                                         TextField("6-digit PIN", text: $pincode)
                                             .keyboardType(.numberPad)
                                             .font(.system(size: 13.5, weight: .semibold, design: .monospaced))
+                                            .foregroundColor(Color.black)
+                                            .tint(Color.spicePrimary)
                                             .onChange(of: pincode) { _, newValue in
                                                 let digits = String(newValue.filter(\.isNumber).prefix(6))
                                                 pincode = digits
@@ -96,6 +98,8 @@ struct AddAddressScreen: View {
                                     fieldLabel("CITY")
                                     TextField("City", text: $city)
                                         .font(.system(size: 13.5, weight: .semibold))
+                                        .foregroundColor(Color.black)
+                                        .tint(Color.spicePrimary)
                                         .padding(10)
                                         .frame(height: 44)
                                         .background(Color.spiceBackground)
@@ -152,6 +156,8 @@ struct AddAddressScreen: View {
             TextField(placeholder, text: text)
                 .keyboardType(keyboard)
                 .font(.system(size: 13, weight: .medium))
+                .foregroundColor(Color.black)
+                .tint(Color.spicePrimary)
                 .padding(10)
                 .frame(height: 44)
                 .background(Color.spiceBackground)

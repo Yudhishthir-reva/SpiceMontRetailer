@@ -67,6 +67,8 @@ struct LoginScreen: View {
                                     .textContentType(.telephoneNumber)
                                     .focused($isMobileFocused)
                                     .font(.system(size: 15, weight: .semibold, design: .monospaced))
+                                    .foregroundColor(Color.black)
+                                    .tint(Color.spicePrimary)
                                     .padding(.horizontal, 14)
                                     .frame(height: 50)
                                     .background(Color.white)

@@ -9,42 +9,68 @@ import SwiftUI
 import Combine
 
 struct OrderDetailScreen: View {
-    var orderId: String = "2967"
+    var orderId: Int? = nil
+    var orderNumber: String? = nil
     @Environment(\.dismiss) private var dismiss
 
-    @State private var order: Order?
+    @State private var order: Order? = nil
     @State private var isLoading: Bool = true
     @State private var isShowToast: Bool = false
     @State private var toastMessage: String = ""
+    @State private var showCart: Bool = false
+    @ObservedObject private var cartManager = CartManager.shared
 
     private let service = OrderServiceManager()
     @State private var cancellables = Set<AnyCancellable>()
 
-    var intOrderId: Int {
-        if let direct = Int(orderId) {
-            return direct
-        }
-        let clean = orderId.replacingOccurrences(of: "#", with: "")
-        if let intVal = Int(clean) { return intVal }
-        if let lastPart = clean.components(separatedBy: "/").last, let intPart = Int(lastPart) {
-            return intPart
-        }
-        return 6434
+    init(orderId: Int? = nil, orderNumber: String? = nil) {
+        self.orderId = orderId
+        self.orderNumber = orderNumber
     }
 
-    var displayOrder: Order {
-        if let order = order {
-            return order
+    init(orderId: String) {
+        let clean = orderId.replacingOccurrences(of: "#", with: "")
+        if let intVal = Int(clean) {
+            self.orderId = intVal
+            self.orderNumber = orderId
+        } else if let lastPart = clean.components(separatedBy: "/").last, let intPart = Int(lastPart) {
+            self.orderId = intPart
+            self.orderNumber = orderId
+        } else {
+            self.orderId = nil
+            self.orderNumber = orderId
         }
-        return Order(
-            id: intOrderId,
-            orderNumber: orderId.hasPrefix("#") ? orderId : "#\(orderId)",
-            status: "pending",
-            total: "0.00",
-            orderDate: "",
-            createdAt: "",
-            itemsCount: 0
-        )
+    }
+
+    var resolvedOrderId: Int {
+        if let id = orderId, id > 0 { return id }
+        if let o = order, let id = o.id, id > 0 { return id }
+        if let num = orderNumber {
+            let clean = num.replacingOccurrences(of: "#", with: "")
+            if let intVal = Int(clean) { return intVal }
+        }
+        return 0
+    }
+
+    var orderNumberText: String {
+        if let num = order?.orderNumberFormatted, !num.isEmpty {
+            return num
+        }
+        if let num = orderNumber, !num.isEmpty {
+            return num.hasPrefix("#") ? num : "#\(num)"
+        }
+        if let id = orderId, id > 0 {
+            return "#\(id)"
+        }
+        return ""
+    }
+
+    var totalProductsCount: Int {
+        order?.items?.count ?? 0
+    }
+
+    var totalUnitsCount: Int {
+        order?.items?.reduce(0) { $0 + ($1.quantity ?? 1) } ?? 0
     }
 
     var body: some View {
@@ -52,7 +78,7 @@ struct OrderDetailScreen: View {
             Color.spiceBackground.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // MARK: - Header
+                // MARK: - Top Navigation Bar
                 HStack(alignment: .center, spacing: 12) {
                     Button(action: { dismiss() }) {
                         Image(systemName: "chevron.left")
@@ -66,9 +92,11 @@ struct OrderDetailScreen: View {
                             .font(.system(size: 17, weight: .heavy))
                             .foregroundColor(Color.spiceInk)
 
-                        Text(displayOrder.orderNumberFormatted)
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(Color.spiceMuted)
+                        if !orderNumberText.isEmpty {
+                            Text(orderNumberText)
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(Color.spiceMuted)
+                        }
                     }
 
                     Spacer()
@@ -86,53 +114,69 @@ struct OrderDetailScreen: View {
                 .background(Color.white)
                 .overlay(Divider().background(Color.spiceDivider), alignment: .bottom)
 
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 12) {
-                        // MARK: - Card 1: Order Header Info Card
-                        orderHeaderCard
-
-                        // MARK: - Card 2: Status Timeline Card
-                        statusTimelineCard
-
-                        // MARK: - Card 3: Order Items Card
-                        orderItemsCard
-
-                        // MARK: - Card 4: Bill Summary Card
-                        billSummaryCard
-
-                        // MARK: - Card 5: Payment Managed Separately Card
-                        paymentManagedCard
-
-                        Spacer(minLength: 80)
+                if isLoading && order == nil {
+                    // Clean Skeleton Loading State
+                    ScrollView {
+                        VStack(spacing: 12) {
+                            SpiceSkeletonBox(height: 100, cornerRadius: 16)
+                            SpiceSkeletonBox(height: 220, cornerRadius: 16)
+                            SpiceSkeletonBox(height: 120, cornerRadius: 16)
+                            SpiceSkeletonBox(height: 120, cornerRadius: 16)
+                        }
+                        .padding(16)
                     }
-                    .padding(16)
-                }
-                .refreshable {
-                    loadOrderDetail()
+                } else if let ord = order {
+                    ScrollView(showsIndicators: false) {
+                        VStack(spacing: 12) {
+                            // MARK: - Card 1: Order Header Info Card
+                            orderHeaderCard(ord)
+
+                            // MARK: - Card 2: Status Timeline Card
+                            statusTimelineCard(ord)
+
+                            // MARK: - Card 3: Order Items Card
+                            orderItemsCard(ord)
+
+                            // MARK: - Card 4: Bill Summary Card
+                            billSummaryCard(ord)
+
+                            // MARK: - Card 5: Payment Managed Separately Card
+                            paymentManagedCard
+
+                            Spacer(minLength: 90)
+                        }
+                        .padding(16)
+                    }
+                    .refreshable {
+                        loadOrderDetail()
+                    }
+                } else {
+                    // Clean Empty State
+                    VStack {
+                        Spacer()
+                        SpiceEmptyStateView(
+                            title: "Order Details Unavailable",
+                            message: "Unable to load details for this order. Please refresh.",
+                            buttonTitle: "Retry"
+                        ) {
+                            loadOrderDetail()
+                        }
+                        Spacer()
+                    }
                 }
             }
 
-            // MARK: - Floating Bottom Track Order CTA
-            VStack {
-                NavigationLink(destination: DeliveryTrackingScreen(orderId: displayOrder.id ?? intOrderId, orderNumber: displayOrder.orderNumberFormatted)) {
-                    Text("Track Order")
-                        .font(.system(size: 15, weight: .heavy))
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
-                        .background(Color.spicePrimary)
-                        .cornerRadius(12)
-                        .shadow(color: Color.black.opacity(0.08), radius: 6, y: 3)
-                }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 16)
-                .padding(.bottom, 12)
-                .background(Color.spiceBackground.opacity(0.95))
+            // MARK: - Sticky Bottom Dual CTA Bar
+            if let ord = order {
+                stickyBottomBar(ord)
             }
         }
         .navigationBarHidden(true)
         .onAppear {
             loadOrderDetail()
+        }
+        .sheet(isPresented: $showCart) {
+            NavigationStack { CartScreen() }
         }
         .toast(isPresenting: $isShowToast, duration: 2.0, offsetY: 10, alert: {
             AlertToast(displayMode: .banner(.pop), type: .regular, title: toastMessage)
@@ -140,22 +184,16 @@ struct OrderDetailScreen: View {
     }
 
     // MARK: - Card 1: Header Info Card
-    private var orderHeaderCard: some View {
+    private func orderHeaderCard(_ ord: Order) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text(displayOrder.orderNumberFormatted)
+                Text(ord.orderNumberFormatted)
                     .font(.system(size: 14.5, weight: .heavy, design: .monospaced))
                     .foregroundColor(Color.spiceInk)
 
                 Spacer()
 
-                Text(displayOrder.statusLabel.uppercased())
-                    .font(.system(size: 10, weight: .heavy, design: .monospaced))
-                    .foregroundColor(Color(hex: "#B87314"))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3.5)
-                    .background(Color(hex: "#FEF4E6"))
-                    .cornerRadius(5)
+                statusBadge(ord: ord)
             }
 
             VStack(spacing: 8) {
@@ -164,7 +202,7 @@ struct OrderDetailScreen: View {
                         .font(.system(size: 13, weight: .medium))
                         .foregroundColor(Color.spiceMuted)
                     Spacer()
-                    Text(displayOrder.displayDateOnly.isEmpty ? "24 Aug 2026" : displayOrder.displayDateOnly)
+                    Text(ord.displayDateOnly.isEmpty ? (ord.orderDate ?? "-") : ord.displayDateOnly)
                         .font(.system(size: 13.5, weight: .bold))
                         .foregroundColor(Color.spiceInk)
                 }
@@ -174,8 +212,7 @@ struct OrderDetailScreen: View {
                         .font(.system(size: 13, weight: .medium))
                         .foregroundColor(Color.spiceMuted)
                     Spacer()
-                    let count = displayOrder.items?.count ?? 2
-                    Text("\(count) products · \(count) units")
+                    Text("\(totalProductsCount) products · \(totalUnitsCount) units")
                         .font(.system(size: 13.5, weight: .bold))
                         .foregroundColor(Color.spiceInk)
                 }
@@ -190,106 +227,44 @@ struct OrderDetailScreen: View {
         )
     }
 
-    // MARK: - Card 2: Status Timeline Card
-    private var statusTimelineCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
+    // MARK: - Status Badge
+    private func statusBadge(ord: Order) -> some View {
+        let label = (ord.statusText?.isEmpty == false ? ord.statusText : ord.statusLabel) ?? "PENDING"
+        let clean = label.uppercased()
+
+        let hex = ord.statusColorHex ?? (clean == "PENDING" ? "#FFA500" : (clean == "DELIVERED" ? "#167444" : "#405189"))
+        let color = Color(hex: hex)
+
+        return Text(clean)
+            .font(.system(size: 10, weight: .heavy, design: .monospaced))
+            .foregroundColor(color)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3.5)
+            .background(color.opacity(0.12))
+            .cornerRadius(5)
+    }
+
+    // MARK: - Card 2: Status Timeline Card (Dynamic from API timeline)
+    private func statusTimelineCard(_ ord: Order) -> some View {
+        let timeline = ord.timeline ?? []
+
+        return VStack(alignment: .leading, spacing: 14) {
             Text("Status Timeline")
                 .font(.system(size: 14, weight: .heavy))
                 .foregroundColor(Color.spiceInk)
                 .padding(.horizontal, 2)
 
-            VStack(alignment: .leading, spacing: 0) {
-                // Step 1: Order Placed (Completed / Current)
-                HStack(alignment: .top, spacing: 14) {
-                    VStack(spacing: 0) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(Color(hex: "#167444"))
-
-                        Rectangle()
-                            .fill(Color(hex: "#D1D5DB"))
-                            .frame(width: 1.5, height: 34)
+            if timeline.isEmpty {
+                defaultTimeline(ord: ord)
+            } else {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(Array(timeline.enumerated()), id: \.offset) { index, item in
+                        let isLast = index == timeline.count - 1
+                        orderTimelineRow(item: item, isLast: isLast)
                     }
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Order Placed")
-                            .font(.system(size: 13.5, weight: .heavy))
-                            .foregroundColor(Color.spiceInk)
-
-                        Text("24 Aug 2026")
-                            .font(.system(size: 11.5, weight: .medium))
-                            .foregroundColor(Color.spiceMuted)
-
-                        Text("Current status")
-                            .font(.system(size: 11.5, weight: .bold))
-                            .foregroundColor(Color(hex: "#167444"))
-                            .padding(.top, 1)
-                    }
-
-                    Spacer()
                 }
-
-                // Step 2: Assigned to Rider (Pending)
-                HStack(alignment: .top, spacing: 14) {
-                    VStack(spacing: 0) {
-                        Circle()
-                            .fill(Color(hex: "#E5E7EB"))
-                            .frame(width: 16, height: 16)
-                            .padding(.vertical, 1)
-
-                        Rectangle()
-                            .fill(Color(hex: "#D1D5DB"))
-                            .frame(width: 1.5, height: 28)
-                    }
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Assigned to Rider")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(Color(hex: "#9CA3AF"))
-                    }
-
-                    Spacer()
-                }
-
-                // Step 3: Picked Up (Pending)
-                HStack(alignment: .top, spacing: 14) {
-                    VStack(spacing: 0) {
-                        Circle()
-                            .fill(Color(hex: "#E5E7EB"))
-                            .frame(width: 16, height: 16)
-                            .padding(.vertical, 1)
-
-                        Rectangle()
-                            .fill(Color(hex: "#D1D5DB"))
-                            .frame(width: 1.5, height: 28)
-                    }
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Picked Up")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(Color(hex: "#9CA3AF"))
-                    }
-
-                    Spacer()
-                }
-
-                // Step 4: Delivered (Pending)
-                HStack(alignment: .top, spacing: 14) {
-                    Circle()
-                        .fill(Color(hex: "#E5E7EB"))
-                        .frame(width: 16, height: 16)
-                        .padding(.vertical, 1)
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Delivered")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(Color(hex: "#9CA3AF"))
-                    }
-
-                    Spacer()
-                }
+                .padding(.horizontal, 4)
             }
-            .padding(.horizontal, 4)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 16)
@@ -301,9 +276,117 @@ struct OrderDetailScreen: View {
         )
     }
 
+    @ViewBuilder
+    private func orderTimelineRow(item: RetailerTimelineItem, isLast: Bool) -> some View {
+        let isDone = item.isDone == true
+        let isActive = item.isActive == true
+
+        HStack(alignment: .top, spacing: 14) {
+            VStack(spacing: 0) {
+                if isDone || isActive {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(Color(hex: "#167444"))
+                } else {
+                    Circle()
+                        .fill(Color(hex: "#E5E7EB"))
+                        .frame(width: 14, height: 14)
+                        .padding(.vertical, 2)
+                }
+
+                if !isLast {
+                    Rectangle()
+                        .fill(isDone ? Color(hex: "#167444") : Color(hex: "#E5E7EB"))
+                        .frame(width: 2, height: 32)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.label ?? item.title ?? "Status")
+                    .font(.system(size: 13.5, weight: isDone || isActive ? .heavy : .semibold))
+                    .foregroundColor(isDone || isActive ? Color.spiceInk : Color(hex: "#9CA3AF"))
+
+                if let date = item.date, !date.isEmpty {
+                    Text(date)
+                        .font(.system(size: 11.5, weight: .medium))
+                        .foregroundColor(Color.spiceMuted)
+                }
+
+                if isActive {
+                    Text("Current status")
+                        .font(.system(size: 11.5, weight: .bold))
+                        .foregroundColor(Color(hex: "#167444"))
+                        .padding(.top, 1)
+                }
+            }
+
+            Spacer()
+        }
+    }
+
+    // Default 4-step layout if timeline array is omitted by backend
+    private func defaultTimeline(ord: Order) -> some View {
+        let status = (ord.status ?? "pending").lowercased()
+        let isAssigned = status == "assigned" || status == "out_for_delivery" || status == "delivered"
+        let isPickedUp = status == "out_for_delivery" || status == "delivered"
+        let isDelivered = status == "delivered"
+
+        return VStack(alignment: .leading, spacing: 0) {
+            // Step 1: Placed
+            HStack(alignment: .top, spacing: 14) {
+                VStack(spacing: 0) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(Color(hex: "#167444"))
+                    Rectangle().fill(Color(hex: "#E5E7EB")).frame(width: 2, height: 34)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Order Placed").font(.system(size: 13.5, weight: .heavy)).foregroundColor(Color.spiceInk)
+                    if !ord.displayDateOnly.isEmpty { Text(ord.displayDateOnly).font(.system(size: 11.5, weight: .medium)).foregroundColor(Color.spiceMuted) }
+                    if status == "pending" { Text("Current status").font(.system(size: 11.5, weight: .bold)).foregroundColor(Color(hex: "#167444")).padding(.top, 1) }
+                }
+                Spacer()
+            }
+
+            // Step 2: Assigned
+            HStack(alignment: .top, spacing: 14) {
+                VStack(spacing: 0) {
+                    Circle().fill(Color(hex: "#E5E7EB")).frame(width: 14, height: 14).padding(.vertical, 2)
+                    Rectangle().fill(Color(hex: "#E5E7EB")).frame(width: 2, height: 26)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Assigned to Rider").font(.system(size: 13, weight: isAssigned ? .heavy : .semibold)).foregroundColor(isAssigned ? Color.spiceInk : Color(hex: "#9CA3AF"))
+                }
+                Spacer()
+            }
+
+            // Step 3: Picked Up
+            HStack(alignment: .top, spacing: 14) {
+                VStack(spacing: 0) {
+                    Circle().fill(Color(hex: "#E5E7EB")).frame(width: 14, height: 14).padding(.vertical, 2)
+                    Rectangle().fill(Color(hex: "#E5E7EB")).frame(width: 2, height: 26)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Picked Up").font(.system(size: 13, weight: isPickedUp ? .heavy : .semibold)).foregroundColor(isPickedUp ? Color.spiceInk : Color(hex: "#9CA3AF"))
+                }
+                Spacer()
+            }
+
+            // Step 4: Delivered
+            HStack(alignment: .top, spacing: 14) {
+                Circle().fill(Color(hex: "#E5E7EB")).frame(width: 14, height: 14).padding(.vertical, 2)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Delivered").font(.system(size: 13, weight: isDelivered ? .heavy : .semibold)).foregroundColor(isDelivered ? Color.spiceInk : Color(hex: "#9CA3AF"))
+                }
+                Spacer()
+            }
+        }
+        .padding(.horizontal, 4)
+    }
+
     // MARK: - Card 3: Order Items Card
-    private var orderItemsCard: some View {
-        let items = displayOrder.items ?? []
+    private func orderItemsCard(_ ord: Order) -> some View {
+        let items = ord.items ?? []
 
         return VStack(alignment: .leading, spacing: 10) {
             VStack(alignment: .leading, spacing: 2) {
@@ -318,47 +401,57 @@ struct OrderDetailScreen: View {
 
             Divider().background(Color.spiceDivider).padding(.vertical, 2)
 
-            VStack(spacing: 12) {
-                ForEach(items) { item in
-                    HStack(alignment: .center, spacing: 12) {
-                        // Product Packaging Thumbnail Box
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color(hex: "#F4F6F4"))
+            if items.isEmpty {
+                Text("No items recorded for this order.")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(Color.spiceMuted)
+                    .padding(.vertical, 8)
+            } else {
+                VStack(spacing: 12) {
+                    ForEach(items) { item in
+                        HStack(alignment: .center, spacing: 12) {
+                            // Thumbnail
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color(hex: "#F4F6F4"))
 
-                            if let img = item.productImage, !img.isEmpty {
-                                RemoteImage(url: img)
-                                    .scaledToFit()
-                                    .frame(width: 44, height: 44)
-                                    .padding(2)
-                            } else {
-                                Image("spice_monk_logo")
-                                    .resizable()
-                                    .scaledToFit()
-                                    .frame(width: 36, height: 36)
+                                if let img = item.productImage, !img.isEmpty {
+                                    RemoteImage(url: img)
+                                        .scaledToFit()
+                                        .frame(width: 44, height: 44)
+                                        .padding(2)
+                                } else {
+                                    Image("spice_monk_logo")
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(width: 36, height: 36)
+                                }
                             }
-                        }
-                        .frame(width: 48, height: 48)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color.spiceCardBorder, lineWidth: 0.8)
-                        )
+                            .frame(width: 48, height: 48)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color.spiceCardBorder, lineWidth: 0.8)
+                            )
 
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(item.productName ?? "Product")
-                                .font(.system(size: 13.5, weight: .bold))
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(item.productName ?? "Product")
+                                    .font(.system(size: 13.5, weight: .bold))
+                                    .foregroundColor(Color.spiceInk)
+
+                                let unitStr = item.unit ?? ""
+                                let qtyStr = "\(item.quantity ?? 1)"
+                                let priceStr = item.price?.priceLabel ?? "₹0.00"
+                                Text("\(unitStr.isEmpty ? "" : "\(unitStr) · ")\(qtyStr) × \(priceStr)")
+                                    .font(.system(size: 11.5, weight: .medium))
+                                    .foregroundColor(Color.spiceMuted)
+                            }
+
+                            Spacer()
+
+                            Text(item.totalPrice?.priceLabel ?? item.price?.priceLabel ?? "₹0.00")
+                                .font(.system(size: 13.5, weight: .heavy, design: .monospaced))
                                 .foregroundColor(Color.spiceInk)
-
-                            Text("\(item.unit ?? "50 gms") · \(item.quantity ?? 1) × \(item.price?.priceLabel ?? "₹29.00")")
-                                .font(.system(size: 11.5, weight: .medium))
-                                .foregroundColor(Color.spiceMuted)
                         }
-
-                        Spacer()
-
-                        Text(item.totalPrice?.priceLabel ?? item.price?.priceLabel ?? "₹29.00")
-                            .font(.system(size: 13.5, weight: .heavy, design: .monospaced))
-                            .foregroundColor(Color.spiceInk)
                     }
                 }
             }
@@ -373,8 +466,9 @@ struct OrderDetailScreen: View {
     }
 
     // MARK: - Card 4: Bill Summary Card
-    private var billSummaryCard: some View {
-        let total = displayOrder.total?.priceLabel ?? "₹57.00"
+    private func billSummaryCard(_ ord: Order) -> some View {
+        let subtotalStr = (ord.subtotal?.isEmpty == false ? ord.subtotal : ord.total)?.priceLabel ?? "₹0.00"
+        let finalTotalStr = (ord.total?.isEmpty == false ? ord.total : ord.subtotal)?.priceLabel ?? "₹0.00"
 
         return VStack(alignment: .leading, spacing: 10) {
             Text("Bill Summary")
@@ -384,21 +478,47 @@ struct OrderDetailScreen: View {
             HStack {
                 Text("Product Total")
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(Color.spiceInk)
+                    .foregroundColor(Color.spiceMuted)
                 Spacer()
-                Text(total)
+                Text(subtotalStr)
                     .font(.system(size: 13.5, weight: .bold, design: .monospaced))
                     .foregroundColor(Color.spiceInk)
+            }
+
+            // Free Gift Row (if present)
+            if let gift = ord.freeGift, !gift.isEmpty {
+                HStack {
+                    Text("Free Gift")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(Color.spiceMuted)
+                    Spacer()
+                    Text(gift)
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(Color.spiceInk)
+                }
+            }
+
+            // Discount Row (if present)
+            if let disc = ord.discount, !disc.isEmpty, Double(disc) ?? 0 > 0 {
+                HStack {
+                    Text("Discount")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(Color.spicePrimary)
+                    Spacer()
+                    Text("-\(disc.priceLabel)")
+                        .font(.system(size: 13, weight: .bold, design: .monospaced))
+                        .foregroundColor(Color.spicePrimary)
+                }
             }
 
             Divider().background(Color.spiceDivider).padding(.vertical, 2)
 
             HStack {
                 Text("Final Order Amount")
-                    .font(.system(size: 13.5, weight: .heavy))
+                    .font(.system(size: 14, weight: .heavy))
                     .foregroundColor(Color.spiceInk)
                 Spacer()
-                Text(total)
+                Text(finalTotalStr)
                     .font(.system(size: 14.5, weight: .heavy, design: .monospaced))
                     .foregroundColor(Color.spiceInk)
             }
@@ -444,17 +564,88 @@ struct OrderDetailScreen: View {
         .buttonStyle(.plain)
     }
 
+    // MARK: - Sticky Bottom Dual CTA Bar
+    private func stickyBottomBar(_ ord: Order) -> some View {
+        HStack(spacing: 12) {
+            // Track Order CTA (Solid Green)
+            NavigationLink(destination: DeliveryTrackingScreen(orderId: ord.id ?? resolvedOrderId, orderNumber: ord.orderNumberFormatted)) {
+                Text("Track Order")
+                    .font(.system(size: 14.5, weight: .heavy))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 46)
+                    .background(Color.spicePrimary)
+                    .cornerRadius(12)
+            }
+            .buttonStyle(.plain)
+
+            // Repeat Order CTA (Outlined Green)
+            Button(action: {
+                handleRepeatOrder(ord)
+            }) {
+                Text("Repeat Order")
+                    .font(.system(size: 14.5, weight: .heavy))
+                    .foregroundColor(Color.spicePrimary)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 46)
+                    .background(Color.white)
+                    .cornerRadius(12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.spicePrimary, lineWidth: 1.2)
+                    )
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(Color.white)
+        .overlay(Divider().background(Color.spiceDivider), alignment: .top)
+    }
+
+    // MARK: - Repeat Order Action
+    private func handleRepeatOrder(_ ord: Order) {
+        guard let items = ord.items, !items.isEmpty else {
+            toastMessage = "No items to repeat"
+            isShowToast = true
+            return
+        }
+
+        for item in items {
+            if let pId = item.productId, let qty = item.quantity {
+                cartManager.setQuantity(
+                    productId: pId,
+                    variantId: item.variantId,
+                    variantName: item.variantName ?? item.unit,
+                    quantity: qty,
+                    price: item.price
+                )
+            }
+        }
+
+        toastMessage = "Items added to cart!"
+        isShowToast = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+            showCart = true
+        }
+    }
+
     // MARK: - Service Call
     private func loadOrderDetail() {
+        guard resolvedOrderId > 0 else {
+            isLoading = false
+            return
+        }
         isLoading = true
         let headers = UserDefaultManager.shared.authHeader
 
-        service.fetchOrderDetail(id: intOrderId, headers: headers)
+        service.fetchOrderDetail(id: resolvedOrderId, headers: headers)
             .receive(on: DispatchQueue.main)
             .sink { completion in
                 isLoading = false
                 if case .failure(let error) = completion {
                     toastMessage = (error as? RequestError)?.errorString ?? error.localizedDescription
+                    isShowToast = true
                 }
             } receiveValue: { response in
                 if let o = response.order {
@@ -462,5 +653,11 @@ struct OrderDetailScreen: View {
                 }
             }
             .store(in: &cancellables)
+    }
+}
+
+#Preview {
+    NavigationStack {
+        OrderDetailScreen(orderId: "1")
     }
 }

@@ -21,37 +21,64 @@ final class GPSLocationManager: NSObject, ObservableObject, CLLocationManagerDel
     override init() {
         super.init()
         manager.delegate = self
-        manager.desiredAccuracy = kCLLocationAccuracyBest
+        manager.desiredAccuracy = kCLLocationAccuracyHundredMeters
+        manager.distanceFilter = 10
     }
 
     func requestLocation() {
         isFetching = true
         locationError = nil
         let status = manager.authorizationStatus
-        if status == .notDetermined {
+        switch status {
+        case .notDetermined:
             manager.requestWhenInUseAuthorization()
-        } else if status == .denied || status == .restricted {
+        case .authorizedWhenInUse, .authorizedAlways:
+            manager.startUpdatingLocation()
+        case .denied, .restricted:
             isFetching = false
             locationError = "Location permission denied. Please allow location in Settings."
-            return
+        @unknown default:
+            manager.requestWhenInUseAuthorization()
         }
-        manager.requestLocation()
     }
 
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        let status = manager.authorizationStatus
         DispatchQueue.main.async {
-            self.isFetching = false
-            if let loc = locations.last {
-                self.latitude = String(format: "%.6f", loc.coordinate.latitude)
-                self.longitude = String(format: "%.6f", loc.coordinate.longitude)
+            switch status {
+            case .authorizedWhenInUse, .authorizedAlways:
+                if self.isFetching || (self.latitude.isEmpty && self.longitude.isEmpty) {
+                    self.isFetching = true
+                    manager.startUpdatingLocation()
+                }
+            case .denied, .restricted:
+                if self.isFetching {
+                    self.isFetching = false
+                    self.locationError = "Location permission denied. Please allow location in Settings."
+                }
+            default:
+                break
             }
         }
     }
 
-    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        guard let loc = locations.last else { return }
+        manager.stopUpdatingLocation()
         DispatchQueue.main.async {
             self.isFetching = false
-            self.locationError = error.localizedDescription
+            self.latitude = String(format: "%.6f", loc.coordinate.latitude)
+            self.longitude = String(format: "%.6f", loc.coordinate.longitude)
+        }
+    }
+
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        manager.stopUpdatingLocation()
+        DispatchQueue.main.async {
+            self.isFetching = false
+            if self.latitude.isEmpty || self.longitude.isEmpty {
+                self.locationError = error.localizedDescription
+            }
         }
     }
 }
@@ -158,16 +185,21 @@ struct RetailerRegistrationFlowView: View {
                 loadStates()
                 gpsManager.requestLocation()
             }
-            .onChange(of: gpsManager.latitude) { newLat in
-                if !newLat.isEmpty { latitude = newLat }
+            .onChange(of: gpsManager.latitude) { _, newLat in
+                if !newLat.isEmpty {
+                    latitude = newLat
+                    longitude = gpsManager.longitude
+                    showToast("Shop GPS location captured!")
+                }
             }
-            .onChange(of: gpsManager.longitude) { newLng in
-                if !newLng.isEmpty { longitude = newLng }
+            .onChange(of: gpsManager.longitude) { _, newLng in
+                if !newLng.isEmpty {
+                    longitude = newLng
+                }
             }
-            .onChange(of: gpsManager.locationError) { err in
+            .onChange(of: gpsManager.locationError) { _, err in
                 if let err = err {
-                    toastMessage = err
-                    isShowToast = true
+                    showToast(err)
                 }
             }
             .toast(isPresenting: $isShowToast, duration: 2.0, offsetY: 10, alert: {
@@ -917,11 +949,11 @@ struct RetailerRegistrationFlowView: View {
             params["gstin"] = gstNumber.trimmingCharacters(in: .whitespacesAndNewlines)
             params["gst_number"] = gstNumber.trimmingCharacters(in: .whitespacesAndNewlines)
         }
-        // Latitude & Longitude (Required by Backend)
-        let finalLat = !latitude.isEmpty ? latitude : (!gpsManager.latitude.isEmpty ? gpsManager.latitude : "28.613939")
-        let finalLng = !longitude.isEmpty ? longitude : (!gpsManager.longitude.isEmpty ? gpsManager.longitude : "77.209021")
-        params["latitude"] = finalLat
-        params["longitude"] = finalLng
+        // Latitude & Longitude
+        let finalLat = !latitude.isEmpty ? latitude : gpsManager.latitude
+        let finalLng = !longitude.isEmpty ? longitude : gpsManager.longitude
+        if !finalLat.isEmpty { params["latitude"] = finalLat }
+        if !finalLng.isEmpty { params["longitude"] = finalLng }
 
         let headers = ["Accept": "application/json"]
 
@@ -984,6 +1016,8 @@ struct RetailerRegistrationFlowView: View {
                 .foregroundColor(Color.spiceInk)
             TextField(placeholder, text: text)
                 .font(isMono ? .system(size: 13, weight: .semibold, design: .monospaced) : .system(size: 13, weight: .medium))
+                .foregroundColor(Color.black)
+                .tint(Color.spicePrimary)
                 .keyboardType(keyboardType)
                 .padding(12)
                 .background(Color.white)

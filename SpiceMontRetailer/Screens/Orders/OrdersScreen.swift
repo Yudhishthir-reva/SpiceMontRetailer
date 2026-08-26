@@ -12,7 +12,7 @@ struct OrdersScreen: View {
     @Environment(\.dismiss) private var dismiss
     @State private var searchText: String = ""
     @State private var selectedStatusFilter: String = "All Orders"
-    @State private var selectedDate: Date? = nil
+    @State private var selectedDateRange: DateRange? = DateRange.today
 
     @State private var allOrders: [Order] = []
     @State private var isLoading: Bool = false
@@ -42,15 +42,11 @@ struct OrdersScreen: View {
             }
         }
 
-        // 2. Date Filter
-        if let filterDate = selectedDate {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy-MM-dd"
-            let dateStr = formatter.string(from: filterDate)
-
+        // 2. Date Range Filter
+        if let range = selectedDateRange, range.isActive {
             list = list.filter { order in
-                if let oDate = order.orderDate, oDate.contains(dateStr) { return true }
-                if let cDate = order.createdAt, cDate.contains(dateStr) { return true }
+                if let oDate = order.orderDate, range.contains(dateString: oDate) { return true }
+                if let cDate = order.createdAt, range.contains(dateString: cDate) { return true }
                 return false
             }
         }
@@ -80,6 +76,14 @@ struct OrdersScreen: View {
                             .foregroundColor(Color.spiceInk)
 
                         Spacer()
+
+                        Button(action: {
+                            loadOrders()
+                        }) {
+                            Text("Refresh")
+                                .font(.system(size: 14, weight: .heavy))
+                                .foregroundColor(Color.spicePrimary)
+                        }
                     }
                     .padding(.horizontal, 16)
                     .padding(.top, 12)
@@ -95,6 +99,8 @@ struct OrdersScreen: View {
 
                                 TextField("Search loaded orders by number", text: $searchText)
                                     .font(.system(size: 13, weight: .medium))
+                                    .foregroundColor(Color.black)
+                                    .tint(Color.spicePrimary)
                             }
                             .padding(.horizontal, 12)
                             .frame(height: 46)
@@ -130,14 +136,35 @@ struct OrdersScreen: View {
                                 .padding(.vertical, 2)
                             }
 
-                            // MARK: - Date Filter Chip
+                            // MARK: - Date Range Filter Chip & Clear All
                             HStack {
-                                SpiceDateFilterChip(selectedDate: $selectedDate)
+                                SpiceDateRangeFilterChip(selectedRange: $selectedDateRange)
+
                                 Spacer()
+
+                                if selectedDateRange != nil || selectedStatusFilter != "All Orders" || !searchText.isEmpty {
+                                    Button(action: {
+                                        selectedDateRange = nil
+                                        selectedStatusFilter = "All Orders"
+                                        searchText = ""
+                                        loadOrders()
+                                    }) {
+                                        Text("Clear all")
+                                            .font(.system(size: 12.5, weight: .bold))
+                                            .foregroundColor(Color.spicePrimary)
+                                    }
+                                }
                             }
 
                             // MARK: - Order Cards List
-                            if displayedOrders.isEmpty {
+                            if isLoading && allOrders.isEmpty {
+                                VStack(spacing: 12) {
+                                    SpiceSkeletonBox(height: 120, cornerRadius: 16)
+                                    SpiceSkeletonBox(height: 120, cornerRadius: 16)
+                                    SpiceSkeletonBox(height: 120, cornerRadius: 16)
+                                }
+                                .padding(.top, 8)
+                            } else if displayedOrders.isEmpty {
                                 SpiceEmptyStateView(
                                     title: "No Orders Found",
                                     message: "No orders match your filter criteria.",
@@ -168,6 +195,9 @@ struct OrdersScreen: View {
             .onAppear {
                 loadOrders()
             }
+            .onChange(of: selectedDateRange) { _, _ in
+                loadOrders()
+            }
             .toast(isPresenting: $isShowToast, duration: 2.0, offsetY: 10, alert: {
                 AlertToast(displayMode: .banner(.pop), type: .regular, title: toastMessage)
             }, onTap: nil, completion: nil)
@@ -178,89 +208,105 @@ struct OrdersScreen: View {
     @ViewBuilder
     private func orderCardView(order: Order) -> some View {
         let isAssigned = (order.status ?? "").lowercased() == "assigned"
-        let isOutForDelivery = (order.status ?? "").lowercased().contains("out")
-        let isProcessing = (order.status ?? "").lowercased() == "processing"
-        let showTrackButton = isAssigned || isOutForDelivery || isProcessing
 
-        NavigationLink(destination: OrderDetailScreen(orderId: "\(order.id ?? 0)")) {
+        NavigationLink(destination: OrderDetailScreen(orderId: order.id, orderNumber: order.orderNumberFormatted)) {
             VStack(alignment: .leading, spacing: 10) {
-                // Top Row: Order Number + Status Badge
+                // Top Row: Order ID + Status
                 HStack {
                     Text(order.orderNumberFormatted)
-                        .font(.system(size: 14, weight: .heavy, design: .monospaced))
+                        .font(.system(size: 14.5, weight: .heavy, design: .monospaced))
                         .foregroundColor(Color.spiceInk)
 
                     Spacer()
 
-                    statusBadgeView(status: order.statusLabel)
+                    statusBadge(status: order.statusLabel)
                 }
 
-                // Middle Row: Date & Amount
-                HStack(spacing: 6) {
-                    Text(formatDate(order.displayDateOnly))
-                        .font(.system(size: 12.5, weight: .medium))
+                // Middle Row: Date & Items Count
+                HStack {
+                    Text(formatDate(order.orderDate ?? order.createdAt))
+                        .font(.system(size: 12, weight: .medium))
                         .foregroundColor(Color.spiceMuted)
 
-                    Text("·")
-                        .font(.system(size: 12.5, weight: .bold))
-                        .foregroundColor(Color.spiceMuted)
+                    Spacer()
 
-                    Text(order.total?.priceLabel ?? "₹0.00")
-                        .font(.system(size: 13, weight: .heavy, design: .monospaced))
+                    let count = order.items?.count ?? order.itemsCount ?? 0
+                    Text("\(count) items")
+                        .font(.system(size: 12, weight: .semibold))
                         .foregroundColor(Color.spiceInk)
                 }
 
-                // Optional Bottom Action: Track Order
-                if showTrackButton {
-                    NavigationLink(destination: DeliveryTrackingScreen(orderId: order.id, orderNumber: order.orderNumberFormatted)) {
-                        HStack {
-                            Spacer()
-                            Text("Track Order")
-                                .font(.system(size: 13, weight: .heavy))
-                                .foregroundColor(.white)
-                            Spacer()
-                        }
-                        .frame(height: 42)
-                        .background(Color.spicePrimary)
-                        .cornerRadius(10)
+                Divider().background(Color.spiceDivider).padding(.vertical, 2)
+
+                // Bottom Row: Total Amount & Track button / Chevron
+                HStack {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Bill Amount")
+                            .font(.system(size: 10.5, weight: .medium))
+                            .foregroundColor(Color.spiceMuted)
+
+                        Text(order.totalPriceFormatted)
+                            .font(.system(size: 14.5, weight: .heavy, design: .monospaced))
+                            .foregroundColor(Color.spiceInk)
                     }
-                    .buttonStyle(.plain)
-                    .padding(.top, 2)
+
+                    Spacer()
+
+                    if isAssigned {
+                        NavigationLink(destination: DeliveryTrackingScreen(orderId: order.id, orderNumber: order.orderNumberFormatted)) {
+                            Text("Track")
+                                .font(.system(size: 12, weight: .heavy))
+                                .foregroundColor(Color.spicePrimary)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 6)
+                                .background(Color.spicePrimaryLight)
+                                .cornerRadius(8)
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        HStack(spacing: 4) {
+                            Text("Details")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundColor(Color.spicePrimary)
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(Color.spicePrimary)
+                        }
+                    }
                 }
             }
             .padding(14)
             .background(Color.white)
-            .cornerRadius(14)
+            .cornerRadius(16)
             .overlay(
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(Color.spiceCardBorder.opacity(0.8), lineWidth: 1)
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.spiceCardBorder, lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
     }
 
-    // MARK: - Status Badge
+    // MARK: - Status Badge View
     @ViewBuilder
-    private func statusBadgeView(status: String) -> some View {
-        let cleanStatus = status.uppercased()
+    private func statusBadge(status: String) -> some View {
+        let cleanStatus = status.trimmingCharacters(in: .whitespacesAndNewlines)
+
         let badgeColor: (bg: Color, text: Color) = {
-            switch cleanStatus {
-            case "PENDING":
+            let lower = cleanStatus.lowercased()
+            if lower.contains("pending") {
                 return (Color(hex: "#FEF4E6"), Color(hex: "#B87314"))
-            case "ASSIGNED":
-                return (Color(hex: "#EBF3FE"), Color(hex: "#2563EB"))
-            case "OUT FOR DELIVERY", "SHIPPED", "DISPATCHED":
-                return (Color(hex: "#EDE9FE"), Color(hex: "#6D28D9"))
-            case "DELIVERED":
-                return (Color(hex: "#E8F8EE"), Color(hex: "#167444"))
-            case "CANCELLED", "REJECTED":
-                return (Color(hex: "#FEECEB"), Color(hex: "#DC2626"))
-            default:
-                return (Color(hex: "#FEF4E6"), Color(hex: "#B87314"))
+            } else if lower.contains("assign") {
+                return (Color(hex: "#E8F0FE"), Color(hex: "#1A73E8"))
+            } else if lower.contains("deliver") {
+                return (Color(hex: "#EBF7EE"), Color(hex: "#167444"))
+            } else if lower.contains("cancel") {
+                return (Color(hex: "#FDECEB"), Color(hex: "#C8322B"))
+            } else {
+                return (Color.spiceLightGray, Color.spiceInk)
             }
         }()
 
-        Text(cleanStatus)
+        Text(cleanStatus.uppercased())
             .font(.system(size: 10, weight: .heavy, design: .monospaced))
             .foregroundColor(badgeColor.text)
             .padding(.horizontal, 8)
@@ -271,7 +317,7 @@ struct OrdersScreen: View {
 
     // MARK: - Date Formatter Helper
     private func formatDate(_ raw: String?) -> String {
-        guard let raw = raw, !raw.isEmpty else { return "24 Aug 2026" }
+        guard let raw = raw, !raw.isEmpty else { return "" }
         let iso = DateFormatter()
         iso.dateFormat = "yyyy-MM-dd"
         if let d = iso.date(from: String(raw.prefix(10))) {
@@ -287,7 +333,15 @@ struct OrdersScreen: View {
         isLoading = true
         let headers = UserDefaultManager.shared.authHeader
 
-        orderService.fetchOrders(headers: headers)
+        var params: [String: Any] = [:]
+        if let range = selectedDateRange, range.isActive {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
+            params["start_date"] = formatter.string(from: range.startDate)
+            params["end_date"] = formatter.string(from: range.endDate)
+        }
+
+        orderService.fetchOrders(params: params, headers: headers)
             .receive(on: DispatchQueue.main)
             .sink { completion in
                 isLoading = false
@@ -300,4 +354,8 @@ struct OrdersScreen: View {
             }
             .store(in: &cancellables)
     }
+}
+
+#Preview {
+    OrdersScreen()
 }

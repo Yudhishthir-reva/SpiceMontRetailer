@@ -20,6 +20,10 @@ extension String {
         return trimmedString.hasPrefix("₹") ? trimmedString : "₹\(trimmedString.removeZerosFromEnd(max: 2))"
     }
 
+    var priceString: String {
+        self
+    }
+
     func removeZerosFromEnd(min minDigitAfterDecimal: Int = 0, max maxDigitAfterDecimal: Int = 2) -> String {
         let formatter = NumberFormatter()
         let number = NSNumber(value: Double(self) ?? 0.0)

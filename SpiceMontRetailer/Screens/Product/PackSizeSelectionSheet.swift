@@ -21,7 +21,18 @@ struct PackSizeSelectionSheet: View {
         if let v = product.variants, !v.isEmpty {
             return v
         }
-        return sampleVariants
+        if let unit = product.unit, !unit.isEmpty {
+            return [
+                ProductVariant(
+                    id: product.id ?? 1,
+                    unit: unit,
+                    price: product.price,
+                    mrp: product.mrp,
+                    availableQuantity: 100
+                )
+            ]
+        }
+        return []
     }
 
     private func variantKey(variant: ProductVariant, index: Int) -> String {
@@ -352,15 +363,5 @@ struct PackSizeSelectionSheet: View {
 
             Divider().background(Color.spiceDivider.opacity(0.6)).padding(.top, 6)
         }
-    }
-
-    // Fallback sample variants matching screenshot exactly
-    private var sampleVariants: [ProductVariant] {
-        [
-            ProductVariant(id: 1, unit: "100 gms", price: "13.00", mrp: "26.00", availableQuantity: 0),
-            ProductVariant(id: 2, unit: "200 gms", price: "26.00", mrp: "52.00", availableQuantity: 97),
-            ProductVariant(id: 3, unit: "500 gms", price: "65.00", mrp: "130.00", availableQuantity: 50),
-            ProductVariant(id: 4, unit: "1 KG", price: "130.00", mrp: "260.00", availableQuantity: 30)
-        ]
     }
 }

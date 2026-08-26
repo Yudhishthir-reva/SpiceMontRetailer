@@ -196,9 +196,7 @@ struct BrandSelectionScreen: View {
                     isShowToast = true
                 }
             } receiveValue: { response in
-                if let list = response.brands, !list.isEmpty {
-                    self.brands = list
-                }
+                self.brands = response.brands ?? []
             }
             .store(in: &cancellables)
     }

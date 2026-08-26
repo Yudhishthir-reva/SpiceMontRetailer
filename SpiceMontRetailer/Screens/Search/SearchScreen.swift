@@ -45,6 +45,8 @@ struct SearchScreen: View {
 
             TextField("Search spices, masalas...", text: $viewModel.query)
                 .font(.system(size: 15))
+                .foregroundColor(Color.black)
+                .tint(Color.spicePrimary)
                 .textFieldStyle(.plain)
                 .autocorrectionDisabled()
                 .submitLabel(.search)

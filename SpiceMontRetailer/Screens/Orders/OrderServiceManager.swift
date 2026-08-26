@@ -16,8 +16,8 @@ class OrderServiceManager {
         self.networkService = networkService
     }
 
-    func fetchOrders(headers: RequestConstants.Header) -> AnyPublisher<OrderListResponse, Error> {
-        networkService.request(APIRouter.orders, params: [:] as [String: Any], headers: headers)
+    func fetchOrders(params: RequestConstants.Param = [:], headers: RequestConstants.Header) -> AnyPublisher<OrderListResponse, Error> {
+        networkService.request(APIRouter.orders, params: params, headers: headers)
     }
 
     func fetchOrderDetail(
