@@ -12,12 +12,14 @@ struct MainTabView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            HomeScreen()
-                .tabItem {
-                    Image(systemName: selectedTab == 0 ? "house.fill" : "house")
-                    Text("HOME")
-                }
-                .tag(0)
+            NavigationStack {
+                HomeScreen()
+            }
+            .tabItem {
+                Image(systemName: selectedTab == 0 ? "house.fill" : "house")
+                Text("HOME")
+            }
+            .tag(0)
 
             NavigationStack {
                 BrandSelectionScreen()

@@ -48,6 +48,7 @@ enum APIRouter: RouterManagable {
     case retailerLogout
     case retailerStates
     case retailerCities(stateId: Int?)
+    case retailerProfile
 
     var endPointUrl: String {
         switch self {
@@ -138,12 +139,14 @@ enum APIRouter: RouterManagable {
                 return "cities?state_id=\(sId)"
             }
             return "cities"
+        case .retailerProfile:
+            return "profile"
         }
     }
 
     var requestType: RequestMethodType {
         switch self {
-        case .home, .addressList, .addressDetail, .cart, .coupons, .orders, .brandList, .offersAvailable, .retailerLedger, .retailerPaymentHistory, .retailerStates, .retailerCities:
+        case .home, .addressList, .addressDetail, .cart, .coupons, .orders, .brandList, .offersAvailable, .retailerLedger, .retailerPaymentHistory, .retailerStates, .retailerCities, .retailerProfile:
             return .get
         case .cartClear:
             return .delete

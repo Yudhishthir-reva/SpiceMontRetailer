@@ -30,142 +30,146 @@ struct SchemePickerSheet: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                // Drag Indicator Bar
-                Capsule()
-                    .fill(Color(hex: "#D1D5DB"))
-                    .frame(width: 40, height: 4)
-                    .padding(.top, 10)
-                    .padding(.bottom, 6)
+            ZStack {
+                Color.white.ignoresSafeArea()
 
-                // MARK: - Header
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack {
-                        Text("Available Offers")
-                            .font(.system(size: 18, weight: .heavy))
-                            .foregroundColor(Color.spiceInk)
-
-                        Spacer()
-
-                        Button(action: {
-                            loadAvailableOffers()
-                        }) {
-                            Image(systemName: "arrow.clockwise")
-                                .font(.system(size: 15, weight: .bold))
+                VStack(spacing: 0) {
+                    // MARK: - Header
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text("Available Offers")
+                                .font(.system(size: 18, weight: .heavy))
                                 .foregroundColor(Color.spiceInk)
-                                .padding(4)
-                        }
-                    }
 
-                    Text("One offer applies at a time. Pick the one worth most to you.")
-                        .font(.system(size: 12.5, weight: .medium))
-                        .foregroundColor(Color.spiceMuted)
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
+                            Spacer()
 
-                Divider().background(Color.spiceDivider.opacity(0.8))
-
-                if isLoading {
-                    VStack(spacing: 12) {
-                        Spacer()
-                        ProgressView()
-                            .tint(Color.spicePrimary)
-                        Text("Loading available offers...")
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundColor(Color.spiceMuted)
-                        Spacer()
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if schemes.isEmpty && slabs.isEmpty {
-                    VStack {
-                        Spacer()
-                        SpiceEmptyStateView(
-                            title: "No Offers Available",
-                            message: "There are no active schemes or quantity slabs right now.",
-                            buttonTitle: "Refresh"
-                        ) {
-                            loadAvailableOffers()
-                        }
-                        Spacer()
-                    }
-                } else {
-                    ScrollView(showsIndicators: false) {
-                        VStack(spacing: 14) {
-                            // Currently Applied Offer Banner (if any)
-                            if let applied = cartManager.appliedOffer {
-                                VStack(alignment: .leading, spacing: 6) {
-                                    HStack {
-                                        Text("Applied Offer")
-                                            .font(.system(size: 13.5, weight: .heavy))
-                                            .foregroundColor(Color(hex: "#167444"))
-
-                                        Spacer()
-
-                                        Button(action: {
-                                            handleRemoveOffer()
-                                        }) {
-                                            Text("Remove")
-                                                .font(.system(size: 12, weight: .bold))
-                                                .foregroundColor(Color.spicePrimary)
-                                        }
-                                        .buttonStyle(.plain)
-                                    }
-
-                                    Text(applied.schemeTitle ?? "Offer Applied")
-                                        .font(.system(size: 13, weight: .bold))
-                                        .foregroundColor(Color.spiceInk)
-
-                                    if let desc = applied.discountText, !desc.isEmpty {
-                                        Text(desc)
-                                            .font(.system(size: 12, weight: .medium))
-                                            .foregroundColor(Color.spiceMuted)
-                                    }
-                                }
-                                .padding(12)
-                                .background(Color(hex: "#EBF7EE"))
-                                .cornerRadius(12)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(Color(hex: "#D2EBD9"), lineWidth: 1)
-                                )
-                            }
-
-                            // Order Value Schemes
-                            ForEach(schemes) { scheme in
-                                orderValueSchemeCard(scheme)
-                            }
-
-                            // Quantity Slabs
-                            ForEach(slabs) { slab in
-                                quantitySlabCard(slab)
-                            }
-
-                            // View All Schemes Button at Bottom
                             Button(action: {
-                                dismiss()
+                                loadAvailableOffers()
                             }) {
-                                Text("View All Schemes")
-                                    .font(.system(size: 14, weight: .heavy))
+                                Image(systemName: "arrow.clockwise")
+                                    .font(.system(size: 15, weight: .bold))
                                     .foregroundColor(Color.spiceInk)
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 44)
-                                    .background(Color.white)
-                                    .cornerRadius(10)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .stroke(Color.spiceCardBorder, lineWidth: 1)
-                                    )
+                                    .padding(4)
                             }
-                            .buttonStyle(.plain)
-                            .padding(.top, 4)
-
-                            Spacer(minLength: 20)
                         }
-                        .padding(16)
+
+                        Text("One offer applies at a time. Pick the one worth most to you.")
+                            .font(.system(size: 12.5, weight: .medium))
+                            .foregroundColor(Color.spiceMuted)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 16)
+                    .padding(.bottom, 10)
+                    .background(Color.white)
+
+                    Divider().background(Color.spiceDivider.opacity(0.8))
+
+                    if isLoading {
+                        VStack(spacing: 12) {
+                            Spacer()
+                            ProgressView()
+                                .tint(Color.spicePrimary)
+                            Text("Loading available offers...")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundColor(Color.spiceMuted)
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Color.white)
+                    } else if schemes.isEmpty && slabs.isEmpty {
+                        VStack {
+                            Spacer()
+                            SpiceEmptyStateView(
+                                title: "No Offers Available",
+                                message: "There are no active schemes or quantity slabs right now.",
+                                buttonTitle: "Refresh"
+                            ) {
+                                loadAvailableOffers()
+                            }
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Color.white)
+                    } else {
+                        ScrollView(showsIndicators: false) {
+                            VStack(spacing: 14) {
+                                // Currently Applied Offer Banner (if any)
+                                if let applied = cartManager.appliedOffer {
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        HStack {
+                                            Text("Applied Offer")
+                                                .font(.system(size: 13.5, weight: .heavy))
+                                                .foregroundColor(Color(hex: "#167444"))
+
+                                            Spacer()
+
+                                            Button(action: {
+                                                handleRemoveOffer()
+                                            }) {
+                                                Text("Remove")
+                                                    .font(.system(size: 12, weight: .bold))
+                                                    .foregroundColor(Color.spicePrimary)
+                                            }
+                                            .buttonStyle(.plain)
+                                        }
+
+                                        Text(applied.schemeTitle ?? "Offer Applied")
+                                            .font(.system(size: 13, weight: .bold))
+                                            .foregroundColor(Color.spiceInk)
+
+                                        if let desc = applied.discountText, !desc.isEmpty {
+                                            Text(desc)
+                                                .font(.system(size: 12, weight: .medium))
+                                                .foregroundColor(Color.spiceMuted)
+                                        }
+                                    }
+                                    .padding(12)
+                                    .background(Color(hex: "#EBF7EE"))
+                                    .cornerRadius(12)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(Color(hex: "#D2EBD9"), lineWidth: 1)
+                                    )
+                                }
+
+                                // Order Value Schemes
+                                ForEach(schemes) { scheme in
+                                    orderValueSchemeCard(scheme)
+                                }
+
+                                // Quantity Slabs
+                                ForEach(slabs) { slab in
+                                    quantitySlabCard(slab)
+                                }
+
+                                // View All Schemes Button at Bottom
+                                Button(action: {
+                                    dismiss()
+                                }) {
+                                    Text("View All Schemes")
+                                        .font(.system(size: 14, weight: .heavy))
+                                        .foregroundColor(Color.spiceInk)
+                                        .frame(maxWidth: .infinity)
+                                        .frame(height: 44)
+                                        .background(Color.white)
+                                        .cornerRadius(10)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 10)
+                                                .stroke(Color.spiceCardBorder, lineWidth: 1)
+                                        )
+                                }
+                                .buttonStyle(.plain)
+                                .padding(.top, 4)
+
+                                Spacer(minLength: 20)
+                            }
+                            .padding(16)
+                        }
+                        .background(Color.white)
                     }
                 }
             }
+            .background(Color.white)
             .navigationBarHidden(true)
             .onAppear {
                 loadAvailableOffers()
@@ -174,6 +178,7 @@ struct SchemePickerSheet: View {
                 AlertToast(displayMode: .banner(.pop), type: .regular, title: toastMessage)
             }, onTap: nil, completion: nil)
         }
+        .background(Color.white)
     }
 
     // MARK: - Order Value Scheme Card (Exact Match)

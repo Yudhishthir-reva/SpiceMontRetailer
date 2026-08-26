@@ -10,146 +10,183 @@ import Combine
 
 struct AccountScreen: View {
     @Environment(\.dismiss) private var dismiss
+    @State private var profileData: RetailerProfileData? = nil
+    @State private var isLoadingProfile: Bool = false
     @State private var showLogoutModal: Bool = false
-    @State private var showEditPersonalModal: Bool = false
-    @State private var showRequestBusinessUpdateModal: Bool = false
     @State private var cancellables = Set<AnyCancellable>()
 
     private let defaults = UserDefaultManager.shared
 
-    var userName: String {
-        let name = defaults.getUserDefaultsString(key: .userName)
+    var displayName: String {
+        let name = profileData?.name ?? defaults.getUserDefaultsString(key: .userName)
         return name.isEmpty ? "Rahul h" : name
     }
 
-    var userMobile: String {
-        let mobile = defaults.getUserDefaultsString(key: .userMobile)
-        return mobile.isEmpty ? "+91 7737772424" : (mobile.hasPrefix("+91") ? mobile : "+91 \(mobile)")
-    }
-
-    var userEmail: String {
-        let email = defaults.getUserDefaultsString(key: .userEmail)
-        return email.isEmpty ? "empty5108@gmail.com" : email
-    }
-
-    var shopName: String {
-        let shop = defaults.getUserDefaultsString(key: .shopName)
+    var displayShopName: String {
+        let shop = profileData?.shopName ?? defaults.getUserDefaultsString(key: .shopName)
         return shop.isEmpty ? "Test Bill" : shop
     }
 
-    var whatsappNumber: String {
-        let wa = defaults.getUserDefaultsString(key: .whatsappNumber)
-        return wa.isEmpty ? userMobile : (wa.hasPrefix("+91") ? wa : "+91 \(wa)")
+    var displayMobile: String {
+        let mobile = profileData?.mobile ?? defaults.getUserDefaultsString(key: .userMobile)
+        if mobile.isEmpty { return "+91 7737772424" }
+        return mobile.hasPrefix("+91") ? mobile : "+91 \(mobile)"
+    }
+
+    var displayEmail: String {
+        let email = profileData?.email ?? defaults.getUserDefaultsString(key: .userEmail)
+        return email.isEmpty ? "empty5108@gmail.com" : email
+    }
+
+    var displayWhatsApp: String {
+        let wa = profileData?.whatsappNo ?? defaults.getUserDefaultsString(key: .whatsappNumber)
+        if wa.isEmpty { return displayMobile }
+        return wa.hasPrefix("+91") ? wa : "+91 \(wa)"
+    }
+
+    var displayAddress: String {
+        let addr = profileData?.address ?? defaults.getUserDefaultsString(key: .shopAddress)
+        return addr.isEmpty ? "plot no 215, near elwood school, aman baag 40 ft road, Railway Officers Colony, Kanakpura, Jaipur, Rajasthan 302012" : addr
+    }
+
+    var displayGstNo: String {
+        let gst = profileData?.gstNo ?? defaults.getUserDefaultsString(key: .gstNo)
+        return gst.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    var displayProfilePic: String {
+        profileData?.profilePic ?? defaults.getUserDefaultsString(key: .profilePic)
+    }
+
+    var isApproved: Bool {
+        if let s = profileData?.status {
+            return s == 1
+        }
+        return true
     }
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                Color.spiceBackground.ignoresSafeArea()
+        ZStack {
+            Color.spiceBackground.ignoresSafeArea()
 
-                VStack(spacing: 0) {
-                    // MARK: - Top Bar
-                    HStack {
-                        Text("Profile")
-                            .font(.system(size: 22, weight: .heavy))
-                            .foregroundColor(Color.spiceInk)
+            VStack(spacing: 0) {
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 14) {
+                        // MARK: - Card 1: Retailer Profile Header Card
+                        profileHeaderCard
 
-                        Spacer()
+                        // MARK: - Card 2: Personal Information Card
+                        personalInfoCard
+
+                        // MARK: - Card 3: Business Information Card
+                        businessInfoCard
+
+                        // MARK: - Card 4: Navigation Menu Card
+                        menuNavigationCard
+
+                        // MARK: - Card 5: Logout Button
+                        Button(action: {
+                            showLogoutModal = true
+                        }) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "rectangle.portrait.and.arrow.right")
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundColor(Color(hex: "#C8322B"))
+
+                                Text("Logout Account")
+                                    .font(.system(size: 14, weight: .heavy))
+                                    .foregroundColor(Color(hex: "#C8322B"))
+                            }
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 48)
+                            .background(Color.white)
+                            .cornerRadius(12)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.spiceCardBorder, lineWidth: 1)
+                            )
+                        }
+                        .buttonStyle(.plain)
+
+                        // MARK: - Version Text
+                        Text("SpiceMonk Business · v1.0.0")
+                            .font(.system(size: 11.5, weight: .medium, design: .monospaced))
+                            .foregroundColor(Color.spiceMuted)
+                            .padding(.top, 2)
+                            .padding(.bottom, 24)
                     }
                     .padding(.horizontal, 16)
-                    .padding(.top, 12)
-                    .padding(.bottom, 8)
-
-                    ScrollView(showsIndicators: false) {
-                        VStack(spacing: 14) {
-                            // MARK: - Card 1: Retailer Profile Header Card
-                            profileHeaderCard
-
-                            // MARK: - Card 2: Personal Information Card
-                            personalInfoCard
-
-                            // MARK: - Card 3: Business Information Card
-                            businessInfoCard
-
-                            // MARK: - Card 4: Navigation Menu Card
-                            menuNavigationCard
-
-                            // MARK: - Card 5: Logout Button
-                            Button(action: {
-                                showLogoutModal = true
-                            }) {
-                                HStack {
-                                    Spacer()
-                                    Text("Logout")
-                                        .font(.system(size: 14, weight: .heavy))
-                                        .foregroundColor(Color.spiceInk)
-                                    Spacer()
-                                }
-                                .frame(height: 48)
-                                .background(Color.white)
-                                .cornerRadius(12)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(Color.spiceCardBorder, lineWidth: 1)
-                                )
-                            }
-                            .buttonStyle(.plain)
-
-                            // MARK: - Version Text
-                            Text("SpiceMonk Business · v1.0.0")
-                                .font(.system(size: 11.5, weight: .medium, design: .monospaced))
-                                .foregroundColor(Color.spiceMuted)
-                                .padding(.top, 2)
-                                .padding(.bottom, 24)
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.top, 4)
-                    }
-                }
-
-                // MARK: - Logout Confirmation Modal
-                if showLogoutModal {
-                    logoutConfirmationDialog
+                    .padding(.top, 14)
                 }
             }
-            .navigationBarHidden(true)
+
+            // MARK: - Logout Confirmation Modal
+            if showLogoutModal {
+                logoutConfirmationDialog
+            }
+        }
+        .navigationTitle("Profile")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarHidden(false)
+        .toolbar(.visible, for: .navigationBar)
+        .toolbar(.hidden, for: .tabBar)
+        .onAppear {
+            fetchProfile()
         }
     }
 
     // MARK: - Card 1: Profile Header Card
     private var profileHeaderCard: some View {
         HStack(alignment: .center, spacing: 14) {
-            // Avatar Logo Box
+            // Avatar Box
             ZStack {
-                Circle()
-                    .fill(Color(hex: "#E8F5EC"))
-                    .frame(width: 54, height: 54)
-
-                Image("spice_monk_logo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 44, height: 44)
+                if !displayProfilePic.isEmpty {
+                    RemoteImage(url: displayProfilePic, contentMode: .fill)
+                        .frame(width: 54, height: 54)
+                        .clipShape(Circle())
+                        .overlay(Circle().stroke(Color.spiceCardBorder.opacity(0.8), lineWidth: 1))
+                } else {
+                    Circle()
+                        .fill(Color(hex: "#E8F5EC"))
+                        .frame(width: 54, height: 54)
+                        .overlay(
+                            Image("spice_monk_logo")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 44, height: 44)
+                        )
+                }
             }
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(userName)
+                Text(displayName)
                     .font(.system(size: 17, weight: .heavy))
                     .foregroundColor(Color.spiceInk)
 
-                Text(shopName)
+                Text(displayShopName)
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(Color.spiceMuted)
             }
 
             Spacer()
 
-            Text("APPROVED")
-                .font(.system(size: 11, weight: .heavy, design: .monospaced))
-                .foregroundColor(Color(hex: "#167444"))
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(Color(hex: "#EAF7EE"))
-                .cornerRadius(6)
+            if isApproved {
+                Text("APPROVED")
+                    .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                    .foregroundColor(Color(hex: "#167444"))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(Color(hex: "#EAF7EE"))
+                    .cornerRadius(6)
+            } else {
+                Text("PENDING")
+                    .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                    .foregroundColor(Color.spiceAmber)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(Color.spiceAmberLight)
+                    .cornerRadius(6)
+            }
         }
         .padding(16)
         .background(Color.white)
@@ -163,33 +200,22 @@ struct AccountScreen: View {
     // MARK: - Card 2: Personal Information Card
     private var personalInfoCard: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Personal Information")
-                    .font(.system(size: 14, weight: .heavy))
-                    .foregroundColor(Color.spiceInk)
+            Text("Personal Information")
+                .font(.system(size: 15, weight: .heavy))
+                .foregroundColor(Color.spiceInk)
 
-                Spacer()
-
-                Button(action: {
-                    showEditPersonalModal = true
-                }) {
-                    Text("Edit")
-                        .font(.system(size: 13.5, weight: .heavy))
-                        .foregroundColor(Color.spicePrimary)
-                }
+            VStack(spacing: 10) {
+                infoRow(key: "Name", value: displayName)
+                infoRow(key: "Mobile", value: displayMobile, isMono: true)
+                infoRow(key: "Email", value: displayEmail)
+                infoRow(key: "WhatsApp", value: displayWhatsApp, isMono: true)
             }
 
-            VStack(spacing: 8) {
-                infoRow(key: "Name", value: userName)
-                infoRow(key: "Mobile", value: userMobile, isMono: true)
-                infoRow(key: "Email", value: userEmail)
-                infoRow(key: "WhatsApp", value: whatsappNumber, isMono: true)
-            }
-
-            Text("Mobile number changes require OTP verification.")
+            Text("To change any of your profile details, please ask SpiceMonk admin.")
                 .font(.system(size: 11.5, weight: .medium))
                 .foregroundColor(Color.spiceMuted)
-                .padding(.top, 2)
+                .lineSpacing(2)
+                .padding(.top, 4)
         }
         .padding(16)
         .background(Color.white)
@@ -203,23 +229,24 @@ struct AccountScreen: View {
     // MARK: - Card 3: Business Information Card
     private var businessInfoCard: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Business Information")
-                    .font(.system(size: 14, weight: .heavy))
-                    .foregroundColor(Color.spiceInk)
+            Text("Business Information")
+                .font(.system(size: 15, weight: .heavy))
+                .foregroundColor(Color.spiceInk)
 
-                Spacer()
-
-                Button(action: {
-                    showRequestBusinessUpdateModal = true
-                }) {
-                    Text("Request Update")
-                        .font(.system(size: 13.5, weight: .heavy))
-                        .foregroundColor(Color.spicePrimary)
+            VStack(spacing: 10) {
+                infoRow(key: "Shop Name", value: displayShopName)
+                infoRow(key: "Address", value: displayAddress, multiline: true)
+                if !displayGstNo.isEmpty {
+                    infoRow(key: "GSTIN", value: displayGstNo, isMono: true)
                 }
+                infoRow(key: "KYC Status", value: "VERIFIED", isBoldValue: true)
             }
 
-            infoRow(key: "Shop Name", value: shopName, isBoldValue: true)
+            Text("To change any of your profile details, please ask SpiceMonk admin.")
+                .font(.system(size: 11.5, weight: .medium))
+                .foregroundColor(Color.spiceMuted)
+                .lineSpacing(2)
+                .padding(.top, 4)
         }
         .padding(16)
         .background(Color.white)
@@ -233,7 +260,7 @@ struct AccountScreen: View {
     // MARK: - Card 4: Navigation Menu Card
     private var menuNavigationCard: some View {
         VStack(spacing: 0) {
-            NavigationLink(destination: OrdersScreen()) {
+            NavigationLink(destination: OrdersScreen().toolbar(.hidden, for: .tabBar)) {
                 menuRow(icon: "doc.plaintext.fill", title: "My Orders")
             }
             Divider().background(Color.spiceDivider)
@@ -243,7 +270,7 @@ struct AccountScreen: View {
             }
             Divider().background(Color.spiceDivider)
 
-            NavigationLink(destination: LedgerScreen()) {
+            NavigationLink(destination: LedgerScreen().toolbar(.hidden, for: .tabBar)) {
                 menuRow(icon: "doc.text.fill", title: "Outstanding Ledger")
             }
             Divider().background(Color.spiceDivider)
@@ -294,11 +321,12 @@ struct AccountScreen: View {
     }
 
     // MARK: - Key-Value Info Row Helper
-    private func infoRow(key: String, value: String, isMono: Bool = false, isBoldValue: Bool = false) -> some View {
-        HStack {
+    private func infoRow(key: String, value: String, isMono: Bool = false, isBoldValue: Bool = false, multiline: Bool = false) -> some View {
+        HStack(alignment: multiline ? .top : .center, spacing: 12) {
             Text(key)
                 .font(.system(size: 13, weight: .medium))
                 .foregroundColor(Color.spiceMuted)
+                .frame(width: multiline ? 80 : nil, alignment: .leading)
 
             Spacer()
 
@@ -309,7 +337,36 @@ struct AccountScreen: View {
                         .system(size: 13, weight: isBoldValue ? .heavy : .semibold)
                 )
                 .foregroundColor(Color.spiceInk)
+                .multilineTextAlignment(multiline ? .trailing : .trailing)
+                .fixedSize(horizontal: false, vertical: multiline)
         }
+    }
+
+    // MARK: - API Fetch Profile
+    private func fetchProfile() {
+        let headers = defaults.authHeader
+        guard !headers.isEmpty else { return }
+        isLoadingProfile = true
+        LoginServiceManager().fetchRetailerProfile(headers: headers)
+            .receive(on: DispatchQueue.main)
+            .sink { _ in
+                isLoadingProfile = false
+            } receiveValue: { response in
+                if response.status == true, let data = response.data {
+                    self.profileData = data
+
+                    if let name = data.name, !name.isEmpty { defaults.setUserDefaultsString(value: name, key: .userName) }
+                    if let shop = data.shopName, !shop.isEmpty { defaults.setUserDefaultsString(value: shop, key: .shopName) }
+                    if let addr = data.address, !addr.isEmpty { defaults.setUserDefaultsString(value: addr, key: .shopAddress) }
+                    if let mob = data.mobile, !mob.isEmpty { defaults.setUserDefaultsString(value: mob, key: .userMobile) }
+                    if let wa = data.whatsappNo, !wa.isEmpty { defaults.setUserDefaultsString(value: wa, key: .whatsappNumber) }
+                    if let em = data.email, !em.isEmpty { defaults.setUserDefaultsString(value: em, key: .userEmail) }
+                    if let pic = data.profilePic, !pic.isEmpty { defaults.setUserDefaultsString(value: pic, key: .profilePic) }
+                    if let gst = data.gstNo, !gst.isEmpty { defaults.setUserDefaultsString(value: gst, key: .gstNo) }
+                    if let sId = data.sellerId, !sId.isEmpty { defaults.setUserDefaultsString(value: sId, key: .sellerId) }
+                }
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Logout Confirmation Dialog

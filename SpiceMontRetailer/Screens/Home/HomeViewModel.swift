@@ -174,7 +174,22 @@ class HomeViewModel: ObservableObject {
             } receiveValue: { [weak self] response in
                 self?.banners = response.banners ?? []
                 self?.categories = response.categories ?? []
-                self?.widgets = response.widgets ?? []
+                let wList = response.widgets ?? []
+                self?.widgets = wList
+                for w in wList {
+                    if let prods = w.products {
+                        for prod in prods {
+                            if let pId = prod.id {
+                                if let avl = prod.availableQuantity { CartManager.shared.registerStock(productId: pId, stock: avl) }
+                                if let variants = prod.variants {
+                                    for v in variants {
+                                        if let vAvl = v.availableQuantity { CartManager.shared.registerStock(productId: pId, variantId: v.id, variantName: v.unit, stock: vAvl) }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
                 self?.startBannerAutoScroll()
             }
             .store(in: &cancellables)

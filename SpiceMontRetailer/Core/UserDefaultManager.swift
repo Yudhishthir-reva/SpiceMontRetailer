@@ -26,6 +26,10 @@ class UserDefaultManager {
         case customerSupportPhone
         case profilePic
         case greeting
+        case gstNo
+        case aadharFront
+        case aadharBack
+        case sellerStatus
     }
 
     func setUserDefaultsString(value: String, key: PersistenceKeys) {

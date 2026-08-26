@@ -34,6 +34,8 @@ struct SearchScreen: View {
         }
         .background(AppTheme.homeCanvas)
         .spiceNavigationBar(title: "Search")
+        .navigationBarHidden(false)
+        .toolbar(.hidden, for: .tabBar)
     }
 
     // MARK: - Search bar

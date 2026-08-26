@@ -55,6 +55,12 @@ class LoginServiceManager {
     ) -> AnyPublisher<RetailerCitiesResponse, Error> {
         networkService.request(APIRouter.retailerCities(stateId: stateId), params: [:] as [String: Any], headers: headers)
     }
+
+    func fetchRetailerProfile(
+        headers: RequestConstants.Header
+    ) -> AnyPublisher<RetailerProfileResponse, Error> {
+        networkService.request(APIRouter.retailerProfile, params: [:] as [String: Any], headers: headers)
+    }
 }
 
 struct OTPSendModel: Decodable {

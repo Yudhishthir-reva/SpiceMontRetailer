@@ -39,8 +39,7 @@ struct HomeScreen: View {
     }
 
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
+        VStack(spacing: 0) {
                 // MARK: - Header Top Bar
                 HStack(spacing: 10) {
                     Image("spice_monk_logo")
@@ -134,7 +133,6 @@ struct HomeScreen: View {
             .onAppear {
                 loadLiveDashboard()
             }
-        }
     }
 
     // MARK: - Dynamic Widget Switcher
@@ -258,7 +256,7 @@ struct HomeScreen: View {
         let billedStr = data.totalAmount ?? "0"
         let paidStr = data.paidAmount ?? "0"
 
-        return NavigationLink(destination: LedgerScreen()) {
+        return NavigationLink(destination: LedgerScreen().toolbar(.hidden, for: .tabBar)) {
             VStack(alignment: .leading, spacing: 12) {
                 Text(title.uppercased())
                     .font(.system(size: 10.5, weight: .bold))
@@ -342,7 +340,7 @@ struct HomeScreen: View {
         let cleanLabel = labelText.replacingOccurrences(of: "+ ", with: "")
         let bgColor = (data.color != nil && !data.color!.isEmpty) ? Color(hex: data.color!) : Color(hex: "#0F7C40")
 
-        return NavigationLink(destination: BrandSelectionScreen()) {
+        return NavigationLink(destination: BrandSelectionScreen().toolbar(.hidden, for: .tabBar)) {
             HStack(spacing: 12) {
                 Circle()
                     .fill(Color.white.opacity(0.18))
@@ -405,15 +403,15 @@ struct HomeScreen: View {
 
         Group {
             if type == "orders" || type == "order" {
-                NavigationLink(destination: OrdersScreen()) {
+                NavigationLink(destination: OrdersScreen().toolbar(.hidden, for: .tabBar)) {
                     quickActionTile(label: label, imageUrl: action.image, fallbackIcon: "doc.text", bgHex: "#EEF2FF", tintHex: "#4F46E5")
                 }
             } else if type == "ledger" {
-                NavigationLink(destination: LedgerScreen()) {
+                NavigationLink(destination: LedgerScreen().toolbar(.hidden, for: .tabBar)) {
                     quickActionTile(label: label, imageUrl: action.image, fallbackIcon: "book.closed", bgHex: "#FEF3C7", tintHex: "#D97706")
                 }
             } else {
-                NavigationLink(destination: BrandSelectionScreen()) {
+                NavigationLink(destination: BrandSelectionScreen().toolbar(.hidden, for: .tabBar)) {
                     quickActionTile(label: label, imageUrl: action.image, fallbackIcon: "cart", bgHex: "#E8F8EE", tintHex: "#167E46")
                 }
             }
@@ -572,7 +570,7 @@ struct HomeScreen: View {
 
                 Spacer()
 
-                NavigationLink(destination: OrdersScreen()) {
+                NavigationLink(destination: OrdersScreen().toolbar(.hidden, for: .tabBar)) {
                     Text("View All")
                         .font(.system(size: 12.5, weight: .heavy))
                         .foregroundColor(Color.spicePrimary)

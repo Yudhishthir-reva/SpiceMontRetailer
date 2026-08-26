@@ -529,6 +529,33 @@ public struct DateRange: Equatable, Hashable {
         return DateRange(start: today, end: today)
     }
 
+    public static var yesterday: DateRange {
+        let cal = Calendar.current
+        let yday = cal.date(byAdding: .day, value: -1, to: cal.startOfDay(for: Date())) ?? Date()
+        return DateRange(start: yday, end: yday)
+    }
+
+    public static var thisWeek: DateRange {
+        let cal = Calendar.current
+        let now = Date()
+        let start = cal.date(from: cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now)) ?? now
+        return DateRange(start: start, end: now)
+    }
+
+    public static var thisMonth: DateRange {
+        let cal = Calendar.current
+        let now = Date()
+        let start = cal.date(from: cal.dateComponents([.year, .month], from: now)) ?? now
+        return DateRange(start: start, end: now)
+    }
+
+    public static var last30Days: DateRange {
+        let cal = Calendar.current
+        let now = Date()
+        let start = cal.date(byAdding: .day, value: -30, to: now) ?? now
+        return DateRange(start: start, end: now)
+    }
+
     public var isComplete: Bool {
         start != nil && end != nil
     }

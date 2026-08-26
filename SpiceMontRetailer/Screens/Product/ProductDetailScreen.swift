@@ -58,54 +58,6 @@ struct ProductDetailScreen: View {
             Color.spiceBackground.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // MARK: - Top Navigation Bar
-                HStack(alignment: .center, spacing: 12) {
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(Color.spiceInk)
-                            .padding(6)
-                    }
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(displayProduct?.name ?? "Product Details")
-                            .font(.system(size: 16.5, weight: .heavy))
-                            .foregroundColor(Color.spiceInk)
-                            .lineLimit(1)
-
-                        Text(displayProduct?.brandName ?? "Spice Monk")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(Color.spiceMuted)
-                    }
-
-                    Spacer()
-
-                    Button(action: { showCart = true }) {
-                        ZStack(alignment: .topTrailing) {
-                            Image(systemName: "cart")
-                                .font(.system(size: 18, weight: .bold))
-                                .foregroundColor(Color.spiceInk)
-                                .padding(6)
-
-                            if cartManager.cartCount > 0 {
-                                Text("\(cartManager.cartCount)")
-                                    .font(.system(size: 10, weight: .heavy))
-                                    .foregroundColor(.white)
-                                    .padding(.horizontal, 5)
-                                    .padding(.vertical, 2)
-                                    .background(Color.spicePrimary)
-                                    .clipShape(Capsule())
-                                    .offset(x: 4, y: -4)
-                            }
-                        }
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 12)
-                .padding(.bottom, 10)
-                .background(Color.white)
-                .overlay(Divider().background(Color.spiceDivider), alignment: .bottom)
-
                 if let prod = displayProduct {
                     ScrollView(showsIndicators: false) {
                         VStack(alignment: .leading, spacing: 16) {
@@ -183,7 +135,11 @@ struct ProductDetailScreen: View {
             // MARK: - Floating Bottom Cart Bar
             floatingCartBar
         }
-        .navigationBarHidden(true)
+        .navigationTitle(displayProduct?.name ?? "Product Details")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarHidden(false)
+        .toolbar(.visible, for: .navigationBar)
+        .toolbar(.hidden, for: .tabBar)
         .sheet(isPresented: $showCart) {
             NavigationStack { CartScreen() }
         }
@@ -297,8 +253,10 @@ struct ProductDetailScreen: View {
                     TextField("0", text: Binding(
                         get: { kgValues[key] ?? "" },
                         set: { newKg in
-                            kgValues[key] = newKg
-                            if let kgVal = Double(newKg), kgVal > 0 {
+                            let sanitizedKg = newKg.sanitizedDecimalQuantity(maxDecimalPlaces: 1)
+                            if sanitizedKg.hasSuffix(".") {
+                                kgValues[key] = sanitizedKg
+                            } else if let kgVal = Double(sanitizedKg), kgVal > 0 {
                                 var calculatedPkt = UnitConverter.kgToPkt(kg: kgVal, unit: variant.unit)
                                 if let avl = variant.availableQuantity, calculatedPkt > avl {
                                     calculatedPkt = avl
@@ -306,7 +264,7 @@ struct ProductDetailScreen: View {
                                     isShowToast = true
                                 }
                                 pktValues[key] = calculatedPkt > 0 ? "\(calculatedPkt)" : ""
-                                kgValues[key] = calculatedPkt > 0 ? UnitConverter.pktToKg(pkt: calculatedPkt, unit: variant.unit) : newKg
+                                kgValues[key] = calculatedPkt > 0 ? UnitConverter.pktToKg(pkt: calculatedPkt, unit: variant.unit) : sanitizedKg
 
                                 if !isUnavailable {
                                     cartManager.setQuantity(
@@ -319,7 +277,8 @@ struct ProductDetailScreen: View {
                                         availableQuantity: variant.availableQuantity
                                     )
                                 }
-                            } else if newKg.isEmpty || newKg == "0" {
+                            } else if sanitizedKg.isEmpty || sanitizedKg == "0" || sanitizedKg == "0." {
+                                kgValues[key] = sanitizedKg.isEmpty ? "" : sanitizedKg
                                 pktValues[key] = ""
                                 cartManager.setQuantity(
                                     productId: pId,
@@ -329,6 +288,8 @@ struct ProductDetailScreen: View {
                                     product: product,
                                     price: variant.price
                                 )
+                            } else {
+                                kgValues[key] = sanitizedKg
                             }
                         }
                     ))
@@ -355,17 +316,20 @@ struct ProductDetailScreen: View {
                     TextField("0", text: Binding(
                         get: { pktValues[key] ?? "" },
                         set: { newPkt in
-                            pktValues[key] = newPkt
-                            if let pktVal = Int(newPkt), pktVal > 0 {
+                            let sanitizedPkt = newPkt.sanitizedIntegerQuantity(maxDigits: 5)
+                            pktValues[key] = sanitizedPkt
+                            if let pktVal = Int(sanitizedPkt), pktVal > 0 {
                                 var finalPkt = pktVal
                                 if let avl = variant.availableQuantity, finalPkt > avl {
                                     finalPkt = avl
                                     toastMessage = "Only \(avl) units available in stock."
                                     isShowToast = true
+                                    pktValues[key] = "\(finalPkt)"
+                                    kgValues[key] = UnitConverter.pktToKg(pkt: finalPkt, unit: variant.unit)
+                                } else {
+                                    let calculatedKg = UnitConverter.pktToKg(pkt: finalPkt, unit: variant.unit)
+                                    kgValues[key] = calculatedKg
                                 }
-                                pktValues[key] = "\(finalPkt)"
-                                let calculatedKg = UnitConverter.pktToKg(pkt: finalPkt, unit: variant.unit)
-                                kgValues[key] = calculatedKg
 
                                 if !isUnavailable {
                                     cartManager.setQuantity(
@@ -378,7 +342,7 @@ struct ProductDetailScreen: View {
                                         availableQuantity: variant.availableQuantity
                                     )
                                 }
-                            } else if newPkt.isEmpty || newPkt == "0" {
+                            } else if sanitizedPkt.isEmpty || sanitizedPkt == "0" {
                                 kgValues[key] = ""
                                 cartManager.setQuantity(
                                     productId: pId,

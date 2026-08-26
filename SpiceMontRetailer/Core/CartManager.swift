@@ -33,9 +33,31 @@ final class CartManager: ObservableObject {
     private let networkService: NetworkServiceManagable
     private var cancellables = Set<AnyCancellable>()
     private var debounceTasks: [String: DispatchWorkItem] = [:]
+    private var stockRegistry: [String: Int] = [:]
 
     private init(networkService: NetworkServiceManagable = NetworkServiceManager.shared) {
         self.networkService = networkService
+    }
+
+    func registerStock(productId: Int, variantId: Int? = nil, variantName: String? = nil, stock: Int) {
+        guard stock >= 0 else { return }
+        if let vId = variantId {
+            stockRegistry["\(productId)_\(vId)"] = stock
+        }
+        if let vName = variantName, !vName.isEmpty {
+            stockRegistry["\(productId)_\(vName.lowercased().trimmingCharacters(in: .whitespaces))"] = stock
+        }
+        stockRegistry["\(productId)"] = stock
+    }
+
+    func getStock(productId: Int, variantId: Int? = nil, variantName: String? = nil) -> Int? {
+        if let vId = variantId, let s = stockRegistry["\(productId)_\(vId)"] {
+            return s
+        }
+        if let vName = variantName, let s = stockRegistry["\(productId)_\(vName.lowercased().trimmingCharacters(in: .whitespaces))"] {
+            return s
+        }
+        return stockRegistry["\(productId)"]
     }
 
     // MARK: - Fetch
@@ -65,7 +87,8 @@ final class CartManager: ObservableObject {
         let vId = variant?.id
         let unitName = variant?.unit ?? product.unit ?? "100 gms"
         let pPrice = variant?.price ?? product.price ?? "26.00"
-        setQuantity(productId: pId, variantId: vId, variantName: unitName, quantity: quantity, product: product, price: pPrice, completion: completion)
+        let avl = variant?.availableQuantity ?? product.availableQuantity
+        setQuantity(productId: pId, variantId: vId, variantName: unitName, quantity: quantity, product: product, price: pPrice, availableQuantity: avl, completion: completion)
     }
 
     func setQuantity(
@@ -78,8 +101,39 @@ final class CartManager: ObservableObject {
         availableQuantity: Int? = nil,
         completion: ((Bool) -> Void)? = nil
     ) {
+        if let avl = availableQuantity, avl >= 0 {
+            registerStock(productId: productId, variantId: variantId, variantName: variantName, stock: avl)
+        }
+        if let p = product {
+            if let pAvl = p.availableQuantity, pAvl >= 0 {
+                registerStock(productId: productId, stock: pAvl)
+            }
+            if let variants = p.variants {
+                for v in variants {
+                    if let vAvl = v.availableQuantity, vAvl >= 0 {
+                        registerStock(productId: productId, variantId: v.id, variantName: v.unit, stock: vAvl)
+                    }
+                }
+            }
+        }
+
+        var resolvedMaxAvl = availableQuantity
+        if resolvedMaxAvl == nil {
+            if let cached = getStock(productId: productId, variantId: variantId, variantName: variantName), cached >= 0 {
+                resolvedMaxAvl = cached
+            } else if let existing = items.first(where: {
+                $0.productId == productId &&
+                (($0.variantId != nil && variantId != nil && $0.variantId == variantId) ||
+                 ($0.variantName != nil && variantName != nil && $0.variantName?.lowercased().trimmingCharacters(in: .whitespaces) == variantName?.lowercased().trimmingCharacters(in: .whitespaces)))
+            }) {
+                resolvedMaxAvl = existing.maxStock
+            } else if let pAvl = product?.availableQuantity, pAvl >= 0 {
+                resolvedMaxAvl = pAvl
+            }
+        }
+
         var finalQty = quantity
-        if let maxAvl = availableQuantity, maxAvl >= 0 {
+        if let maxAvl = resolvedMaxAvl, maxAvl >= 0 {
             finalQty = min(finalQty, maxAvl)
         }
 
@@ -124,6 +178,9 @@ final class CartManager: ObservableObject {
             items[idx].quantity = finalQty
             let priceVal = Double(items[idx].price ?? items[idx].perPrice ?? price ?? "0") ?? 0
             items[idx].totalPrice = String(format: "%.2f", priceVal * Double(finalQty))
+            if let avl = resolvedMaxAvl {
+                items[idx].availableQuantity = avl
+            }
             recalculateTotals()
         } else {
             let itemPrice = price ?? product?.price ?? "24.50"
@@ -139,6 +196,7 @@ final class CartManager: ObservableObject {
                 price: itemPrice,
                 perPrice: itemPrice,
                 totalPrice: String(format: "%.2f", priceVal * Double(finalQty)),
+                availableQuantity: resolvedMaxAvl,
                 product: product
             )
             items.append(newItem)
@@ -448,6 +506,15 @@ final class CartManager: ObservableObject {
             var merged = items
 
             for serverItem in responseItems {
+                var itemToAdd = serverItem
+                if let pId = serverItem.productId {
+                    if let avl = serverItem.availableQuantity {
+                        registerStock(productId: pId, variantId: serverItem.variantId, variantName: serverItem.variantName, stock: avl)
+                    } else if let cached = getStock(productId: pId, variantId: serverItem.variantId, variantName: serverItem.variantName) {
+                        itemToAdd.availableQuantity = cached
+                    }
+                }
+
                 if let idx = merged.firstIndex(where: {
                     ($0.id != nil && serverItem.id != nil && $0.id == serverItem.id) ||
                     ($0.productId == serverItem.productId &&
@@ -458,8 +525,15 @@ final class CartManager: ObservableObject {
                     if let sp = serverItem.price { merged[idx].price = sp }
                     if let spp = serverItem.perPrice { merged[idx].perPrice = spp }
                     if let stp = serverItem.totalPrice { merged[idx].totalPrice = stp }
+                    if let avl = serverItem.availableQuantity {
+                        merged[idx].availableQuantity = avl
+                    } else if merged[idx].availableQuantity == nil, let pId = merged[idx].productId {
+                        merged[idx].availableQuantity = getStock(productId: pId, variantId: merged[idx].variantId, variantName: merged[idx].variantName)
+                    }
+                    if let prod = serverItem.product { merged[idx].product = prod }
+                    if let vari = serverItem.variant { merged[idx].variant = vari }
                 } else {
-                    merged.append(serverItem)
+                    merged.append(itemToAdd)
                 }
             }
 

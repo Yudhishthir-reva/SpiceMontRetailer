@@ -72,169 +72,169 @@ struct LedgerScreen: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                Color.spiceBackground.ignoresSafeArea()
+        ZStack {
+            Color.spiceBackground.ignoresSafeArea()
 
-                VStack(spacing: 0) {
-                    // MARK: - Header
-                    HStack {
-                        Text("Outstanding Ledger")
-                            .font(.system(size: 22, weight: .heavy))
-                            .foregroundColor(Color.spiceInk)
+            VStack(spacing: 0) {
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 14) {
+                        // MARK: - Top Outstanding Summary Pink Card
+                        outstandingSummaryCard
 
-                        Spacer()
+                        // MARK: - Search Bar
+                        HStack(spacing: 10) {
+                            Image(systemName: "magnifyingglass")
+                                .foregroundColor(Color.spiceMuted)
+                                .font(.system(size: 14, weight: .semibold))
 
-                        Button(action: {
-                            viewModel.loadAll()
-                        }) {
-                            Text("Refresh")
-                                .font(.system(size: 14, weight: .heavy))
-                                .foregroundColor(Color.spicePrimary)
+                            TextField("Search by order number", text: $searchText)
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundColor(Color.black)
+                                .tint(Color.spicePrimary)
                         }
+                        .padding(.horizontal, 12)
+                        .frame(height: 46)
+                        .background(Color.white)
+                        .cornerRadius(12)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.spiceCardBorder, lineWidth: 1)
+                        )
+
+                        // MARK: - Filter Row 1: Payment Status
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(paymentFilters, id: \.self) { chip in
+                                    Button(action: {
+                                        selectedPaymentFilter = chip
+                                    }) {
+                                        Text(chip)
+                                            .font(.system(size: 12.5, weight: .bold))
+                                            .padding(.horizontal, 14)
+                                            .padding(.vertical, 7)
+                                            .background(selectedPaymentFilter == chip ? Color.spicePrimary : Color.white)
+                                            .foregroundColor(selectedPaymentFilter == chip ? .white : Color.spiceInk)
+                                            .cornerRadius(20)
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 20)
+                                                    .stroke(selectedPaymentFilter == chip ? Color.spicePrimary : Color.spiceCardBorder, lineWidth: 1)
+                                            )
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                            .padding(.vertical, 1)
+                        }
+
+                        // MARK: - Filter Row 2: Order Status
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(orderStatusFilters, id: \.self) { chip in
+                                    Button(action: {
+                                        selectedOrderStatusFilter = chip
+                                    }) {
+                                        Text(chip)
+                                            .font(.system(size: 12.5, weight: .bold))
+                                            .padding(.horizontal, 14)
+                                            .padding(.vertical, 7)
+                                            .background(selectedOrderStatusFilter == chip ? Color.spicePrimary : Color.white)
+                                            .foregroundColor(selectedOrderStatusFilter == chip ? .white : Color.spiceInk)
+                                            .cornerRadius(20)
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 20)
+                                                    .stroke(selectedOrderStatusFilter == chip ? Color.spicePrimary : Color.spiceCardBorder, lineWidth: 1)
+                                            )
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                            .padding(.vertical, 1)
+                        }
+
+                        // MARK: - Filter Row 3: Date & Clear All (Calendar Sheet)
+                        HStack {
+                            SpiceDateRangeFilterChip(selectedRange: $selectedDateRange)
+
+                            Spacer()
+
+                            Button(action: {
+                                selectedPaymentFilter = "All Payments"
+                                selectedOrderStatusFilter = "All Orders"
+                                selectedDateRange = DateRange.today
+                                searchText = ""
+                            }) {
+                                Text("Clear all")
+                                    .font(.system(size: 12.5, weight: .bold))
+                                    .foregroundColor(Color.spicePrimary)
+                            }
+                        }
+
+                        // MARK: - Orders List or Skeletons
+                        if viewModel.isLoading && viewModel.orders.isEmpty {
+                            VStack(spacing: 12) {
+                                ForEach(0..<4, id: \.self) { _ in
+                                    SpiceSkeletonBox(height: 180, cornerRadius: 16)
+                                }
+                            }
+                        } else if filteredOrders.isEmpty {
+                            if viewModel.orders.isEmpty {
+                                SpiceEmptyStateView(
+                                    title: "No Outstanding Dues",
+                                    message: "Great news! You have cleared all payments and have zero pending dues.",
+                                    buttonTitle: "Refresh"
+                                ) {
+                                    viewModel.loadAll()
+                                }
+                                .padding(.top, 24)
+                            } else {
+                                SpiceEmptyStateView(
+                                    title: "No Ledger Entries",
+                                    message: "No orders match your filter criteria.",
+                                    buttonTitle: "Refresh"
+                                ) {
+                                    viewModel.loadAll()
+                                }
+                                .padding(.top, 24)
+                            }
+                        } else {
+                            VStack(spacing: 12) {
+                                ForEach(filteredOrders) { order in
+                                    ledgerOrderCardView(order: order)
+                                }
+                            }
+                        }
+
+                        Spacer(minLength: 24)
                     }
                     .padding(.horizontal, 16)
-                    .padding(.top, 12)
-                    .padding(.bottom, 8)
-
-                    ScrollView(showsIndicators: false) {
-                        VStack(alignment: .leading, spacing: 14) {
-                            // MARK: - Top Outstanding Summary Pink Card
-                            outstandingSummaryCard
-
-                            // MARK: - Search Bar
-                            HStack(spacing: 10) {
-                                Image(systemName: "magnifyingglass")
-                                    .foregroundColor(Color.spiceMuted)
-                                    .font(.system(size: 14, weight: .semibold))
-
-                                TextField("Search by order number", text: $searchText)
-                                    .font(.system(size: 13, weight: .medium))
-                                    .foregroundColor(Color.black)
-                                    .tint(Color.spicePrimary)
-                            }
-                            .padding(.horizontal, 12)
-                            .frame(height: 46)
-                            .background(Color.white)
-                            .cornerRadius(12)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(Color.spiceCardBorder, lineWidth: 1)
-                            )
-
-                            // MARK: - Filter Row 1: Payment Status
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 8) {
-                                    ForEach(paymentFilters, id: \.self) { chip in
-                                        Button(action: {
-                                            selectedPaymentFilter = chip
-                                        }) {
-                                            Text(chip)
-                                                .font(.system(size: 12.5, weight: .bold))
-                                                .padding(.horizontal, 14)
-                                                .padding(.vertical, 7)
-                                                .background(selectedPaymentFilter == chip ? Color.spicePrimary : Color.white)
-                                                .foregroundColor(selectedPaymentFilter == chip ? .white : Color.spiceInk)
-                                                .cornerRadius(20)
-                                                .overlay(
-                                                    RoundedRectangle(cornerRadius: 20)
-                                                        .stroke(selectedPaymentFilter == chip ? Color.spicePrimary : Color.spiceCardBorder, lineWidth: 1)
-                                                )
-                                        }
-                                        .buttonStyle(.plain)
-                                    }
-                                }
-                                .padding(.vertical, 1)
-                            }
-
-                            // MARK: - Filter Row 2: Order Status
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 8) {
-                                    ForEach(orderStatusFilters, id: \.self) { chip in
-                                        Button(action: {
-                                            selectedOrderStatusFilter = chip
-                                        }) {
-                                            Text(chip)
-                                                .font(.system(size: 12.5, weight: .bold))
-                                                .padding(.horizontal, 14)
-                                                .padding(.vertical, 7)
-                                                .background(selectedOrderStatusFilter == chip ? Color.spicePrimary : Color.white)
-                                                .foregroundColor(selectedOrderStatusFilter == chip ? .white : Color.spiceInk)
-                                                .cornerRadius(20)
-                                                .overlay(
-                                                    RoundedRectangle(cornerRadius: 20)
-                                                        .stroke(selectedOrderStatusFilter == chip ? Color.spicePrimary : Color.spiceCardBorder, lineWidth: 1)
-                                                )
-                                        }
-                                        .buttonStyle(.plain)
-                                    }
-                                }
-                                .padding(.vertical, 1)
-                            }
-
-                            // MARK: - Filter Row 3: Date & Clear All
-                            HStack {
-                                SpiceDateRangeFilterChip(selectedRange: $selectedDateRange)
-
-                                Spacer()
-
-                                Button(action: {
-                                    selectedPaymentFilter = "All Payments"
-                                    selectedOrderStatusFilter = "All Orders"
-                                    selectedDateRange = DateRange.today
-                                    searchText = ""
-                                }) {
-                                    Text("Clear all")
-                                        .font(.system(size: 12.5, weight: .bold))
-                                        .foregroundColor(Color.spicePrimary)
-                                }
-                            }
-
-                            // MARK: - Ledger Items List
-                            if filteredOrders.isEmpty {
-                                if viewModel.isLoading {
-                                    HStack {
-                                        Spacer()
-                                        ProgressView()
-                                            .padding(.vertical, 40)
-                                        Spacer()
-                                    }
-                                } else {
-                                    SpiceEmptyStateView(
-                                        title: "No Ledger Entries",
-                                        message: "No orders match your filter criteria.",
-                                        buttonTitle: "Refresh"
-                                    ) {
-                                        viewModel.loadAll()
-                                    }
-                                    .padding(.top, 24)
-                                }
-                            } else {
-                                VStack(spacing: 12) {
-                                    ForEach(filteredOrders) { order in
-                                        ledgerOrderCardView(order: order)
-                                    }
-                                }
-                            }
-
-                            Spacer(minLength: 24)
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.top, 4)
-                    }
-                    .refreshable {
-                        viewModel.loadAll()
-                    }
+                    .padding(.top, 10)
+                }
+                .refreshable {
+                    viewModel.loadAll()
                 }
             }
-            .navigationBarHidden(true)
-            .onAppear {
-                viewModel.loadAll()
-            }
-            .toast(isPresenting: $viewModel.isShowToast, duration: 2.0, offsetY: 10, alert: {
-                AlertToast(displayMode: .banner(.pop), type: .regular, title: viewModel.toastMessage)
-            }, onTap: nil, completion: nil)
         }
+        .navigationTitle("Outstanding Ledger")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarHidden(false)
+        .toolbar(.visible, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: {
+                    viewModel.loadAll()
+                }) {
+                    Text("Refresh")
+                        .font(.system(size: 13.5, weight: .heavy))
+                        .foregroundColor(Color.spicePrimary)
+                }
+            }
+        }
+        .onAppear {
+            viewModel.loadAll()
+        }
+        .toast(isPresenting: $viewModel.isShowToast, duration: 2.0, offsetY: 10, alert: {
+            AlertToast(displayMode: .banner(.pop), type: .regular, title: viewModel.toastMessage)
+        }, onTap: nil, completion: nil)
     }
 
     // MARK: - Top Summary Pink Card

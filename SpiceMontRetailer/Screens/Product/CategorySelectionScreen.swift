@@ -38,33 +38,24 @@ struct CategorySelectionScreen: View {
         ZStack(alignment: .bottom) {
             Color.spiceBackground.ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                // MARK: - Top Bar
-                HStack(alignment: .center, spacing: 12) {
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(Color.spiceInk)
-                            .padding(4)
-                    }
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(brandName)
-                            .font(.system(size: 17, weight: .heavy))
-                            .foregroundColor(Color.spiceInk)
-
-                        Text("Step 2 of 3")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(Color.spiceMuted)
-                    }
-
+            VStack(alignment: .leading, spacing: 0) {
+                // Step Subheader
+                HStack {
+                    Text("Select Category")
+                        .font(.system(size: 15, weight: .heavy))
+                        .foregroundColor(Color.spiceInk)
                     Spacer()
+                    Text("Step 2 of 3")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(Color.spicePrimary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(Color.spicePrimaryLight)
+                        .cornerRadius(6)
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 12)
-                .padding(.bottom, 10)
-                .background(Color.white)
-                .overlay(Divider().background(Color.spiceDivider), alignment: .bottom)
+                .padding(.bottom, 6)
 
                 if isLoading && categories.isEmpty {
                     ScrollView {
@@ -80,8 +71,8 @@ struct CategorySelectionScreen: View {
                         Spacer()
                         SpiceEmptyStateView(
                             title: "No Categories Found",
-                            message: "No spice categories are available right now.",
-                            buttonTitle: "Refresh"
+                            message: "No product categories are available for this brand.",
+                            buttonTitle: "Retry"
                         ) {
                             loadCategories()
                         }
@@ -105,7 +96,7 @@ struct CategorySelectionScreen: View {
                             }
                         }
                         .padding(16)
-                        .padding(.bottom, 80)
+                        .padding(.bottom, cartManager.cartCount > 0 ? 80 : 20)
                     }
                     .refreshable {
                         loadCategories()
@@ -117,7 +108,11 @@ struct CategorySelectionScreen: View {
             // MARK: - Floating Bottom Cart Pill Bar
             floatingCartBar
         }
-        .navigationBarHidden(true)
+        .navigationTitle(brandName)
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarHidden(false)
+        .toolbar(.visible, for: .navigationBar)
+        .toolbar(.hidden, for: .tabBar)
         .onAppear {
             loadCategories()
             cartManager.fetchCart()

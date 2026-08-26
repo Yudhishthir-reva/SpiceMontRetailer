@@ -80,42 +80,6 @@ struct OrderDetailScreen: View {
             Color.spiceBackground.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // MARK: - Top Navigation Bar
-                HStack(alignment: .center, spacing: 12) {
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(Color.spiceInk)
-                            .padding(4)
-                    }
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Order Details")
-                            .font(.system(size: 17, weight: .heavy))
-                            .foregroundColor(Color.spiceInk)
-
-                        if !orderNumberText.isEmpty {
-                            Text(orderNumberText)
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundColor(Color.spiceMuted)
-                        }
-                    }
-
-                    Spacer()
-
-                    Button(action: {
-                        loadOrderDetail()
-                    }) {
-                        Text("Refresh")
-                            .font(.system(size: 13.5, weight: .heavy))
-                            .foregroundColor(Color.spicePrimary)
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .background(Color.white)
-                .overlay(Divider().background(Color.spiceDivider), alignment: .bottom)
-
                 if isLoading && order == nil {
                     // Clean Skeleton Loading State
                     ScrollView {
@@ -173,7 +137,20 @@ struct OrderDetailScreen: View {
                 stickyBottomBar(ord)
             }
         }
-        .navigationBarHidden(true)
+        .navigationTitle(orderNumberText.isEmpty ? "Order Details" : orderNumberText)
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarHidden(false)
+        .toolbar(.visible, for: .navigationBar)
+        .toolbar(.hidden, for: .tabBar)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: { loadOrderDetail() }) {
+                    Text("Refresh")
+                        .font(.system(size: 13.5, weight: .heavy))
+                        .foregroundColor(Color.spicePrimary)
+                }
+            }
+        }
         .onAppear {
             loadOrderDetail()
         }

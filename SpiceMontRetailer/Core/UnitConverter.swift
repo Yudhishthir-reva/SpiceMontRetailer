@@ -54,7 +54,7 @@ public struct UnitConverter {
         if totalKg.truncatingRemainder(dividingBy: 1) == 0 {
             return "\(Int(totalKg))"
         } else {
-            let formatted = String(format: "%.3f", totalKg)
+            let formatted = String(format: "%.1f", totalKg)
             return formatted
                 .replacingOccurrences(of: "0+$", with: "", options: .regularExpression)
                 .replacingOccurrences(of: "\\.$", with: "", options: .regularExpression)

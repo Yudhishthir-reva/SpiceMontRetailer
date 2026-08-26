@@ -256,8 +256,10 @@ struct PackSizeSelectionSheet: View {
                     TextField("0", text: Binding(
                         get: { kgValues[key] ?? "" },
                         set: { newKg in
-                            kgValues[key] = newKg
-                            if let kgVal = Double(newKg), kgVal > 0 {
+                            let sanitizedKg = newKg.sanitizedDecimalQuantity(maxDecimalPlaces: 1)
+                            if sanitizedKg.hasSuffix(".") {
+                                kgValues[key] = sanitizedKg
+                            } else if let kgVal = Double(sanitizedKg), kgVal > 0 {
                                 var calculatedPkt = UnitConverter.kgToPkt(kg: kgVal, unit: variant.unit)
                                 if let avl = maxStock, calculatedPkt > avl {
                                     calculatedPkt = avl
@@ -265,7 +267,7 @@ struct PackSizeSelectionSheet: View {
                                     isShowToast = true
                                 }
                                 pktValues[key] = calculatedPkt > 0 ? "\(calculatedPkt)" : ""
-                                kgValues[key] = calculatedPkt > 0 ? UnitConverter.pktToKg(pkt: calculatedPkt, unit: variant.unit) : newKg
+                                kgValues[key] = calculatedPkt > 0 ? UnitConverter.pktToKg(pkt: calculatedPkt, unit: variant.unit) : sanitizedKg
 
                                 if !isUnavailable {
                                     cartManager.setQuantity(
@@ -278,7 +280,8 @@ struct PackSizeSelectionSheet: View {
                                         availableQuantity: variant.availableQuantity
                                     )
                                 }
-                            } else if newKg.isEmpty || newKg == "0" {
+                            } else if sanitizedKg.isEmpty || sanitizedKg == "0" || sanitizedKg == "0." {
+                                kgValues[key] = sanitizedKg.isEmpty ? "" : sanitizedKg
                                 pktValues[key] = ""
                                 cartManager.setQuantity(
                                     productId: product.id ?? 1,
@@ -288,6 +291,8 @@ struct PackSizeSelectionSheet: View {
                                     product: product,
                                     price: variant.price
                                 )
+                            } else {
+                                kgValues[key] = sanitizedKg
                             }
                         }
                     ))
@@ -310,17 +315,20 @@ struct PackSizeSelectionSheet: View {
                     TextField("0", text: Binding(
                         get: { pktValues[key] ?? "" },
                         set: { newPkt in
-                            pktValues[key] = newPkt
-                            if let pktVal = Int(newPkt), pktVal > 0 {
+                            let sanitizedPkt = newPkt.sanitizedIntegerQuantity(maxDigits: 5)
+                            pktValues[key] = sanitizedPkt
+                            if let pktVal = Int(sanitizedPkt), pktVal > 0 {
                                 var finalPkt = pktVal
                                 if let avl = maxStock, finalPkt > avl {
                                     finalPkt = avl
                                     toastMessage = "Only \(avl) units available in stock."
                                     isShowToast = true
+                                    pktValues[key] = "\(finalPkt)"
+                                    kgValues[key] = UnitConverter.pktToKg(pkt: finalPkt, unit: variant.unit)
+                                } else {
+                                    let calculatedKg = UnitConverter.pktToKg(pkt: finalPkt, unit: variant.unit)
+                                    kgValues[key] = calculatedKg
                                 }
-                                pktValues[key] = "\(finalPkt)"
-                                let calculatedKg = UnitConverter.pktToKg(pkt: finalPkt, unit: variant.unit)
-                                kgValues[key] = calculatedKg
 
                                 if !isUnavailable {
                                     cartManager.setQuantity(
@@ -333,7 +341,7 @@ struct PackSizeSelectionSheet: View {
                                         availableQuantity: variant.availableQuantity
                                     )
                                 }
-                            } else if newPkt.isEmpty || newPkt == "0" {
+                            } else if sanitizedPkt.isEmpty || sanitizedPkt == "0" {
                                 kgValues[key] = ""
                                 cartManager.setQuantity(
                                     productId: product.id ?? 1,

@@ -33,6 +33,18 @@ final class ProductDetailViewModel: ObservableObject {
                 }
             } receiveValue: { [weak self] response in
                 self?.product = response.product
+                if let prod = response.product, let pId = prod.id {
+                    if let avl = prod.availableQuantity {
+                        CartManager.shared.registerStock(productId: pId, stock: avl)
+                    }
+                    if let variants = prod.variants {
+                        for v in variants {
+                            if let vAvl = v.availableQuantity {
+                                CartManager.shared.registerStock(productId: pId, variantId: v.id, variantName: v.unit, stock: vAvl)
+                            }
+                        }
+                    }
+                }
             }
             .store(in: &cancellables)
     }

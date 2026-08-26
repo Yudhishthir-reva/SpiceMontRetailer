@@ -30,9 +30,6 @@ struct SchemesScreen: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Top Bar
-            SpiceTopBar(title: "Running Schemes", showBack: true, onBack: { dismiss() })
-
             // Filter Chips
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 6) {
@@ -61,32 +58,32 @@ struct SchemesScreen: View {
             if isLoading && schemes.isEmpty {
                 ScrollView {
                     VStack(spacing: 12) {
-                        ForEach(1...3, id: \.self) { _ in
-                            SpiceSkeletonBox(height: 180, cornerRadius: 16)
+                        ForEach(0..<4, id: \.self) { _ in
+                            SpiceSkeletonBox(height: 140, cornerRadius: 14)
                         }
                     }
                     .padding(16)
                 }
-                .background(Color.spiceBackground)
+            } else if filteredSchemes.isEmpty {
+                VStack {
+                    Spacer()
+                    SpiceEmptyStateView(
+                        title: "No Schemes Found",
+                        message: "There are no active schemes matching your selection.",
+                        buttonTitle: "Refresh"
+                    ) {
+                        loadSchemes()
+                    }
+                    Spacer()
+                }
             } else {
                 ScrollView {
                     VStack(spacing: 12) {
-                        if filteredSchemes.isEmpty {
-                            SpiceEmptyStateView(
-                                title: "No Schemes Available",
-                                message: "There are currently no active schemes under this category.",
-                                buttonTitle: "Refresh"
-                            ) {
-                                loadSchemes()
+                        ForEach(filteredSchemes) { scheme in
+                            NavigationLink(destination: SchemeDetailScreen(scheme: scheme)) {
+                                schemeCardView(scheme)
                             }
-                            .padding(.top, 30)
-                        } else {
-                            ForEach(filteredSchemes) { scheme in
-                                NavigationLink(destination: SchemeDetailScreen(scheme: scheme)) {
-                                    schemeCardView(scheme)
-                                }
-                                .buttonStyle(.plain)
-                            }
+                            .buttonStyle(.plain)
                         }
                     }
                     .padding(16)
@@ -97,10 +94,14 @@ struct SchemesScreen: View {
                 .background(Color.spiceBackground)
             }
         }
+        .navigationTitle("Running Schemes")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarHidden(false)
+        .toolbar(.visible, for: .navigationBar)
+        .toolbar(.hidden, for: .tabBar)
         .onAppear {
             loadSchemes()
         }
-        .navigationBarHidden(true)
         .toast(isPresenting: $isShowToast, duration: 2.0, offsetY: 10, alert: {
             AlertToast(displayMode: .banner(.pop), type: .regular, title: toastMessage)
         }, onTap: nil, completion: nil)
@@ -161,9 +162,11 @@ struct SchemesScreen: View {
                                 .foregroundColor(Color.spiceMuted)
                         }
                         Spacer()
-                        Text("View Slabs →")
-                            .font(.system(size: 11, weight: .heavy))
-                            .foregroundColor(Color.spicePrimary)
+                        if let exp = scheme.expiryDate, !exp.isEmpty {
+                            Text("Valid till \(exp)")
+                                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                                .foregroundColor(Color.spiceMuted)
+                        }
                     }
                     .padding(.top, 4)
                 }
@@ -180,9 +183,6 @@ struct SchemeDetailScreen: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Top Bar
-            SpiceTopBar(title: "Scheme Details", showBack: true, onBack: { dismiss() })
-
             ScrollView {
                 VStack(spacing: 14) {
                     // Header Banner Card
@@ -237,7 +237,7 @@ struct SchemeDetailScreen: View {
                     }
 
                     // Action Button
-                    NavigationLink(destination: BrandSelectionScreen()) {
+                    NavigationLink(destination: BrandSelectionScreen().toolbar(.hidden, for: .tabBar)) {
                         Text("Explore Eligible Products")
                             .font(.system(size: 14, weight: .heavy))
                             .foregroundColor(.white)
@@ -252,6 +252,10 @@ struct SchemeDetailScreen: View {
             }
             .background(Color.spiceBackground)
         }
-        .navigationBarHidden(true)
+        .navigationTitle(scheme.title ?? "Scheme Details")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarHidden(false)
+        .toolbar(.visible, for: .navigationBar)
+        .toolbar(.hidden, for: .tabBar)
     }
 }

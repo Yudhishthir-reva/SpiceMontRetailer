@@ -366,7 +366,68 @@ struct RetailerRegistrationFlowView: View {
 
             formField(label: "Shop Name *", text: $shopName, placeholder: "e.g. Shri Ganesh Kirana Store")
 
-            formField(label: "GST Number (Optional)", text: $gstNumber, placeholder: "15-digit GSTIN (e.g. 27ABCDE1234F1Z5)", isMono: true)
+            // GST Number with Validation
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text("GST Number (Optional)")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(Color.spiceInk)
+                    Spacer()
+                    if !gstNumber.isEmpty {
+                        if gstNumber.isValidGSTNumber() {
+                            HStack(spacing: 3) {
+                                Image(systemName: "checkmark.circle.fill")
+                                Text("Valid GSTIN")
+                            }
+                            .font(.system(size: 10.5, weight: .bold))
+                            .foregroundColor(Color.spicePrimary)
+                        } else if gstNumber.count == 15 {
+                            HStack(spacing: 3) {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                Text("Invalid Format")
+                            }
+                            .font(.system(size: 10.5, weight: .bold))
+                            .foregroundColor(Color.spiceDue)
+                        } else {
+                            Text("\(gstNumber.count)/15 digits")
+                                .font(.system(size: 10.5, weight: .semibold, design: .monospaced))
+                                .foregroundColor(Color.spiceMuted)
+                        }
+                    }
+                }
+
+                TextField("15-digit GSTIN (e.g. 27ABCDE1234F1Z5)", text: $gstNumber)
+                    .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                    .foregroundColor(Color.black)
+                    .tint(Color.spicePrimary)
+                    .textInputAutocapitalization(.characters)
+                    .autocorrectionDisabled()
+                    .padding(12)
+                    .background(Color.white)
+                    .cornerRadius(10)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(
+                                !gstNumber.isEmpty && !gstNumber.isValidGSTNumber() && gstNumber.count == 15
+                                    ? Color.spiceDue
+                                    : (!gstNumber.isEmpty && gstNumber.isValidGSTNumber() ? Color.spicePrimary : Color.spiceCardBorder),
+                                lineWidth: 1
+                            )
+                    )
+                    .onChange(of: gstNumber) { _, newValue in
+                        let sanitized = newValue.uppercased().filter { $0.isLetter || $0.isNumber }
+                        let truncated = String(sanitized.prefix(15))
+                        if gstNumber != truncated {
+                            gstNumber = truncated
+                        }
+                    }
+
+                if !gstNumber.isEmpty && !gstNumber.isValidGSTNumber() {
+                    Text(gstNumber.count == 15 ? "Invalid GSTIN format. Example: 27ABCDE1234F1Z5" : "GSTIN must be 15 characters (e.g. 27ABCDE1234F1Z5)")
+                        .font(.system(size: 10.5, weight: .medium))
+                        .foregroundColor(gstNumber.count == 15 ? Color.spiceDue : Color.spiceMuted)
+                }
+            }
 
             formField(label: "Shop Address *", text: $shopAddress, placeholder: "Shop No, Street, Landmark, Area")
 
@@ -764,8 +825,8 @@ struct RetailerRegistrationFlowView: View {
                     }
                     Divider()
                     SpiceKVRow(key: "Shop Name", value: shopName)
-                    if !gstNumber.isEmpty {
-                        SpiceKVRow(key: "GSTIN", value: gstNumber, isMonoValue: true)
+                    if !gstNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        SpiceKVRow(key: "GSTIN", value: gstNumber.trimmingCharacters(in: .whitespacesAndNewlines).uppercased(), isMonoValue: true)
                     }
                     SpiceKVRow(key: "Address", value: shopAddress)
                     SpiceKVRow(key: "State", value: selectedStateName)
@@ -894,8 +955,14 @@ struct RetailerRegistrationFlowView: View {
         case .business:
             let cleanShop = shopName.trimmingCharacters(in: .whitespacesAndNewlines)
             let cleanAddress = shopAddress.trimmingCharacters(in: .whitespacesAndNewlines)
+            let cleanGST = gstNumber.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+
             if cleanShop.isEmpty {
                 showToast("Please enter your shop name.")
+                return
+            }
+            if !cleanGST.isEmpty && !cleanGST.isValidGSTNumber() {
+                showToast("Please enter a valid 15-digit GSTIN (e.g. 27ABCDE1234F1Z5) or leave it blank.")
                 return
             }
             if cleanAddress.isEmpty {
@@ -945,9 +1012,10 @@ struct RetailerRegistrationFlowView: View {
             "city": cityId,
             "address": shopAddress.trimmingCharacters(in: .whitespacesAndNewlines)
         ]
-        if !gstNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            params["gstin"] = gstNumber.trimmingCharacters(in: .whitespacesAndNewlines)
-            params["gst_number"] = gstNumber.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleanGST = gstNumber.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        if !cleanGST.isEmpty {
+            params["gstin"] = cleanGST
+            params["gst_number"] = cleanGST
         }
         // Latitude & Longitude
         let finalLat = !latitude.isEmpty ? latitude : gpsManager.latitude

@@ -174,6 +174,8 @@ struct CartScreen: View {
                 }
             )
             .presentationDetents([.medium, .large])
+            .presentationBackground(Color.white)
+            .presentationDragIndicator(.visible)
         }
         .alert(isPresented: $showClearAlert) {
             Alert(
@@ -226,7 +228,7 @@ struct CartScreen: View {
         let unitPriceText = String(format: "₹%.2f / unit", unitPriceVal)
         let qty = item.quantity ?? 1
         let lineTotal = unitPriceVal * Double(qty)
-        let maxAvailable = item.availableQuantity ?? 9999
+        let maxAvailable = item.maxStock
 
         return VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top, spacing: 12) {
@@ -250,6 +252,12 @@ struct CartScreen: View {
                     Text("\(unitText) · \(unitPriceText)")
                         .font(.system(size: 12, weight: .medium))
                         .foregroundColor(Color.spiceMuted)
+
+                    if maxAvailable < 9999 {
+                        Text("\(maxAvailable) in stock")
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .foregroundColor(maxAvailable <= 5 ? Color.spiceDue : Color.spicePrimary)
+                    }
                 }
 
                 Spacer()
@@ -286,7 +294,8 @@ struct CartScreen: View {
                                 productId: pId,
                                 variantId: item.variantId,
                                 variantName: item.variantName,
-                                quantity: newQty
+                                quantity: newQty,
+                                availableQuantity: maxAvailable
                             )
                         }
                     }) {
@@ -304,18 +313,24 @@ struct CartScreen: View {
 
                     Button(action: {
                         if let pId = item.productId ?? item.id {
+                            if qty >= maxAvailable {
+                                toastMessage = "Sirf \(maxAvailable) units stock me available hain."
+                                isShowToast = true
+                                return
+                            }
                             let newQty = min(maxAvailable, qty + 1)
                             cartManager.setQuantity(
                                 productId: pId,
                                 variantId: item.variantId,
                                 variantName: item.variantName,
-                                quantity: newQty
+                                quantity: newQty,
+                                availableQuantity: maxAvailable
                             )
                         }
                     }) {
                         Image(systemName: "plus")
                             .font(.system(size: 11, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundColor(qty >= maxAvailable ? Color.white.opacity(0.35) : .white)
                             .frame(width: 32, height: 32)
                     }
                     .buttonStyle(.plain)

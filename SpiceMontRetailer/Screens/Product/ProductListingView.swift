@@ -61,52 +61,35 @@ struct ProductListingView: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             Color.spiceBackground.ignoresSafeArea()
-
             VStack(spacing: 0) {
-                // MARK: - Top Navigation Bar
-                HStack(alignment: .center, spacing: 12) {
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(Color.spiceInk)
-                            .padding(4)
-                    }
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(categoryName)
-                            .font(.system(size: 17, weight: .heavy))
-                            .foregroundColor(Color.spiceInk)
-
-                        Text("\(brandName) · \(displayProducts.count) products")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(Color.spiceMuted)
-                    }
-
-                    Spacer()
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 12)
-                .padding(.bottom, 10)
-                .background(Color.white)
-                .overlay(Divider().background(Color.spiceDivider), alignment: .bottom)
-
-                // MARK: - Search Bar & Filter Chips
-                VStack(spacing: 10) {
-                    HStack(spacing: 8) {
+                // MARK: - Search & Filter Subheader
+                VStack(spacing: 8) {
+                    HStack(spacing: 10) {
                         Image(systemName: "magnifyingglass")
                             .foregroundColor(Color.spiceMuted)
                             .font(.system(size: 14, weight: .semibold))
 
-                        TextField("Search products", text: $searchText)
-                            .font(.system(size: 13.5, weight: .medium))
+                        TextField("Search in \(categoryName)...", text: $searchText)
+                            .font(.system(size: 13, weight: .medium))
                             .foregroundColor(Color.black)
                             .tint(Color.spicePrimary)
+
+                        if !searchText.isEmpty {
+                            Button(action: { searchText = "" }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundColor(Color.spiceMuted)
+                                    .font(.system(size: 14))
+                            }
+                        }
                     }
                     .padding(.horizontal, 12)
-                    .frame(height: 44)
+                    .frame(height: 42)
                     .background(Color.white)
                     .cornerRadius(10)
-                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.spiceCardBorder, lineWidth: 1))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(Color.spiceCardBorder, lineWidth: 1)
+                    )
 
                     // Filter Chips Row
                     ScrollView(.horizontal, showsIndicators: false) {
@@ -117,14 +100,14 @@ struct ProductListingView: View {
                                     selectedFilter = chip
                                 }) {
                                     Text(chip)
-                                        .font(.system(size: 12, weight: .bold))
-                                        .foregroundColor(isSelected ? .white : Color.spiceInk)
-                                        .padding(.horizontal, 14)
-                                        .padding(.vertical, 7)
+                                        .font(.system(size: 11.5, weight: .bold))
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 6)
                                         .background(isSelected ? Color.spicePrimary : Color.white)
-                                        .cornerRadius(20)
+                                        .foregroundColor(isSelected ? .white : Color.spiceInk)
+                                        .cornerRadius(16)
                                         .overlay(
-                                            RoundedRectangle(cornerRadius: 20)
+                                            RoundedRectangle(cornerRadius: 16)
                                                 .stroke(isSelected ? Color.spicePrimary : Color.spiceCardBorder, lineWidth: 1)
                                         )
                                 }
@@ -181,7 +164,11 @@ struct ProductListingView: View {
             // MARK: - Floating Bottom Cart Bar
             floatingCartBar
         }
-        .navigationBarHidden(true)
+        .navigationTitle(categoryName)
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarHidden(false)
+        .toolbar(.visible, for: .navigationBar)
+        .toolbar(.hidden, for: .tabBar)
         .onAppear {
             loadProducts()
             cartManager.fetchCart()
@@ -369,7 +356,22 @@ struct ProductListingView: View {
                     toastMessage = (error as? RequestError)?.errorString ?? error.localizedDescription
                 }
             } receiveValue: { response in
-                self.products = response.dataPage?.products ?? []
+                let list = response.dataPage?.products ?? []
+                self.products = list
+                for prod in list {
+                    if let pId = prod.id {
+                        if let avl = prod.availableQuantity {
+                            CartManager.shared.registerStock(productId: pId, stock: avl)
+                        }
+                        if let variants = prod.variants {
+                            for v in variants {
+                                if let vAvl = v.availableQuantity {
+                                    CartManager.shared.registerStock(productId: pId, variantId: v.id, variantName: v.unit, stock: vAvl)
+                                }
+                            }
+                        }
+                    }
+                }
             }
             .store(in: &cancellables)
     }

@@ -64,107 +64,95 @@ struct OrdersScreen: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                Color.spiceBackground.ignoresSafeArea()
+        ZStack {
+            Color.spiceBackground.ignoresSafeArea()
 
-                VStack(spacing: 0) {
-                    // MARK: - Header
-                    HStack {
-                        Text("My Orders")
-                            .font(.system(size: 22, weight: .heavy))
-                            .foregroundColor(Color.spiceInk)
+            VStack(spacing: 0) {
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        // MARK: - Search Bar
+                        HStack(spacing: 10) {
+                            Image(systemName: "magnifyingglass")
+                                .foregroundColor(Color.spiceMuted)
+                                .font(.system(size: 14, weight: .semibold))
 
-                        Spacer()
-
-                        Button(action: {
-                            loadOrders()
-                        }) {
-                            Text("Refresh")
-                                .font(.system(size: 14, weight: .heavy))
-                                .foregroundColor(Color.spicePrimary)
+                            TextField("Search loaded orders by number", text: $searchText)
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundColor(Color.black)
+                                .tint(Color.spicePrimary)
                         }
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 12)
-                    .padding(.bottom, 10)
+                        .padding(.horizontal, 12)
+                        .frame(height: 46)
+                        .background(Color.white)
+                        .cornerRadius(12)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.spiceCardBorder, lineWidth: 1)
+                        )
 
-                    ScrollView(showsIndicators: false) {
-                        VStack(alignment: .leading, spacing: 12) {
-                            // MARK: - Search Bar
-                            HStack(spacing: 10) {
-                                Image(systemName: "magnifyingglass")
-                                    .foregroundColor(Color.spiceMuted)
-                                    .font(.system(size: 14, weight: .semibold))
-
-                                TextField("Search loaded orders by number", text: $searchText)
-                                    .font(.system(size: 13, weight: .medium))
-                                    .foregroundColor(Color.black)
-                                    .tint(Color.spicePrimary)
-                            }
-                            .padding(.horizontal, 12)
-                            .frame(height: 46)
-                            .background(Color.white)
-                            .cornerRadius(12)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(Color.spiceCardBorder, lineWidth: 1)
-                            )
-
-                            // MARK: - Status Filter Chips
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 8) {
-                                    ForEach(statusChips, id: \.self) { chip in
-                                        Button(action: {
-                                            selectedStatusFilter = chip
-                                        }) {
-                                            Text(chip)
-                                                .font(.system(size: 12.5, weight: .bold))
-                                                .padding(.horizontal, 14)
-                                                .padding(.vertical, 7)
-                                                .background(selectedStatusFilter == chip ? Color.spicePrimary : Color.white)
-                                                .foregroundColor(selectedStatusFilter == chip ? .white : Color.spiceInk)
-                                                .cornerRadius(20)
-                                                .overlay(
-                                                    RoundedRectangle(cornerRadius: 20)
-                                                        .stroke(selectedStatusFilter == chip ? Color.spicePrimary : Color.spiceCardBorder, lineWidth: 1)
-                                                )
-                                        }
-                                        .buttonStyle(.plain)
-                                    }
-                                }
-                                .padding(.vertical, 2)
-                            }
-
-                            // MARK: - Date Range Filter Chip & Clear All
-                            HStack {
-                                SpiceDateRangeFilterChip(selectedRange: $selectedDateRange)
-
-                                Spacer()
-
-                                if selectedDateRange != nil || selectedStatusFilter != "All Orders" || !searchText.isEmpty {
+                        // MARK: - Status Filter Chips
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(statusChips, id: \.self) { chip in
                                     Button(action: {
-                                        selectedDateRange = nil
-                                        selectedStatusFilter = "All Orders"
-                                        searchText = ""
-                                        loadOrders()
+                                        selectedStatusFilter = chip
                                     }) {
-                                        Text("Clear all")
+                                        Text(chip)
                                             .font(.system(size: 12.5, weight: .bold))
-                                            .foregroundColor(Color.spicePrimary)
+                                            .padding(.horizontal, 14)
+                                            .padding(.vertical, 7)
+                                            .background(selectedStatusFilter == chip ? Color.spicePrimary : Color.white)
+                                            .foregroundColor(selectedStatusFilter == chip ? .white : Color.spiceInk)
+                                            .cornerRadius(20)
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 20)
+                                                    .stroke(selectedStatusFilter == chip ? Color.spicePrimary : Color.spiceCardBorder, lineWidth: 1)
+                                            )
                                     }
+                                    .buttonStyle(.plain)
                                 }
                             }
+                            .padding(.vertical, 1)
+                        }
 
-                            // MARK: - Order Cards List
-                            if isLoading && allOrders.isEmpty {
-                                VStack(spacing: 12) {
-                                    SpiceSkeletonBox(height: 120, cornerRadius: 16)
-                                    SpiceSkeletonBox(height: 120, cornerRadius: 16)
-                                    SpiceSkeletonBox(height: 120, cornerRadius: 16)
+                        // MARK: - Date Range Filter Chip & Clear All (Calendar Sheet)
+                        HStack {
+                            SpiceDateRangeFilterChip(selectedRange: $selectedDateRange)
+
+                            Spacer()
+
+                            if selectedDateRange != nil || selectedStatusFilter != "All Orders" || !searchText.isEmpty {
+                                Button(action: {
+                                    selectedDateRange = nil
+                                    selectedStatusFilter = "All Orders"
+                                    searchText = ""
+                                    loadOrders()
+                                }) {
+                                    Text("Clear all")
+                                        .font(.system(size: 12, weight: .bold))
+                                        .foregroundColor(Color.spicePrimary)
                                 }
-                                .padding(.top, 8)
-                            } else if displayedOrders.isEmpty {
+                            }
+                        }
+
+                        // MARK: - Orders List or Skeletons
+                        if isLoading && allOrders.isEmpty {
+                            VStack(spacing: 12) {
+                                ForEach(0..<4, id: \.self) { _ in
+                                    SpiceSkeletonBox(height: 140, cornerRadius: 16)
+                                }
+                            }
+                        } else if displayedOrders.isEmpty {
+                            if allOrders.isEmpty {
+                                SpiceEmptyStateView(
+                                    title: "No Orders Placed Yet",
+                                    message: "You haven't placed any orders with SpiceMonk yet. Explore brands to create your first order.",
+                                    buttonTitle: "Explore Brands"
+                                ) {
+                                    loadOrders()
+                                }
+                                .padding(.top, 30)
+                            } else {
                                 SpiceEmptyStateView(
                                     title: "No Orders Found",
                                     message: "No orders match your filter criteria.",
@@ -173,35 +161,49 @@ struct OrdersScreen: View {
                                     loadOrders()
                                 }
                                 .padding(.top, 30)
-                            } else {
-                                VStack(spacing: 12) {
-                                    ForEach(displayedOrders) { order in
-                                        orderCardView(order: order)
-                                    }
+                            }
+                        } else {
+                            VStack(spacing: 12) {
+                                ForEach(displayedOrders) { order in
+                                    orderCardView(order: order)
                                 }
                             }
-
-                            Spacer(minLength: 24)
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.top, 4)
+
+                        Spacer(minLength: 24)
                     }
-                    .refreshable {
-                        loadOrders()
-                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 10)
+                }
+                .refreshable {
+                    loadOrders()
                 }
             }
-            .navigationBarHidden(true)
-            .onAppear {
-                loadOrders()
-            }
-            .onChange(of: selectedDateRange) { _, _ in
-                loadOrders()
-            }
-            .toast(isPresenting: $isShowToast, duration: 2.0, offsetY: 10, alert: {
-                AlertToast(displayMode: .banner(.pop), type: .regular, title: toastMessage)
-            }, onTap: nil, completion: nil)
         }
+        .navigationTitle("My Orders")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarHidden(false)
+        .toolbar(.visible, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: {
+                    loadOrders()
+                }) {
+                    Text("Refresh")
+                        .font(.system(size: 13.5, weight: .heavy))
+                        .foregroundColor(Color.spicePrimary)
+                }
+            }
+        }
+        .onAppear {
+            loadOrders()
+        }
+        .onChange(of: selectedDateRange) { _, _ in
+            loadOrders()
+        }
+        .toast(isPresenting: $isShowToast, duration: 2.0, offsetY: 10, alert: {
+            AlertToast(displayMode: .banner(.pop), type: .regular, title: toastMessage)
+        }, onTap: nil, completion: nil)
     }
 
     // MARK: - Order Card Component

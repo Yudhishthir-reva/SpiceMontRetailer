@@ -43,43 +43,6 @@ struct DeliveryTrackingScreen: View {
             Color.spiceBackground.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // MARK: - Top Bar
-                HStack(alignment: .center, spacing: 12) {
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(Color.spiceInk)
-                            .padding(4)
-                    }
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Delivery Tracking")
-                            .font(.system(size: 17, weight: .heavy))
-                            .foregroundColor(Color.spiceInk)
-
-                        if !orderNumberText.isEmpty {
-                            Text(orderNumberText)
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundColor(Color.spiceMuted)
-                        }
-                    }
-
-                    Spacer()
-
-                    Button(action: {
-                        loadTracking()
-                    }) {
-                        Text("Refresh")
-                            .font(.system(size: 13.5, weight: .heavy))
-                            .foregroundColor(Color.spicePrimary)
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 12)
-                .padding(.bottom, 10)
-                .background(Color.white)
-                .overlay(Divider().background(Color.spiceDivider), alignment: .bottom)
-
                 if isLoading && trackData == nil {
                     ScrollView {
                         VStack(spacing: 12) {
@@ -144,7 +107,20 @@ struct DeliveryTrackingScreen: View {
                 }
             }
         }
-        .navigationBarHidden(true)
+        .navigationTitle("Track Order")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarHidden(false)
+        .toolbar(.visible, for: .navigationBar)
+        .toolbar(.hidden, for: .tabBar)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: { loadTracking() }) {
+                    Text("Refresh")
+                        .font(.system(size: 13.5, weight: .heavy))
+                        .foregroundColor(Color.spicePrimary)
+                }
+            }
+        }
         .onAppear {
             loadTracking()
         }

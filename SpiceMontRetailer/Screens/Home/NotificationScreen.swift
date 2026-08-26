@@ -57,21 +57,59 @@ struct NotificationScreen: View {
     ]
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Header
-            HStack {
-                Button(action: { dismiss() }) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(Color.spiceInk)
+        ScrollView {
+            VStack(spacing: 10) {
+                ForEach(notifications) { item in
+                    SpiceCard(padding: 12) {
+                        HStack(alignment: .top, spacing: 12) {
+                            Circle()
+                                .fill(item.isUnread ? Color.spicePrimaryLight : Color.spiceLightGray)
+                                .frame(width: 38, height: 38)
+                                .overlay(
+                                    Image(systemName: item.type == "order" ? "shippingbox.fill" : (item.type == "scheme" ? "tag.fill" : "person.fill"))
+                                        .font(.system(size: 14, weight: .bold))
+                                        .foregroundColor(item.isUnread ? Color.spicePrimary : Color.spiceMuted)
+                                )
+
+                            VStack(alignment: .leading, spacing: 3) {
+                                HStack {
+                                    Text(item.title)
+                                        .font(.system(size: 13, weight: .heavy))
+                                        .foregroundColor(Color.spiceInk)
+
+                                    Spacer()
+
+                                    if item.isUnread {
+                                        Circle()
+                                            .fill(Color.spicePrimary)
+                                            .frame(width: 7, height: 7)
+                                    }
+                                }
+
+                                Text(item.message)
+                                    .font(.system(size: 11, weight: .medium))
+                                    .foregroundColor(Color.spiceInk.opacity(0.85))
+                                    .lineSpacing(2)
+
+                                Text(item.time)
+                                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                                    .foregroundColor(Color.spiceMuted)
+                                    .padding(.top, 2)
+                            }
+                        }
+                    }
                 }
-
-                Text("Notifications")
-                    .font(.system(size: 15, weight: .heavy))
-                    .foregroundColor(Color.spiceInk)
-
-                Spacer()
-
+            }
+            .padding(16)
+        }
+        .background(Color.spiceBackground)
+        .navigationTitle("Notifications")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarHidden(false)
+        .toolbar(.visible, for: .navigationBar)
+        .toolbar(.hidden, for: .tabBar)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: {
                     for i in 0..<notifications.count {
                         notifications[i] = SpiceNotificationItem(
@@ -88,56 +126,6 @@ struct NotificationScreen: View {
                         .foregroundColor(Color.spicePrimary)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(Color.white)
-            .overlay(Divider().background(Color.spiceDivider), alignment: .bottom)
-
-            ScrollView {
-                VStack(spacing: 10) {
-                    ForEach(notifications) { item in
-                        SpiceCard(
-                            backgroundColor: item.isUnread ? Color(hex: "#F4FAF6") : Color.white,
-                            borderColor: item.isUnread ? Color(hex: "#CFE7D9") : Color.spiceCardBorder,
-                            padding: 12
-                        ) {
-                            HStack(alignment: .top, spacing: 12) {
-                                Image(systemName: item.type == "order" ? "box.truck.fill" : (item.type == "scheme" ? "tag.fill" : "checkmark.seal.fill"))
-                                    .font(.system(size: 16))
-                                    .foregroundColor(item.isUnread ? Color.spicePrimary : Color.spiceMuted)
-                                    .frame(width: 24, height: 24)
-
-                                VStack(alignment: .leading, spacing: 4) {
-                                    HStack {
-                                        Text(item.title)
-                                            .font(.system(size: 12.5, weight: .heavy))
-                                            .foregroundColor(Color.spiceInk)
-                                        Spacer()
-                                        if item.isUnread {
-                                            Circle()
-                                                .fill(Color.spicePrimary)
-                                                .frame(width: 7, height: 7)
-                                        }
-                                    }
-
-                                    Text(item.message)
-                                        .font(.system(size: 11, weight: .medium))
-                                        .foregroundColor(Color.spiceInk.opacity(0.85))
-                                        .lineSpacing(2)
-
-                                    Text(item.time)
-                                        .font(.system(size: 10, weight: .medium, design: .monospaced))
-                                        .foregroundColor(Color.spiceMuted)
-                                        .padding(.top, 2)
-                                }
-                            }
-                        }
-                    }
-                }
-                .padding(16)
-            }
-            .background(Color.spiceBackground)
         }
-        .navigationBarHidden(true)
     }
 }

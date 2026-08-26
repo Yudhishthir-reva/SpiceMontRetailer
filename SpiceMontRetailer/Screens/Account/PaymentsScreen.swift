@@ -35,104 +35,131 @@ struct PaymentsScreen: View {
         return list
     }
 
+    var filterSubtitleText: String {
+        let modeText = selectedModeFilter
+        let dateText = selectedDateRange?.displayString ?? "All Time"
+        return "\(modeText), \(dateText)"
+    }
+
     var body: some View {
-        NavigationStack {
-            ZStack {
-                Color.spiceBackground.ignoresSafeArea()
+        ZStack {
+            Color.spiceBackground.ignoresSafeArea()
 
-                VStack(spacing: 0) {
-                    // MARK: - Header
-                    HStack {
-                        Text("Payments")
-                            .font(.system(size: 22, weight: .heavy))
-                            .foregroundColor(Color.spiceInk)
+            VStack(spacing: 0) {
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 14) {
+                        // MARK: - Top Total Paid Summary Mint Card
+                        totalPaidSummaryCard
 
-                        Spacer()
-
-                        Button(action: {
-                            viewModel.loadPayments()
-                        }) {
-                            Text("Refresh")
-                                .font(.system(size: 14, weight: .heavy))
-                                .foregroundColor(Color.spicePrimary)
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 12)
-                    .padding(.bottom, 8)
-
-                    ScrollView(showsIndicators: false) {
-                        VStack(alignment: .leading, spacing: 14) {
-                            // MARK: - Top Total Paid Summary Mint Card
-                            totalPaidSummaryCard
-
-                            // MARK: - Payment Mode Filter Chips
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 8) {
-                                    ForEach(modeFilters, id: \.self) { mode in
-                                        Button(action: {
-                                            selectedModeFilter = mode
-                                        }) {
-                                            Text(mode)
-                                                .font(.system(size: 12.5, weight: .bold))
-                                                .padding(.horizontal, 14)
-                                                .padding(.vertical, 7)
-                                                .background(selectedModeFilter == mode ? Color.spicePrimary : Color.white)
-                                                .foregroundColor(selectedModeFilter == mode ? .white : Color.spiceInk)
-                                                .cornerRadius(20)
-                                                .overlay(
-                                                    RoundedRectangle(cornerRadius: 20)
-                                                        .stroke(selectedModeFilter == mode ? Color.spicePrimary : Color.spiceCardBorder, lineWidth: 1)
-                                                )
-                                        }
-                                        .buttonStyle(.plain)
+                        // MARK: - Payment Mode Filter Chips
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(modeFilters, id: \.self) { mode in
+                                    Button(action: {
+                                        selectedModeFilter = mode
+                                    }) {
+                                        Text(mode)
+                                            .font(.system(size: 12.5, weight: .bold))
+                                            .padding(.horizontal, 14)
+                                            .padding(.vertical, 7)
+                                            .background(selectedModeFilter == mode ? Color.spicePrimary : Color.white)
+                                            .foregroundColor(selectedModeFilter == mode ? .white : Color.spiceInk)
+                                            .cornerRadius(20)
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 20)
+                                                    .stroke(selectedModeFilter == mode ? Color.spicePrimary : Color.spiceCardBorder, lineWidth: 1)
+                                            )
                                     }
+                                    .buttonStyle(.plain)
                                 }
-                                .padding(.vertical, 1)
                             }
+                            .padding(.vertical, 1)
+                        }
 
-                            // MARK: - Date Filter Chip
-                            HStack {
-                                SpiceDateRangeFilterChip(selectedRange: $selectedDateRange)
-                                Spacer()
+                        // MARK: - Filter Row 2: Date Filter (Calendar Sheet)
+                        HStack {
+                            SpiceDateRangeFilterChip(selectedRange: $selectedDateRange)
+
+                            Spacer()
+
+                            if selectedDateRange != nil || selectedModeFilter != "All Modes" {
+                                Button(action: {
+                                    selectedDateRange = nil
+                                    selectedModeFilter = "All Modes"
+                                }) {
+                                    Text("Clear all")
+                                        .font(.system(size: 12, weight: .bold))
+                                        .foregroundColor(Color.spicePrimary)
+                                }
                             }
+                        }
 
-                            // MARK: - Transactions List
-                            if filteredTransactions.isEmpty {
+                        // MARK: - Transactions List or Skeletons
+                        if viewModel.isLoading && viewModel.transactions.isEmpty {
+                            VStack(spacing: 12) {
+                                ForEach(0..<4, id: \.self) { _ in
+                                    SpiceSkeletonBox(height: 180, cornerRadius: 16)
+                                }
+                            }
+                        } else if filteredTransactions.isEmpty {
+                            if viewModel.transactions.isEmpty {
                                 SpiceEmptyStateView(
-                                    title: "No Payments Found",
-                                    message: "No payment transactions match your filter.",
+                                    title: "No Payment History",
+                                    message: "No payment transactions have been recorded for your account yet.",
                                     buttonTitle: "Refresh"
                                 ) {
                                     viewModel.loadPayments()
                                 }
                                 .padding(.top, 24)
                             } else {
-                                VStack(spacing: 12) {
-                                    ForEach(filteredTransactions) { txn in
-                                        paymentCardView(txn: txn)
-                                    }
+                                SpiceEmptyStateView(
+                                    title: "No Transactions Found",
+                                    message: "No payments match your filter criteria.",
+                                    buttonTitle: "Refresh"
+                                ) {
+                                    viewModel.loadPayments()
+                                }
+                                .padding(.top, 24)
+                            }
+                        } else {
+                            VStack(spacing: 12) {
+                                ForEach(filteredTransactions) { txn in
+                                    paymentCardView(txn: txn)
                                 }
                             }
-
-                            Spacer(minLength: 24)
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.top, 4)
+
+                        Spacer(minLength: 24)
                     }
-                    .refreshable {
-                        viewModel.loadPayments()
-                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 10)
+                }
+                .refreshable {
+                    viewModel.loadPayments()
                 }
             }
-            .navigationBarHidden(true)
-            .onAppear {
-                viewModel.loadPayments()
-            }
-            .toast(isPresenting: $viewModel.isShowToast, duration: 2.0, offsetY: 10, alert: {
-                AlertToast(displayMode: .banner(.pop), type: .regular, title: viewModel.toastMessage)
-            }, onTap: nil, completion: nil)
         }
+        .navigationTitle("Payments")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarHidden(false)
+        .toolbar(.visible, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: {
+                    viewModel.loadPayments()
+                }) {
+                    Text("Refresh")
+                        .font(.system(size: 13.5, weight: .heavy))
+                        .foregroundColor(Color.spicePrimary)
+                }
+            }
+        }
+        .onAppear {
+            viewModel.loadPayments()
+        }
+        .toast(isPresenting: $viewModel.isShowToast, duration: 2.0, offsetY: 10, alert: {
+            AlertToast(displayMode: .banner(.pop), type: .regular, title: viewModel.toastMessage)
+        }, onTap: nil, completion: nil)
     }
 
     // MARK: - Top Summary Mint Card

@@ -725,6 +725,7 @@ struct RetailerOfferScheme: Decodable, Identifiable, Hashable {
     var description: String?
     var eligible: Bool?
     var discountAmount: Double?
+    var expiryDate: String?
 
     enum CodingKeys: String, CodingKey {
         case id, type, title, description, eligible
@@ -733,6 +734,9 @@ struct RetailerOfferScheme: Decodable, Identifiable, Hashable {
         case minOrderValue = "min_order_value"
         case productId = "product_id"
         case discountAmount = "discount_amount"
+        case expiryDate = "expiry_date"
+        case validTill = "valid_till"
+        case endDate = "end_date"
     }
 
     init(from decoder: Decoder) throws {
@@ -747,6 +751,7 @@ struct RetailerOfferScheme: Decodable, Identifiable, Hashable {
         description = c.decodeStringLeniently(forKey: .description)
         eligible = c.decodeBoolLeniently(forKey: .eligible)
         discountAmount = try? c.decodeIfPresent(Double.self, forKey: .discountAmount)
+        expiryDate = c.decodeStringLeniently(forKey: .expiryDate) ?? c.decodeStringLeniently(forKey: .validTill) ?? c.decodeStringLeniently(forKey: .endDate)
     }
 }
 
@@ -1017,7 +1022,36 @@ struct CartItem: Decodable, Identifiable, Hashable {
     var perPrice: String?
     var totalPrice: String?
     var availableQuantity: Int?
+    var variant: ProductVariant?
     var product: Product?
+
+    var maxStock: Int {
+        if let direct = availableQuantity, direct >= 0 {
+            return direct
+        }
+        if let v = variant, let avl = v.availableQuantity, avl >= 0 {
+            return avl
+        }
+        if let vId = variantId, let variants = product?.variants {
+            if let matched = variants.first(where: { $0.id == vId }), let avl = matched.availableQuantity, avl >= 0 {
+                return avl
+            }
+        }
+        if let vName = variantName, let variants = product?.variants {
+            if let matched = variants.first(where: { $0.unit == vName || $0.variantName == vName }), let avl = matched.availableQuantity, avl >= 0 {
+                return avl
+            }
+        }
+        if let prodAvl = product?.availableQuantity, prodAvl >= 0 {
+            return prodAvl
+        }
+        if let pId = productId {
+            if let cached = CartManager.shared.getStock(productId: pId, variantId: variantId, variantName: variantName), cached >= 0 {
+                return cached
+            }
+        }
+        return 9999
+    }
 
     var identifier: String {
         if let id = id, id > 0 { return "\(id)" }
@@ -1025,7 +1059,7 @@ struct CartItem: Decodable, Identifiable, Hashable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, price, mrp, gst, product
+        case id, price, mrp, gst, product, variant
         case cartId = "cart_id"
         case productId = "product_id"
         case productName = "product_name"
@@ -1039,6 +1073,10 @@ struct CartItem: Decodable, Identifiable, Hashable {
         case availableQuantity = "avl_qty"
         case avlQuantity = "avl_quantity"
         case availableQty = "available_qty"
+        case availableQuantityAlt = "available_quantity"
+        case availableStock = "available_stock"
+        case maxQuantity = "max_quantity"
+        case maxQty = "max_qty"
         case stock = "stock"
     }
 
@@ -1063,10 +1101,16 @@ struct CartItem: Decodable, Identifiable, Hashable {
         gst = c.decodeStringLeniently(forKey: .gst)
         perPrice = c.decodeStringLeniently(forKey: .perPrice)
         totalPrice = c.decodeStringLeniently(forKey: .totalPrice)
-        availableQuantity = c.decodeIntLeniently(forKey: .availableQuantity) ??
+        let avl = c.decodeIntLeniently(forKey: .availableQuantity) ??
             c.decodeIntLeniently(forKey: .avlQuantity) ??
             c.decodeIntLeniently(forKey: .availableQty) ??
+            c.decodeIntLeniently(forKey: .availableQuantityAlt) ??
+            c.decodeIntLeniently(forKey: .availableStock) ??
+            c.decodeIntLeniently(forKey: .maxQuantity) ??
+            c.decodeIntLeniently(forKey: .maxQty) ??
             c.decodeIntLeniently(forKey: .stock)
+        availableQuantity = avl
+        variant = try? c.decodeIfPresent(ProductVariant.self, forKey: .variant)
         product = try? c.decodeIfPresent(Product.self, forKey: .product)
     }
 
@@ -2429,6 +2473,107 @@ struct RetailerCitiesResponse: Decodable {
         let s = try? c.decodeIfPresent([RetailerCityItem].self, forKey: .cities)
         data = d ?? s
         cities = s ?? d
+    }
+}
+
+// MARK: - Retailer Profile API Models
+
+struct RetailerProfileResponse: Decodable {
+    var status: Bool?
+    var message: String?
+    var data: RetailerProfileData?
+
+    enum CodingKeys: String, CodingKey { case status, message, data }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        status = c.decodeBoolLeniently(forKey: .status)
+        message = c.decodeStringLeniently(forKey: .message)
+        data = try? c.decodeIfPresent(RetailerProfileData.self, forKey: .data)
+    }
+}
+
+struct RetailerProfileData: Decodable {
+    var sellerId: String?
+    var name: String?
+    var shopName: String?
+    var mobile: String?
+    var whatsappNo: String?
+    var email: String?
+    var address: String?
+    var gstNo: String?
+    var latitude: String?
+    var longitude: String?
+    var state: RetailerProfileState?
+    var city: RetailerProfileCity?
+    var profilePic: String?
+    var aadharFront: String?
+    var aadharBack: String?
+    var status: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case sellerId = "seller_id"
+        case name
+        case shopName = "shop_name"
+        case mobile
+        case whatsappNo = "whatsapp_no"
+        case email
+        case address
+        case gstNo = "gst_no"
+        case latitude
+        case longitude
+        case state
+        case city
+        case profilePic = "profile_pic"
+        case aadharFront = "aadhar_front"
+        case aadharBack = "aadhar_back"
+        case status
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        sellerId = c.decodeStringLeniently(forKey: .sellerId)
+        name = c.decodeStringLeniently(forKey: .name)
+        shopName = c.decodeStringLeniently(forKey: .shopName)
+        mobile = c.decodeStringLeniently(forKey: .mobile)
+        whatsappNo = c.decodeStringLeniently(forKey: .whatsappNo)
+        email = c.decodeStringLeniently(forKey: .email)
+        address = c.decodeStringLeniently(forKey: .address)
+        gstNo = c.decodeStringLeniently(forKey: .gstNo)
+        latitude = c.decodeStringLeniently(forKey: .latitude)
+        longitude = c.decodeStringLeniently(forKey: .longitude)
+        state = try? c.decodeIfPresent(RetailerProfileState.self, forKey: .state)
+        city = try? c.decodeIfPresent(RetailerProfileCity.self, forKey: .city)
+        profilePic = c.decodeStringLeniently(forKey: .profilePic)
+        aadharFront = c.decodeStringLeniently(forKey: .aadharFront)
+        aadharBack = c.decodeStringLeniently(forKey: .aadharBack)
+        status = c.decodeIntLeniently(forKey: .status)
+    }
+}
+
+struct RetailerProfileState: Decodable {
+    var id: Int?
+    var name: String?
+
+    enum CodingKeys: String, CodingKey { case id, name }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = c.decodeIntLeniently(forKey: .id)
+        name = c.decodeStringLeniently(forKey: .name)
+    }
+}
+
+struct RetailerProfileCity: Decodable {
+    var id: Int?
+    var name: String?
+
+    enum CodingKeys: String, CodingKey { case id, name }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = c.decodeIntLeniently(forKey: .id)
+        name = c.decodeStringLeniently(forKey: .name)
     }
 }
 

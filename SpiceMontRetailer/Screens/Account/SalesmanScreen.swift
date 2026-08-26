@@ -25,8 +25,6 @@ struct SalesmanScreen: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            SpiceTopBar(title: "Assigned Salesman", showBack: true, onBack: { dismiss() })
-
             ScrollView {
                 VStack(spacing: 12) {
                     if !salesmanName.isEmpty || !salesmanPhone.isEmpty {
@@ -49,8 +47,8 @@ struct SalesmanScreen: View {
 
                                     if !salesmanPhone.isEmpty {
                                         Text(salesmanPhone)
-                                            .font(.system(size: 13, weight: .bold, design: .monospaced))
-                                            .foregroundColor(Color.spiceInk)
+                                            .font(.system(size: 14, weight: .bold, design: .monospaced))
+                                            .foregroundColor(Color.spicePrimary)
                                     }
 
                                     SpiceStatusBadge(status: "MAPPED BY ADMIN")
@@ -100,7 +98,11 @@ struct SalesmanScreen: View {
             }
             .background(Color.spiceBackground)
         }
-        .navigationBarHidden(true)
+        .navigationTitle("Assigned Salesman")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarHidden(false)
+        .toolbar(.visible, for: .navigationBar)
+        .toolbar(.hidden, for: .tabBar)
     }
 }
 
@@ -128,8 +130,6 @@ struct CustomerSupportScreen: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            SpiceTopBar(title: "Customer Support", showBack: true, onBack: { dismiss() })
-
             ScrollView {
                 VStack(spacing: 12) {
                     // Toll-free Card
@@ -178,31 +178,25 @@ struct CustomerSupportScreen: View {
                                         .frame(width: 42, height: 42)
                                         .overlay(
                                             Text(String(salesmanName.prefix(2)).uppercased())
-                                                .font(.system(size: 11, weight: .heavy))
+                                                .font(.system(size: 14, weight: .heavy))
                                                 .foregroundColor(.white)
                                         )
 
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(salesmanName)
-                                            .font(.system(size: 12.5, weight: .heavy))
-                                            .foregroundColor(Color.spiceInk)
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text("Assigned Salesman")
+                                            .font(.system(size: 11, weight: .medium))
+                                            .foregroundColor(Color.spiceMuted)
 
-                                        if !salesmanPhone.isEmpty {
-                                            Text("Your salesman · \(salesmanPhone)")
-                                                .font(.system(size: 10.5, weight: .medium, design: .monospaced))
-                                                .foregroundColor(Color.spiceMuted)
-                                        }
+                                        Text(salesmanName)
+                                            .font(.system(size: 13.5, weight: .heavy))
+                                            .foregroundColor(Color.spiceInk)
                                     }
 
                                     Spacer()
 
-                                    Text("CALL")
-                                        .font(.system(size: 9.5, weight: .heavy))
-                                        .foregroundColor(Color.spicePrimary)
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 4)
-                                        .background(Color.spicePrimaryLight)
-                                        .cornerRadius(6)
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 12, weight: .bold))
+                                        .foregroundColor(Color.spiceMuted)
                                 }
                             }
                         }
@@ -226,6 +220,10 @@ struct CustomerSupportScreen: View {
             }
             .background(Color.spiceBackground)
         }
-        .navigationBarHidden(true)
+        .navigationTitle("Customer Support")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarHidden(false)
+        .toolbar(.visible, for: .navigationBar)
+        .toolbar(.hidden, for: .tabBar)
     }
 }

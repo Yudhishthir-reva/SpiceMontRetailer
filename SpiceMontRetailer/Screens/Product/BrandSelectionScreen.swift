@@ -31,15 +31,19 @@ struct BrandSelectionScreen: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 14) {
-                    // MARK: - Header
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("Select Brand")
-                            .font(.system(size: 22, weight: .heavy))
+                    // MARK: - Step Subheader
+                    HStack {
+                        Text("All Brands")
+                            .font(.system(size: 15, weight: .heavy))
                             .foregroundColor(Color.spiceInk)
-
+                        Spacer()
                         Text("Step 1 of 3")
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundColor(Color.spiceMuted)
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(Color.spicePrimary)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(Color.spicePrimaryLight)
+                            .cornerRadius(6)
                     }
                     .padding(.top, 8)
                     .padding(.horizontal, 4)
@@ -171,6 +175,22 @@ struct BrandSelectionScreen: View {
             }
         }
         .animation(.easeInOut(duration: 0.25), value: cartManager.cartCount > 0)
+        .navigationTitle("Select Brand")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarHidden(false)
+        .toolbar(.visible, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: {
+                    loadBrands()
+                    cartManager.fetchCart()
+                }) {
+                    Text("Refresh")
+                        .font(.system(size: 13.5, weight: .heavy))
+                        .foregroundColor(Color.spicePrimary)
+                }
+            }
+        }
         .onAppear {
             loadBrands()
             cartManager.fetchCart()
