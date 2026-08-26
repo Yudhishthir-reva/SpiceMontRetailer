@@ -23,6 +23,7 @@ struct Product: Decodable, Identifiable, Hashable {
     var hsnCode: String?
     var inStock: Bool?
     var isNew: Bool?
+    var availableQuantity: Int?
     var categoryId: Int?
     var categoryName: String?
     var brandId: Int?
@@ -35,6 +36,9 @@ struct Product: Decodable, Identifiable, Hashable {
         case discountPercentage = "discount_percentage"
         case inStock = "in_stock"
         case isNew = "is_new"
+        case availableQuantity = "avl_qty"
+        case availableQuantityAlt = "available_quantity"
+        case stock = "stock"
         case categoryId = "category_id"
         case categoryName = "category_name"
         case brandId = "brand_id"
@@ -52,6 +56,10 @@ struct Product: Decodable, Identifiable, Hashable {
         description = c.decodeStringLeniently(forKey: .description)
         inStock = c.decodeBoolLeniently(forKey: .inStock)
         isNew = c.decodeBoolLeniently(forKey: .isNew)
+        let q1 = c.decodeIntLeniently(forKey: .availableQuantity)
+        let q2 = c.decodeIntLeniently(forKey: .availableQuantityAlt)
+        let q3 = c.decodeIntLeniently(forKey: .stock)
+        availableQuantity = q1 ?? q2 ?? q3
         categoryId = c.decodeIntLeniently(forKey: .categoryId)
         brandId = c.decodeIntLeniently(forKey: .brandId)
 
@@ -83,6 +91,7 @@ struct Product: Decodable, Identifiable, Hashable {
         price: String? = nil, mrp: String? = nil, discountPercentage: String? = nil,
         unit: String? = nil, description: String? = nil,
         hsnCode: String? = nil, inStock: Bool? = true, isNew: Bool? = false,
+        availableQuantity: Int? = nil,
         categoryId: Int? = nil, categoryName: String? = nil,
         brandId: Int? = nil, brandName: String? = nil,
         variants: [ProductVariant]? = nil
@@ -92,6 +101,7 @@ struct Product: Decodable, Identifiable, Hashable {
         self.price = price; self.mrp = mrp; self.discountPercentage = discountPercentage
         self.unit = unit; self.description = description; self.hsnCode = hsnCode
         self.inStock = inStock; self.isNew = isNew
+        self.availableQuantity = availableQuantity
         self.categoryId = categoryId; self.categoryName = categoryName
         self.brandId = brandId; self.brandName = brandName
         self.variants = variants
@@ -101,7 +111,6 @@ struct Product: Decodable, Identifiable, Hashable {
     static func == (lhs: Product, rhs: Product) -> Bool { lhs.id == rhs.id }
 
     var title: String? { name }
-
     var displayPrice: String { price?.priceLabel ?? "₹0" }
     var displayMRP: String { mrp?.priceLabel ?? "" }
 
@@ -134,6 +143,7 @@ struct ProductImage: Decodable, Hashable {
 struct ProductVariant: Decodable, Identifiable, Hashable {
     var id: Int?
     var unit: String?
+    var variantName: String?
     var price: String?
     var mrp: String?
     var gst: String?
@@ -145,6 +155,8 @@ struct ProductVariant: Decodable, Identifiable, Hashable {
         case id, unit, price, mrp, gst
         case variantName = "variant_name"
         case availableQuantity = "avl_qty"
+        case availableQuantityAlt = "available_quantity"
+        case stock = "stock"
         case minOrderQuantity = "min_order_qty"
         case maxOrderQuantity = "max_order_qty"
     }
@@ -155,10 +167,14 @@ struct ProductVariant: Decodable, Identifiable, Hashable {
         let vName = c.decodeStringLeniently(forKey: .variantName)
         let u = c.decodeStringLeniently(forKey: .unit)
         unit = (vName != nil && !vName!.isEmpty) ? vName : u
+        variantName = vName ?? u
         price = c.decodeStringLeniently(forKey: .price)
         mrp = c.decodeStringLeniently(forKey: .mrp)
         gst = c.decodeStringLeniently(forKey: .gst)
-        availableQuantity = c.decodeIntLeniently(forKey: .availableQuantity)
+        let avl1 = c.decodeIntLeniently(forKey: .availableQuantity)
+        let avl2 = c.decodeIntLeniently(forKey: .availableQuantityAlt)
+        let avl3 = c.decodeIntLeniently(forKey: .stock)
+        availableQuantity = avl1 ?? avl2 ?? avl3
         minOrderQuantity = c.decodeIntLeniently(forKey: .minOrderQuantity)
         maxOrderQuantity = c.decodeIntLeniently(forKey: .maxOrderQuantity)
     }
@@ -166,6 +182,7 @@ struct ProductVariant: Decodable, Identifiable, Hashable {
     init(
         id: Int? = nil,
         unit: String? = nil,
+        variantName: String? = nil,
         price: String? = nil,
         mrp: String? = nil,
         gst: String? = nil,
@@ -175,6 +192,7 @@ struct ProductVariant: Decodable, Identifiable, Hashable {
     ) {
         self.id = id
         self.unit = unit
+        self.variantName = variantName
         self.price = price
         self.mrp = mrp
         self.gst = gst

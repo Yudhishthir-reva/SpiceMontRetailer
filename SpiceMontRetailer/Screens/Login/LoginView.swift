@@ -34,7 +34,7 @@ struct LoginScreen: View {
                             Image("spice_monk_logo")
                                 .resizable()
                                 .scaledToFit()
-                                .frame(width: 56, height: 56)
+                                .frame(width: 80, height: 80)
                                 .padding(.top, 14)
 
                             Text("Retailer Login")
