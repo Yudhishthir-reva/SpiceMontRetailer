@@ -118,18 +118,28 @@ struct LoginScreen: View {
                             viewModel.sendOTP()
                         }
 
-                        // Register Now Link
-                        HStack {
-                            Spacer()
-                            Text("New retailer?")
-                                .font(.system(size: 12.5, weight: .semibold))
+                        // OR Divider
+                        HStack(spacing: 12) {
+                            Rectangle()
+                                .fill(Color.spiceCardBorder)
+                                .frame(height: 1)
+                            Text("OR")
+                                .font(.system(size: 11, weight: .bold))
                                 .foregroundColor(Color.spiceMuted)
-                            Button(action: { showRegistration = true }) {
-                                Text("Register Now")
-                                    .font(.system(size: 12.5, weight: .heavy))
-                                    .foregroundColor(Color.spicePrimary)
-                            }
-                            Spacer()
+                            Rectangle()
+                                .fill(Color.spiceCardBorder)
+                                .frame(height: 1)
+                        }
+                        .padding(.vertical, 4)
+
+                        // Register Button in Rectangle
+                        SpiceOutlinedButton(
+                            title: "New Retailer? Register Now",
+                            icon: "person.badge.plus",
+                            color: Color.spicePrimary,
+                            height: 50
+                        ) {
+                            showRegistration = true
                         }
 
                         Spacer(minLength: 40)
@@ -266,7 +276,7 @@ struct LoginScreen: View {
                     Text(block.message?.isEmpty == false ? block.message! : "We could not find a registered retailer account for this mobile number. Register your shop to get started.")
                         .font(.system(size: 11.5, weight: .medium))
                         .foregroundColor(Color.spiceMuted)
-                    SpicePrimaryButton(title: "Register Now", height: 36) {
+                    SpicePrimaryButton(title: "Register Now", height: 48) {
                         viewModel.accountBlock = nil
                         showRegistration = true
                     }
