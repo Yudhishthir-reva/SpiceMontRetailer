@@ -97,16 +97,16 @@ struct AddressListScreen: View {
                     HStack(spacing: 6) {
                         if isSelectMode {
                             Image(systemName: isSelected ? "largecircle.fill.circle" : "circle")
-                                .font(.system(size: 16, weight: .bold))
+                                .font(.appFont(size: 16, weight: .bold))
                                 .foregroundColor(isSelected ? Color.spicePrimary : Color.spiceMuted)
                         } else {
                             Image(systemName: address.type?.lowercased() == "office" ? "building.2.fill" : "storefront.fill")
-                                .font(.system(size: 13))
+                                .font(.appFont(size: 13))
                                 .foregroundColor(Color.spicePrimary)
                         }
 
                         Text(address.name ?? "Store Address")
-                            .font(.system(size: 13.5, weight: .heavy))
+                            .font(.appFont(size: 13.5, weight: .heavy))
                             .foregroundColor(Color.spiceInk)
                     }
 
@@ -119,7 +119,7 @@ struct AddressListScreen: View {
                             setDefault(id: address.id ?? 0)
                         }) {
                             Text("Set Default")
-                                .font(.system(size: 11, weight: .bold))
+                                .font(.appFont(size: 11, weight: .bold))
                                 .foregroundColor(Color.spicePrimary)
                         }
                     }
@@ -128,17 +128,17 @@ struct AddressListScreen: View {
                 Divider()
 
                 Text(address.fullAddress)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.appFont(size: 12, weight: .medium))
                     .foregroundColor(Color.spiceInk.opacity(0.85))
                     .lineSpacing(2)
 
                 if let phone = address.phone, !phone.isEmpty {
                     HStack(spacing: 6) {
                         Image(systemName: "phone.fill")
-                            .font(.system(size: 10))
+                            .font(.appFont(size: 10))
                             .foregroundColor(Color.spiceMuted)
                         Text("+91 \(phone)")
-                            .font(.system(size: 11.5, weight: .semibold, design: .monospaced))
+                            .font(.appFont(size: 11.5, weight: .semibold, design: .monospaced))
                             .foregroundColor(Color.spiceMuted)
                     }
                 }
@@ -175,16 +175,16 @@ struct AddressListScreen: View {
                 .frame(width: 72, height: 72)
                 .overlay(
                     Image(systemName: "mappin.and.ellipse")
-                        .font(.system(size: 30))
+                        .font(.appFont(size: 30))
                         .foregroundColor(Color.spicePrimary)
                 )
 
             Text("No Delivery Addresses")
-                .font(.system(size: 17, weight: .heavy))
+                .font(.appFont(size: 17, weight: .heavy))
                 .foregroundColor(Color.spiceInk)
 
             Text("Add your shop, godown, or outlet delivery address to receive wholesale orders.")
-                .font(.system(size: 12, weight: .medium))
+                .font(.appFont(size: 12, weight: .medium))
                 .foregroundColor(Color.spiceMuted)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)

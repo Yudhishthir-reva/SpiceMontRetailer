@@ -1269,13 +1269,16 @@ struct Order: Decodable, Identifiable, Hashable {
     var packingCharge: String?
     var paymentMethod: String?
     var paymentStatus: String?
+    var paymentMode: String?
     var createdAt: String?
     var orderDate: String?
     var orderTime: String?
     var deliveryDate: String?
     var deliveryTime: String?
     var remark: String?
+    var audioRemark: String?
     var canTrack: Bool?
+    var canCancel: Bool?
     var itemsCount: Int?
     var items: [OrderItem]?
     var address: Address?
@@ -1286,6 +1289,7 @@ struct Order: Decodable, Identifiable, Hashable {
 
     enum CodingKeys: String, CodingKey {
         case id, total, subtotal, discount, items, address, remark, rider, timeline
+        case audioRemark = "audio_remark"
         case statusStr = "status"
         case orderId = "order_id"
         case orderNumber = "order_number"
@@ -1299,11 +1303,13 @@ struct Order: Decodable, Identifiable, Hashable {
         case deliveryDate = "delivery_date"
         case deliveryTime = "delivery_time"
         case canTrack = "can_track"
+        case canCancel = "can_cancel"
         case deliveryCharge = "delivery_charge"
         case handlingCharge = "handling_charge"
         case packingCharge = "packing_charge"
         case paymentMethod = "payment_method"
         case paymentStatus = "payment_status"
+        case paymentMode = "payment_mode"
         case itemsCount = "items_count"
         case orderItems = "order_items"
         case appliedOffer = "applied_offer"
@@ -1336,13 +1342,16 @@ struct Order: Decodable, Identifiable, Hashable {
         packingCharge = c.decodeStringLeniently(forKey: .packingCharge)
         paymentMethod = c.decodeStringLeniently(forKey: .paymentMethod)
         paymentStatus = c.decodeStringLeniently(forKey: .paymentStatus)
+        paymentMode = c.decodeStringLeniently(forKey: .paymentMode)
         createdAt = c.decodeStringLeniently(forKey: .createdAt)
         orderDate = c.decodeStringLeniently(forKey: .orderDate)
         orderTime = c.decodeStringLeniently(forKey: .orderTime)
         deliveryDate = c.decodeStringLeniently(forKey: .deliveryDate)
         deliveryTime = c.decodeStringLeniently(forKey: .deliveryTime)
         remark = c.decodeStringLeniently(forKey: .remark)
+        audioRemark = c.decodeStringLeniently(forKey: .audioRemark)
         canTrack = c.decodeBoolLeniently(forKey: .canTrack)
+        canCancel = c.decodeBoolLeniently(forKey: .canCancel)
         itemsCount = c.decodeIntLeniently(forKey: .itemsCount)
 
         let stdItems = try? c.decodeIfPresent([OrderItem].self, forKey: .items)
@@ -1417,6 +1426,15 @@ struct Order: Decodable, Identifiable, Hashable {
         case "cancelled": return "Cancelled"
         default: return status?.capitalized ?? "Unknown"
         }
+    }
+
+    var isCancellable: Bool {
+        let st = (status ?? statusText ?? "").lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        if st.isEmpty { return true }
+        if st.contains("cancel") || st.contains("deliver") || st.contains("out_for") || st.contains("out for") {
+            return false
+        }
+        return true
     }
 
     var orderNumberFormatted: String {
@@ -1680,6 +1698,7 @@ struct RetailerAppliedOffer: Decodable, Hashable {
 typealias CartAppliedOffer = RetailerAppliedOffer
 
 struct OrderItem: Decodable, Identifiable, Hashable {
+    var rowId: String = UUID().uuidString
     var id: Int?
     var productId: Int?
     var productName: String?
@@ -1692,6 +1711,10 @@ struct OrderItem: Decodable, Identifiable, Hashable {
     var mrp: String?
     var gst: String?
     var unit: String?
+
+    var identifier: String {
+        "\(rowId)_\(id ?? 0)_\(productId ?? 0)_\(variantId ?? 0)"
+    }
 
     enum CodingKeys: String, CodingKey {
         case id, quantity, price, unit, mrp, gst
@@ -1706,6 +1729,7 @@ struct OrderItem: Decodable, Identifiable, Hashable {
     }
 
     init(from decoder: Decoder) throws {
+        rowId = UUID().uuidString
         let c = try decoder.container(keyedBy: CodingKeys.self)
         let pId = c.decodeIntLeniently(forKey: .productId)
         let dId = c.decodeIntLeniently(forKey: .id)
@@ -2576,6 +2600,179 @@ struct RetailerProfileCity: Decodable {
         name = c.decodeStringLeniently(forKey: .name)
     }
 }
+
+// MARK: - Retailer Config Models
+
+public struct RetailerConfigResponse: Decodable {
+    public var status: Bool?
+    public var message: String?
+    public var data: RetailerConfigData?
+
+    enum CodingKeys: String, CodingKey {
+        case status, message, data
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        status = c.decodeBoolLeniently(forKey: .status)
+        message = c.decodeStringLeniently(forKey: .message)
+        data = try? c.decodeIfPresent(RetailerConfigData.self, forKey: .data)
+    }
+}
+
+public struct RetailerConfigData: Decodable {
+    public var charges: RetailerConfigCharges?
+    public var customerSupport: RetailerCustomerSupport?
+    public var accountDetails: RetailerAccountDetails?
+
+    enum CodingKeys: String, CodingKey {
+        case charges
+        case customerSupport = "customer_support"
+        case accountDetails = "account_details"
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        charges = try? c.decodeIfPresent(RetailerConfigCharges.self, forKey: .charges)
+        customerSupport = try? c.decodeIfPresent(RetailerCustomerSupport.self, forKey: .customerSupport)
+        accountDetails = try? c.decodeIfPresent(RetailerAccountDetails.self, forKey: .accountDetails)
+    }
+}
+
+public struct RetailerConfigCharges: Decodable {
+    public var handlingTitle: String?
+    public var handlingAmount: Double?
+    public var handlingVisible: Bool?
+    public var packingTitle: String?
+    public var packingAmount: Double?
+    public var packingVisible: Bool?
+
+    enum CodingKeys: String, CodingKey {
+        case handlingTitle = "handling_title"
+        case handlingAmount = "handling_amount"
+        case handlingVisible = "handling_visible"
+        case packingTitle = "packing_title"
+        case packingAmount = "packing_amount"
+        case packingVisible = "packing_visible"
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        handlingTitle = c.decodeStringLeniently(forKey: .handlingTitle)
+        handlingAmount = c.decodeDoubleLeniently(forKey: .handlingAmount)
+        handlingVisible = c.decodeBoolLeniently(forKey: .handlingVisible)
+        packingTitle = c.decodeStringLeniently(forKey: .packingTitle)
+        packingAmount = c.decodeDoubleLeniently(forKey: .packingAmount)
+        packingVisible = c.decodeBoolLeniently(forKey: .packingVisible)
+    }
+}
+
+public struct RetailerCustomerSupport: Decodable {
+    public var number: String?
+
+    enum CodingKeys: String, CodingKey {
+        case number
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        number = c.decodeStringLeniently(forKey: .number)
+    }
+}
+
+public struct RetailerAccountDetails: Decodable {
+    public var accountName: String?
+    public var bankName: String?
+    public var ifscCode: String?
+    public var branchName: String?
+    public var upiId: String?
+    public var qrCode: String?
+
+    enum CodingKeys: String, CodingKey {
+        case accountName = "account_name"
+        case bankName = "bank_name"
+        case ifscCode = "ifsc_code"
+        case branchName = "branch_name"
+        case upiId = "upi_id"
+        case qrCode = "qr_code"
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        accountName = c.decodeStringLeniently(forKey: .accountName)
+        bankName = c.decodeStringLeniently(forKey: .bankName)
+        ifscCode = c.decodeStringLeniently(forKey: .ifscCode)
+        branchName = c.decodeStringLeniently(forKey: .branchName)
+        upiId = c.decodeStringLeniently(forKey: .upiId)
+        qrCode = c.decodeStringLeniently(forKey: .qrCode)
+    }
+}
+
+// MARK: - Retailer Check Status Models
+
+public struct RetailerCheckStatusResponse: Decodable {
+    public var status: Bool?
+    public var code: String?
+    public var message: String?
+    public var data: RetailerCheckStatusData?
+
+    enum CodingKeys: String, CodingKey {
+        case status, code, message, data
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        status = c.decodeBoolLeniently(forKey: .status)
+        code = c.decodeStringLeniently(forKey: .code)
+        message = c.decodeStringLeniently(forKey: .message)
+        data = try? c.decodeIfPresent(RetailerCheckStatusData.self, forKey: .data)
+    }
+}
+
+public struct RetailerCheckStatusData: Decodable {
+    public var isMaintenance: Bool?
+    public var needsUpdate: Bool?
+    public var forceUpdate: Bool?
+    public var hasNewVersion: Bool?
+    public var currentVersion: String?
+    public var minVersion: String?
+    public var updateUrl: String?
+    public var updateMessage: String?
+    public var charges: RetailerConfigCharges?
+    public var customerSupport: RetailerCustomerSupport?
+    public var accountDetails: RetailerAccountDetails?
+
+    enum CodingKeys: String, CodingKey {
+        case isMaintenance = "is_maintenance"
+        case needsUpdate = "needs_update"
+        case forceUpdate = "force_update"
+        case hasNewVersion = "has_new_version"
+        case currentVersion = "current_version"
+        case minVersion = "min_version"
+        case updateUrl = "update_url"
+        case updateMessage = "update_message"
+        case charges
+        case customerSupport = "customer_support"
+        case accountDetails = "account_details"
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        isMaintenance = c.decodeBoolLeniently(forKey: .isMaintenance)
+        needsUpdate = c.decodeBoolLeniently(forKey: .needsUpdate)
+        forceUpdate = c.decodeBoolLeniently(forKey: .forceUpdate)
+        hasNewVersion = c.decodeBoolLeniently(forKey: .hasNewVersion)
+        currentVersion = c.decodeStringLeniently(forKey: .currentVersion)
+        minVersion = c.decodeStringLeniently(forKey: .minVersion)
+        updateUrl = c.decodeStringLeniently(forKey: .updateUrl)
+        updateMessage = c.decodeStringLeniently(forKey: .updateMessage)
+        charges = try? c.decodeIfPresent(RetailerConfigCharges.self, forKey: .charges)
+        customerSupport = try? c.decodeIfPresent(RetailerCustomerSupport.self, forKey: .customerSupport)
+        accountDetails = try? c.decodeIfPresent(RetailerAccountDetails.self, forKey: .accountDetails)
+    }
+}
+
+
 
 
 

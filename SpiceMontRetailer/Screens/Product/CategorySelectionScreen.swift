@@ -42,11 +42,11 @@ struct CategorySelectionScreen: View {
                 // Step Subheader
                 HStack {
                     Text("Select Category")
-                        .font(.system(size: 15, weight: .heavy))
+                        .font(.appFont(size: 15, weight: .heavy))
                         .foregroundColor(Color.spiceInk)
                     Spacer()
                     Text("Step 2 of 3")
-                        .font(.system(size: 12, weight: .bold))
+                        .font(.appFont(size: 12, weight: .bold))
                         .foregroundColor(Color.spicePrimary)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
@@ -144,7 +144,7 @@ struct CategorySelectionScreen: View {
                         .fill(LinearGradient(colors: [Color(hex: "#56CCF2"), Color(hex: "#2F80ED")], startPoint: .topLeading, endPoint: .bottomTrailing))
                         .overlay(
                             Image(systemName: "photo.fill")
-                                .font(.system(size: 24))
+                                .font(.appFont(size: 24))
                                 .foregroundColor(.white.opacity(0.8))
                         )
                 }
@@ -154,7 +154,7 @@ struct CategorySelectionScreen: View {
 
             // Category Name Label
             Text((cat.name ?? "Category").uppercased())
-                .font(.system(size: 11, weight: .heavy))
+                .font(.appFont(size: 11, weight: .heavy))
                 .foregroundColor(Color.spiceInk)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
@@ -181,15 +181,15 @@ struct CategorySelectionScreen: View {
                 }) {
                     HStack {
                         Image(systemName: "cart.fill")
-                            .font(.system(size: 14, weight: .bold))
+                            .font(.appFont(size: 14, weight: .bold))
 
                         Text("\(cartManager.cartCount) \(cartManager.cartCount == 1 ? "unit" : "units") in cart")
-                            .font(.system(size: 13.5, weight: .heavy))
+                            .font(.appFont(size: 13.5, weight: .heavy))
 
                         Spacer()
 
                         Text("VIEW CART")
-                            .font(.system(size: 12.5, weight: .heavy))
+                            .font(.appFont(size: 12.5, weight: .heavy))
                             .tracking(0.5)
                     }
                     .foregroundColor(.white)

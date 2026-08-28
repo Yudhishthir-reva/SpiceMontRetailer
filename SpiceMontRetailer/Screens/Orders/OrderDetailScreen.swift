@@ -19,7 +19,10 @@ struct OrderDetailScreen: View {
     @State private var toastMessage: String = ""
     @State private var isRepeatingOrder: Bool = false
     @State private var showCart: Bool = false
+    @State private var showCancelConfirmation: Bool = false
+    @State private var isCancellingOrder: Bool = false
     @ObservedObject private var cartManager = CartManager.shared
+    @StateObject private var audioManager = AudioRemarkManager.shared
 
     private let service = OrderServiceManager()
     private let productService = ProductServiceManager()
@@ -106,7 +109,10 @@ struct OrderDetailScreen: View {
                             // MARK: - Card 4: Bill Summary Card
                             billSummaryCard(ord)
 
-                            // MARK: - Card 5: Payment Managed Separately Card
+                            // MARK: - Card 5: Delivery Instructions / Remarks Card
+                            remarksCard(ord)
+
+                            // MARK: - Card 6: Payment Managed Separately Card
                             paymentManagedCard
 
                             Spacer(minLength: 90)
@@ -146,7 +152,7 @@ struct OrderDetailScreen: View {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: { loadOrderDetail() }) {
                     Text("Refresh")
-                        .font(.system(size: 13.5, weight: .heavy))
+                        .font(.appFont(size: 13.5, weight: .heavy))
                         .foregroundColor(Color.spicePrimary)
                 }
             }
@@ -154,8 +160,21 @@ struct OrderDetailScreen: View {
         .onAppear {
             loadOrderDetail()
         }
+        .onDisappear {
+            audioManager.stopAudio()
+        }
         .sheet(isPresented: $showCart) {
             NavigationStack { CartScreen() }
+        }
+        .alert("Cancel Order", isPresented: $showCancelConfirmation) {
+            Button("Keep Order", role: .cancel) { }
+            Button("Yes, Cancel Order", role: .destructive) {
+                if resolvedOrderId > 0 {
+                    handleCancelOrder(orderId: resolvedOrderId)
+                }
+            }
+        } message: {
+            Text("Are you sure you want to cancel order \(orderNumberText)? This action cannot be undone.")
         }
         .toast(isPresenting: $isShowToast, duration: 2.0, offsetY: 10, alert: {
             AlertToast(displayMode: .banner(.pop), type: .regular, title: toastMessage)
@@ -167,7 +186,7 @@ struct OrderDetailScreen: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text(ord.orderNumberFormatted)
-                    .font(.system(size: 14.5, weight: .heavy, design: .monospaced))
+                    .font(.appFont(size: 14.5, weight: .heavy, design: .monospaced))
                     .foregroundColor(Color.spiceInk)
 
                 Spacer()
@@ -178,23 +197,51 @@ struct OrderDetailScreen: View {
             VStack(spacing: 8) {
                 HStack {
                     Text("Order Date")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.appFont(size: 13, weight: .medium))
                         .foregroundColor(Color.spiceMuted)
                     Spacer()
                     Text(ord.displayDateOnly.isEmpty ? (ord.orderDate ?? "-") : ord.displayDateOnly)
-                        .font(.system(size: 13.5, weight: .bold))
+                        .font(.appFont(size: 13.5, weight: .bold))
                         .foregroundColor(Color.spiceInk)
                 }
 
                 HStack {
                     Text("Total Items")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.appFont(size: 13, weight: .medium))
                         .foregroundColor(Color.spiceMuted)
                     Spacer()
                     Text("\(totalProductsCount) products · \(totalUnitsCount) units")
-                        .font(.system(size: 13.5, weight: .bold))
+                        .font(.appFont(size: 13.5, weight: .bold))
                         .foregroundColor(Color.spiceInk)
                 }
+            }
+
+            if ord.isCancellable {
+                Divider().background(Color.spiceDivider).padding(.top, 2)
+
+                Button(action: {
+                    showCancelConfirmation = true
+                }) {
+                    HStack(spacing: 6) {
+                        if isCancellingOrder {
+                            ProgressView()
+                                .tint(Color.spiceDue)
+                                .scaleEffect(0.8)
+                        } else {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.appFont(size: 13, weight: .bold))
+                        }
+                        Text(isCancellingOrder ? "Cancelling Order..." : "Cancel Order")
+                            .font(.appFont(size: 12.5, weight: .heavy))
+                    }
+                    .foregroundColor(Color.spiceDue)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .background(Color.spiceDue.opacity(0.08))
+                    .cornerRadius(8)
+                }
+                .buttonStyle(.plain)
+                .disabled(isCancellingOrder)
             }
         }
         .padding(14)
@@ -215,7 +262,7 @@ struct OrderDetailScreen: View {
         let color = Color(hex: hex)
 
         return Text(clean)
-            .font(.system(size: 10, weight: .heavy, design: .monospaced))
+            .font(.appFont(size: 10, weight: .heavy, design: .monospaced))
             .foregroundColor(color)
             .padding(.horizontal, 8)
             .padding(.vertical, 3.5)
@@ -229,7 +276,7 @@ struct OrderDetailScreen: View {
 
         return VStack(alignment: .leading, spacing: 14) {
             Text("Status Timeline")
-                .font(.system(size: 14, weight: .heavy))
+                .font(.appFont(size: 14, weight: .heavy))
                 .foregroundColor(Color.spiceInk)
                 .padding(.horizontal, 2)
 
@@ -264,7 +311,7 @@ struct OrderDetailScreen: View {
             VStack(spacing: 0) {
                 if isDone || isActive {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 18, weight: .bold))
+                        .font(.appFont(size: 18, weight: .bold))
                         .foregroundColor(Color(hex: "#167444"))
                 } else {
                     Circle()
@@ -282,18 +329,18 @@ struct OrderDetailScreen: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.label ?? item.title ?? "Status")
-                    .font(.system(size: 13.5, weight: isDone || isActive ? .heavy : .semibold))
+                    .font(.appFont(size: 13.5, weight: isDone || isActive ? .heavy : .semibold))
                     .foregroundColor(isDone || isActive ? Color.spiceInk : Color(hex: "#9CA3AF"))
 
                 if let date = item.date, !date.isEmpty {
                     Text(date)
-                        .font(.system(size: 11.5, weight: .medium))
+                        .font(.appFont(size: 11.5, weight: .medium))
                         .foregroundColor(Color.spiceMuted)
                 }
 
                 if isActive {
                     Text("Current status")
-                        .font(.system(size: 11.5, weight: .bold))
+                        .font(.appFont(size: 11.5, weight: .bold))
                         .foregroundColor(Color(hex: "#167444"))
                         .padding(.top, 1)
                 }
@@ -315,14 +362,14 @@ struct OrderDetailScreen: View {
             HStack(alignment: .top, spacing: 14) {
                 VStack(spacing: 0) {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 18, weight: .bold))
+                        .font(.appFont(size: 18, weight: .bold))
                         .foregroundColor(Color(hex: "#167444"))
                     Rectangle().fill(Color(hex: "#E5E7EB")).frame(width: 2, height: 34)
                 }
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Order Placed").font(.system(size: 13.5, weight: .heavy)).foregroundColor(Color.spiceInk)
-                    if !ord.displayDateOnly.isEmpty { Text(ord.displayDateOnly).font(.system(size: 11.5, weight: .medium)).foregroundColor(Color.spiceMuted) }
-                    if status == "pending" { Text("Current status").font(.system(size: 11.5, weight: .bold)).foregroundColor(Color(hex: "#167444")).padding(.top, 1) }
+                    Text("Order Placed").font(.appFont(size: 13.5, weight: .heavy)).foregroundColor(Color.spiceInk)
+                    if !ord.displayDateOnly.isEmpty { Text(ord.displayDateOnly).font(.appFont(size: 11.5, weight: .medium)).foregroundColor(Color.spiceMuted) }
+                    if status == "pending" { Text("Current status").font(.appFont(size: 11.5, weight: .bold)).foregroundColor(Color(hex: "#167444")).padding(.top, 1) }
                 }
                 Spacer()
             }
@@ -334,7 +381,7 @@ struct OrderDetailScreen: View {
                     Rectangle().fill(Color(hex: "#E5E7EB")).frame(width: 2, height: 26)
                 }
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Assigned to Rider").font(.system(size: 13, weight: isAssigned ? .heavy : .semibold)).foregroundColor(isAssigned ? Color.spiceInk : Color(hex: "#9CA3AF"))
+                    Text("Assigned to Rider").font(.appFont(size: 13, weight: isAssigned ? .heavy : .semibold)).foregroundColor(isAssigned ? Color.spiceInk : Color(hex: "#9CA3AF"))
                 }
                 Spacer()
             }
@@ -346,7 +393,7 @@ struct OrderDetailScreen: View {
                     Rectangle().fill(Color(hex: "#E5E7EB")).frame(width: 2, height: 26)
                 }
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Picked Up").font(.system(size: 13, weight: isPickedUp ? .heavy : .semibold)).foregroundColor(isPickedUp ? Color.spiceInk : Color(hex: "#9CA3AF"))
+                    Text("Picked Up").font(.appFont(size: 13, weight: isPickedUp ? .heavy : .semibold)).foregroundColor(isPickedUp ? Color.spiceInk : Color(hex: "#9CA3AF"))
                 }
                 Spacer()
             }
@@ -355,7 +402,7 @@ struct OrderDetailScreen: View {
             HStack(alignment: .top, spacing: 14) {
                 Circle().fill(Color(hex: "#E5E7EB")).frame(width: 14, height: 14).padding(.vertical, 2)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Delivered").font(.system(size: 13, weight: isDelivered ? .heavy : .semibold)).foregroundColor(isDelivered ? Color.spiceInk : Color(hex: "#9CA3AF"))
+                    Text("Delivered").font(.appFont(size: 13, weight: isDelivered ? .heavy : .semibold)).foregroundColor(isDelivered ? Color.spiceInk : Color(hex: "#9CA3AF"))
                 }
                 Spacer()
             }
@@ -370,11 +417,11 @@ struct OrderDetailScreen: View {
         return VStack(alignment: .leading, spacing: 10) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Order Items")
-                    .font(.system(size: 14, weight: .heavy))
+                    .font(.appFont(size: 14, weight: .heavy))
                     .foregroundColor(Color.spiceInk)
 
                 Text("At the prices and schemes applied when the order was placed")
-                    .font(.system(size: 11.5, weight: .medium))
+                    .font(.appFont(size: 11.5, weight: .medium))
                     .foregroundColor(Color.spiceMuted)
             }
 
@@ -382,12 +429,12 @@ struct OrderDetailScreen: View {
 
             if items.isEmpty {
                 Text("No items recorded for this order.")
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.appFont(size: 12, weight: .medium))
                     .foregroundColor(Color.spiceMuted)
                     .padding(.vertical, 8)
             } else {
                 VStack(spacing: 12) {
-                    ForEach(items) { item in
+                    ForEach(Array(items.enumerated()), id: \.offset) { _, item in
                         HStack(alignment: .center, spacing: 12) {
                             // Thumbnail
                             ZStack {
@@ -414,21 +461,21 @@ struct OrderDetailScreen: View {
 
                             VStack(alignment: .leading, spacing: 3) {
                                 Text(item.productName ?? "Product")
-                                    .font(.system(size: 13.5, weight: .bold))
+                                    .font(.appFont(size: 13.5, weight: .bold))
                                     .foregroundColor(Color.spiceInk)
 
                                 let unitStr = item.unit ?? ""
                                 let qtyStr = "\(item.quantity ?? 1)"
                                 let priceStr = item.price?.priceLabel ?? "₹0.00"
                                 Text("\(unitStr.isEmpty ? "" : "\(unitStr) · ")\(qtyStr) × \(priceStr)")
-                                    .font(.system(size: 11.5, weight: .medium))
+                                    .font(.appFont(size: 11.5, weight: .medium))
                                     .foregroundColor(Color.spiceMuted)
                             }
 
                             Spacer()
 
                             Text(item.totalPrice?.priceLabel ?? item.price?.priceLabel ?? "₹0.00")
-                                .font(.system(size: 13.5, weight: .heavy, design: .monospaced))
+                                .font(.appFont(size: 13.5, weight: .heavy, design: .monospaced))
                                 .foregroundColor(Color.spiceInk)
                         }
                     }
@@ -451,16 +498,16 @@ struct OrderDetailScreen: View {
 
         return VStack(alignment: .leading, spacing: 10) {
             Text("Bill Summary")
-                .font(.system(size: 14, weight: .heavy))
+                .font(.appFont(size: 14, weight: .heavy))
                 .foregroundColor(Color.spiceInk)
 
             HStack {
                 Text("Product Total")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.appFont(size: 13, weight: .medium))
                     .foregroundColor(Color.spiceMuted)
                 Spacer()
                 Text(subtotalStr)
-                    .font(.system(size: 13.5, weight: .bold, design: .monospaced))
+                    .font(.appFont(size: 13.5, weight: .bold, design: .monospaced))
                     .foregroundColor(Color.spiceInk)
             }
 
@@ -468,11 +515,11 @@ struct OrderDetailScreen: View {
             if let gift = ord.freeGift, !gift.isEmpty {
                 HStack {
                     Text("Free Gift")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.appFont(size: 13, weight: .medium))
                         .foregroundColor(Color.spiceMuted)
                     Spacer()
                     Text(gift)
-                        .font(.system(size: 13, weight: .bold))
+                        .font(.appFont(size: 13, weight: .bold))
                         .foregroundColor(Color.spiceInk)
                 }
             }
@@ -481,11 +528,11 @@ struct OrderDetailScreen: View {
             if let disc = ord.discount, !disc.isEmpty, Double(disc) ?? 0 > 0 {
                 HStack {
                     Text("Discount")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.appFont(size: 13, weight: .medium))
                         .foregroundColor(Color.spicePrimary)
                     Spacer()
                     Text("-\(disc.priceLabel)")
-                        .font(.system(size: 13, weight: .bold, design: .monospaced))
+                        .font(.appFont(size: 13, weight: .bold, design: .monospaced))
                         .foregroundColor(Color.spicePrimary)
                 }
             }
@@ -494,11 +541,11 @@ struct OrderDetailScreen: View {
 
             HStack {
                 Text("Final Order Amount")
-                    .font(.system(size: 14, weight: .heavy))
+                    .font(.appFont(size: 14, weight: .heavy))
                     .foregroundColor(Color.spiceInk)
                 Spacer()
                 Text(finalTotalStr)
-                    .font(.system(size: 14.5, weight: .heavy, design: .monospaced))
+                    .font(.appFont(size: 14.5, weight: .heavy, design: .monospaced))
                     .foregroundColor(Color.spiceInk)
             }
         }
@@ -511,17 +558,122 @@ struct OrderDetailScreen: View {
         )
     }
 
-    // MARK: - Card 5: Payment Managed Separately
+    // MARK: - Delivery Instructions & Audio Remark Card
+    @ViewBuilder
+    private func remarksCard(_ ord: Order) -> some View {
+        let hasText = ord.remark?.isEmpty == false
+        let hasAudio = ord.audioRemark?.isEmpty == false
+
+        if hasText || hasAudio {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 6) {
+                    Image(systemName: "note.text")
+                        .foregroundColor(Color.spicePrimary)
+                        .font(.appFont(size: 13, weight: .bold))
+                    Text("Delivery Instructions & Voice Note")
+                        .font(.appFont(size: 14, weight: .heavy))
+                        .foregroundColor(Color.spiceInk)
+                }
+
+                if let text = ord.remark, !text.isEmpty {
+                    Text(text)
+                        .font(.appFont(size: 13, weight: .medium))
+                        .foregroundColor(Color.spiceInk)
+                        .padding(10)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color(hex: "#F9FAF9"))
+                        .cornerRadius(10)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(Color.spiceCardBorder, lineWidth: 1)
+                        )
+                }
+
+                if let audioSource = ord.audioRemark, !audioSource.isEmpty {
+                    let isThisPlaying = audioManager.isPlaying && audioManager.currentPlayingSource == audioSource
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 12) {
+                            Button(action: {
+                                audioManager.playAudio(source: audioSource)
+                            }) {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color.spicePrimary)
+                                        .frame(width: 40, height: 40)
+
+                                    Image(systemName: isThisPlaying ? "pause.fill" : "play.fill")
+                                        .font(.appFont(size: 16, weight: .heavy))
+                                        .foregroundColor(.white)
+                                }
+                            }
+                            .buttonStyle(.plain)
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack {
+                                    Text(isThisPlaying ? "Playing Voice Note..." : "Voice Note Attached")
+                                        .font(.appFont(size: 12.5, weight: .bold))
+                                        .foregroundColor(Color.spiceInk)
+
+                                    Spacer()
+
+                                    if isThisPlaying && audioManager.playbackDuration > 0 {
+                                        Text("\(audioManager.formatTime(audioManager.playbackCurrentTime)) / \(audioManager.formatTime(audioManager.playbackDuration))")
+                                            .font(.appFont(size: 11.5, weight: .bold, design: .monospaced))
+                                            .foregroundColor(Color.spicePrimary)
+                                    } else {
+                                        Text("Tap to Listen")
+                                            .font(.appFont(size: 11.5, weight: .heavy))
+                                            .foregroundColor(Color.spicePrimary)
+                                    }
+                                }
+
+                                // Interactive Progress Bar
+                                GeometryReader { geo in
+                                    ZStack(alignment: .leading) {
+                                        Capsule()
+                                            .fill(Color.spicePrimary.opacity(0.18))
+                                            .frame(height: 5)
+
+                                        Capsule()
+                                            .fill(Color.spicePrimary)
+                                            .frame(width: isThisPlaying ? geo.size.width * CGFloat(audioManager.playbackProgress) : 0, height: 5)
+                                    }
+                                }
+                                .frame(height: 5)
+                            }
+                        }
+                    }
+                    .padding(12)
+                    .background(Color.spicePrimaryLight)
+                    .cornerRadius(12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.spicePrimary.opacity(0.25), lineWidth: 1)
+                    )
+                }
+            }
+            .padding(14)
+            .background(Color.white)
+            .cornerRadius(16)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.spiceCardBorder.opacity(0.8), lineWidth: 1)
+            )
+        }
+    }
+
+    // MARK: - Card 6: Payment Managed Separately
     private var paymentManagedCard: some View {
         NavigationLink(destination: LedgerScreen()) {
             HStack(alignment: .center, spacing: 12) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Payment Managed Separately")
-                        .font(.system(size: 13.5, weight: .heavy))
+                        .font(.appFont(size: 13.5, weight: .heavy))
                         .foregroundColor(Color.spiceInk)
 
                     Text("This order contributes to your outstanding balance. Settlement is recorded by SpiceMonk.")
-                        .font(.system(size: 11.5, weight: .medium))
+                        .font(.appFont(size: 11.5, weight: .medium))
                         .foregroundColor(Color.spiceMuted)
                         .multilineTextAlignment(.leading)
                 }
@@ -529,7 +681,7 @@ struct OrderDetailScreen: View {
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .bold))
+                    .font(.appFont(size: 12, weight: .bold))
                     .foregroundColor(Color.spiceMuted)
             }
             .padding(14)
@@ -549,7 +701,7 @@ struct OrderDetailScreen: View {
             // Track Order CTA (Solid Green)
             NavigationLink(destination: DeliveryTrackingScreen(orderId: ord.id ?? resolvedOrderId, orderNumber: ord.orderNumberFormatted)) {
                 Text("Track Order")
-                    .font(.system(size: 14.5, weight: .heavy))
+                    .font(.appFont(size: 14.5, weight: .heavy))
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .frame(height: 46)
@@ -569,7 +721,7 @@ struct OrderDetailScreen: View {
                             .scaleEffect(0.8)
                     }
                     Text(isRepeatingOrder ? "Checking Stock..." : "Repeat Order")
-                        .font(.system(size: 14.5, weight: .heavy))
+                        .font(.appFont(size: 14.5, weight: .heavy))
                         .foregroundColor(Color.spicePrimary)
                 }
                 .frame(maxWidth: .infinity)
@@ -725,6 +877,29 @@ struct OrderDetailScreen: View {
                 if let o = response.order {
                     self.order = o
                 }
+            }
+            .store(in: &cancellables)
+    }
+
+    // MARK: - Cancel Order Action
+    private func handleCancelOrder(orderId: Int) {
+        isCancellingOrder = true
+        let headers = UserDefaultManager.shared.authHeader
+        let params: [String: Any] = ["order_id": orderId]
+
+        service.cancelOrder(params: params, headers: headers)
+            .receive(on: DispatchQueue.main)
+            .sink { completion in
+                isCancellingOrder = false
+                if case .failure(let error) = completion {
+                    toastMessage = (error as? RequestError)?.errorString ?? error.localizedDescription
+                    isShowToast = true
+                }
+            } receiveValue: { response in
+                isCancellingOrder = false
+                toastMessage = response.message ?? "Order cancelled successfully"
+                isShowToast = true
+                loadOrderDetail()
             }
             .store(in: &cancellables)
     }

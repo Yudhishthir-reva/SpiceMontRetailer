@@ -46,11 +46,11 @@ struct PackSizeSelectionSheet: View {
             // Header
             VStack(alignment: .leading, spacing: 4) {
                 Text((product.name ?? "PRODUCT").uppercased())
-                    .font(.system(size: 18, weight: .heavy))
+                    .font(.appFont(size: 18, weight: .heavy))
                     .foregroundColor(Color.spiceInk)
 
                 Text("Select pack size")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.appFont(size: 13, weight: .medium))
                     .foregroundColor(Color.spiceMuted)
             }
             .padding(.horizontal, 20)
@@ -109,17 +109,17 @@ struct PackSizeSelectionSheet: View {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(variant.unit ?? "100 gms")
-                        .font(.system(size: 14.5, weight: .heavy))
+                        .font(.appFont(size: 14.5, weight: .heavy))
                         .foregroundColor(Color.spiceInk)
 
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
                         Text("₹\(variant.price ?? "26.00")")
-                            .font(.system(size: 13.5, weight: .heavy, design: .monospaced))
+                            .font(.appFont(size: 13.5, weight: .heavy, design: .monospaced))
                             .foregroundColor(Color.spiceInk)
 
                         if let mrp = variant.mrp, !mrp.isEmpty {
                             Text("₹\(mrp)")
-                                .font(.system(size: 11.5, weight: .medium, design: .monospaced))
+                                .font(.appFont(size: 11.5, weight: .medium, design: .monospaced))
                                 .foregroundColor(Color.spiceMuted)
                                 .strikethrough()
                         }
@@ -127,12 +127,12 @@ struct PackSizeSelectionSheet: View {
 
                     if isUnavailable {
                         Text("Currently unavailable")
-                            .font(.system(size: 11.5, weight: .medium))
+                            .font(.appFont(size: 11.5, weight: .medium))
                             .foregroundColor(Color(hex: "#C8322B"))
                             .padding(.top, 1)
                     } else if let avl = maxStock, avl > 0 && avl <= 20 {
                         Text("Only \(avl) left in stock")
-                            .font(.system(size: 10.5, weight: .bold))
+                            .font(.appFont(size: 10.5, weight: .bold))
                             .foregroundColor(Color.spiceAmber)
                     }
                 }
@@ -142,7 +142,7 @@ struct PackSizeSelectionSheet: View {
                 // Action: Disabled ADD / Mint Green ADD / Green Stepper Pill
                 if isUnavailable {
                     Text("ADD")
-                        .font(.system(size: 12, weight: .heavy))
+                        .font(.appFont(size: 12, weight: .heavy))
                         .foregroundColor(Color(hex: "#9CA3AF"))
                         .frame(width: 72, height: 34)
                         .background(Color(hex: "#F3F4F6"))
@@ -172,7 +172,7 @@ struct PackSizeSelectionSheet: View {
                         )
                     }) {
                         Text("ADD")
-                            .font(.system(size: 12, weight: .heavy))
+                            .font(.appFont(size: 12, weight: .heavy))
                             .foregroundColor(Color(hex: "#167444"))
                             .frame(width: 72, height: 34)
                             .background(Color(hex: "#EBF7EE"))
@@ -207,13 +207,13 @@ struct PackSizeSelectionSheet: View {
                             }
                         }) {
                             Text("−")
-                                .font(.system(size: 15, weight: .heavy))
+                                .font(.appFont(size: 15, weight: .heavy))
                                 .foregroundColor(.white)
                                 .frame(width: 24, height: 32)
                         }
 
                         Text("\(currentPkt)")
-                            .font(.system(size: 13, weight: .heavy, design: .monospaced))
+                            .font(.appFont(size: 13, weight: .heavy, design: .monospaced))
                             .foregroundColor(.white)
                             .frame(minWidth: 20)
 
@@ -237,7 +237,7 @@ struct PackSizeSelectionSheet: View {
                             )
                         }) {
                             Text("+")
-                                .font(.system(size: 15, weight: .heavy))
+                                .font(.appFont(size: 15, weight: .heavy))
                                 .foregroundColor(.white)
                                 .frame(width: 24, height: 32)
                         }
@@ -296,13 +296,13 @@ struct PackSizeSelectionSheet: View {
                             }
                         }
                     ))
-                    .font(.system(size: 13, weight: .bold))
+                    .font(.appFont(size: 13, weight: .bold))
                     .foregroundColor(Color.spiceInk)
                     .keyboardType(.decimalPad)
                     .disabled(isUnavailable)
 
                     Text("Kg")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.appFont(size: 12, weight: .medium))
                         .foregroundColor(Color.spiceMuted)
                 }
                 .padding(.horizontal, 12)
@@ -354,13 +354,13 @@ struct PackSizeSelectionSheet: View {
                             }
                         }
                     ))
-                    .font(.system(size: 13, weight: .bold))
+                    .font(.appFont(size: 13, weight: .bold))
                     .foregroundColor(Color.spiceInk)
                     .keyboardType(.numberPad)
                     .disabled(isUnavailable)
 
                     Text("Pkt")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.appFont(size: 12, weight: .medium))
                         .foregroundColor(Color.spiceMuted)
                 }
                 .padding(.horizontal, 12)

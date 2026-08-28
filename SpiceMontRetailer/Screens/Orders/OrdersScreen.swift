@@ -74,10 +74,10 @@ struct OrdersScreen: View {
                         HStack(spacing: 10) {
                             Image(systemName: "magnifyingglass")
                                 .foregroundColor(Color.spiceMuted)
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(.appFont(size: 14, weight: .semibold))
 
                             TextField("Search loaded orders by number", text: $searchText)
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.appFont(size: 13, weight: .medium))
                                 .foregroundColor(Color.black)
                                 .tint(Color.spicePrimary)
                         }
@@ -98,7 +98,7 @@ struct OrdersScreen: View {
                                         selectedStatusFilter = chip
                                     }) {
                                         Text(chip)
-                                            .font(.system(size: 12.5, weight: .bold))
+                                            .font(.appFont(size: 12.5, weight: .bold))
                                             .padding(.horizontal, 14)
                                             .padding(.vertical, 7)
                                             .background(selectedStatusFilter == chip ? Color.spicePrimary : Color.white)
@@ -129,7 +129,7 @@ struct OrdersScreen: View {
                                     loadOrders()
                                 }) {
                                     Text("Clear all")
-                                        .font(.system(size: 12, weight: .bold))
+                                        .font(.appFont(size: 12, weight: .bold))
                                         .foregroundColor(Color.spicePrimary)
                                 }
                             }
@@ -190,7 +190,7 @@ struct OrdersScreen: View {
                     loadOrders()
                 }) {
                     Text("Refresh")
-                        .font(.system(size: 13.5, weight: .heavy))
+                        .font(.appFont(size: 13.5, weight: .heavy))
                         .foregroundColor(Color.spicePrimary)
                 }
             }
@@ -216,7 +216,7 @@ struct OrdersScreen: View {
                 // Top Row: Order ID + Status
                 HStack {
                     Text(order.orderNumberFormatted)
-                        .font(.system(size: 14.5, weight: .heavy, design: .monospaced))
+                        .font(.appFont(size: 14.5, weight: .heavy, design: .monospaced))
                         .foregroundColor(Color.spiceInk)
 
                     Spacer()
@@ -227,14 +227,14 @@ struct OrdersScreen: View {
                 // Middle Row: Date & Items Count
                 HStack {
                     Text(formatDate(order.orderDate ?? order.createdAt))
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.appFont(size: 12, weight: .medium))
                         .foregroundColor(Color.spiceMuted)
 
                     Spacer()
 
                     let count = order.items?.count ?? order.itemsCount ?? 0
                     Text("\(count) items")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.appFont(size: 12, weight: .semibold))
                         .foregroundColor(Color.spiceInk)
                 }
 
@@ -244,11 +244,11 @@ struct OrdersScreen: View {
                 HStack {
                     VStack(alignment: .leading, spacing: 1) {
                         Text("Bill Amount")
-                            .font(.system(size: 10.5, weight: .medium))
+                            .font(.appFont(size: 10.5, weight: .medium))
                             .foregroundColor(Color.spiceMuted)
 
                         Text(order.totalPriceFormatted)
-                            .font(.system(size: 14.5, weight: .heavy, design: .monospaced))
+                            .font(.appFont(size: 14.5, weight: .heavy, design: .monospaced))
                             .foregroundColor(Color.spiceInk)
                     }
 
@@ -257,7 +257,7 @@ struct OrdersScreen: View {
                     if isAssigned {
                         NavigationLink(destination: DeliveryTrackingScreen(orderId: order.id, orderNumber: order.orderNumberFormatted)) {
                             Text("Track")
-                                .font(.system(size: 12, weight: .heavy))
+                                .font(.appFont(size: 12, weight: .heavy))
                                 .foregroundColor(Color.spicePrimary)
                                 .padding(.horizontal, 14)
                                 .padding(.vertical, 6)
@@ -268,10 +268,10 @@ struct OrdersScreen: View {
                     } else {
                         HStack(spacing: 4) {
                             Text("Details")
-                                .font(.system(size: 12, weight: .bold))
+                                .font(.appFont(size: 12, weight: .bold))
                                 .foregroundColor(Color.spicePrimary)
                             Image(systemName: "chevron.right")
-                                .font(.system(size: 10, weight: .bold))
+                                .font(.appFont(size: 10, weight: .bold))
                                 .foregroundColor(Color.spicePrimary)
                         }
                     }
@@ -309,7 +309,7 @@ struct OrdersScreen: View {
         }()
 
         Text(cleanStatus.uppercased())
-            .font(.system(size: 10, weight: .heavy, design: .monospaced))
+            .font(.appFont(size: 10, weight: .heavy, design: .monospaced))
             .foregroundColor(badgeColor.text)
             .padding(.horizontal, 8)
             .padding(.vertical, 3.5)

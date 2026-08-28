@@ -68,7 +68,7 @@ struct SplashScreen: View {
 
                 // MARK: Title
                 Text("SpiceMonk")
-                    .font(.system(size: 36, weight: .heavy, design: .rounded))
+                    .font(.appFont(size: 36, weight: .heavy, design: .rounded))
                     .foregroundStyle(
                         LinearGradient(
                             colors: [AppTheme.brandGreenLight, AppTheme.brandGreen, AppTheme.brandGreenDark],
@@ -88,7 +88,7 @@ struct SplashScreen: View {
 
                 // MARK: Tagline
                 Text("India's Leading Spices B2B Network\nDirect Wholesale Supply & Live Schemes")
-                    .font(.system(size: 14.5, weight: .semibold))
+                    .font(.appFont(size: 14.5, weight: .semibold))
                     .foregroundStyle(Color.spiceMuted)
                     .multilineTextAlignment(.center)
                     .lineSpacing(4)
@@ -107,7 +107,7 @@ struct SplashScreen: View {
                 }
 
                 Text("SpiceMonk Retailer B2B")
-                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                    .font(.appFont(size: 11, weight: .bold, design: .monospaced))
                     .foregroundStyle(Color.spiceMuted.opacity(0.8))
                     .opacity(showLoader ? 1 : 0)
                     .padding(.bottom, 28)

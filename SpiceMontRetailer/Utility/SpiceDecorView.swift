@@ -20,9 +20,9 @@ struct PrimaryActionButton: View {
                         .tint(.white)
                 } else {
                     Text(title)
-                        .font(.system(size: 18, weight: .semibold))
+                        .font(.appFont(size: 18, weight: .semibold))
                     Image(systemName: icon)
-                        .font(.system(size: 12, weight: .bold))
+                        .font(.appFont(size: 12, weight: .bold))
                         .padding(6)
                         .background(Circle().stroke(.white, lineWidth: 1.4))
                 }
@@ -47,3 +47,48 @@ struct AccentDash: View {
         }
     }
 }
+
+// MARK: - Global Tap To Dismiss Keyboard
+
+extension UIApplication {
+    func endEditing() {
+        sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
+
+    func addTapGestureToDismissKeyboard() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                  let window = windowScene.windows.first else { return }
+
+            if window.gestureRecognizers?.contains(where: { $0 is KeyboardDismissTapGesture }) == true {
+                return
+            }
+
+            let tapGesture = KeyboardDismissTapGesture(target: window, action: #selector(UIView.endEditing))
+            tapGesture.requiresExclusiveTouchType = false
+            tapGesture.cancelsTouchesInView = false
+            tapGesture.delegate = KeyboardDismissGestureDelegate.shared
+            window.addGestureRecognizer(tapGesture)
+        }
+    }
+}
+
+private class KeyboardDismissTapGesture: UITapGestureRecognizer {}
+
+private class KeyboardDismissGestureDelegate: NSObject, UIGestureRecognizerDelegate {
+    static let shared = KeyboardDismissGestureDelegate()
+
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        return true
+    }
+}
+
+extension View {
+    /// Dismiss keyboard when tapping on this view
+    func hideKeyboardOnTap() -> some View {
+        self.onTapGesture {
+            UIApplication.shared.endEditing()
+        }
+    }
+}
+

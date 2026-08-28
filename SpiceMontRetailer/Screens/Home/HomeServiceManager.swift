@@ -62,4 +62,8 @@ class HomeServiceManager {
     ) -> AnyPublisher<ProductListResponse, Error> {
         networkService.request(APIRouter.bannerProducts, params: params, headers: headers)
     }
+
+    func checkRetailerStatus(params: RequestConstants.Param, headers: RequestConstants.Header) -> AnyPublisher<RetailerCheckStatusResponse, Error> {
+        networkService.request(APIRouter.retailerCheckStatus, params: params, headers: headers)
+    }
 }

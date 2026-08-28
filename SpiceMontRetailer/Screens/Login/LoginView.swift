@@ -38,11 +38,11 @@ struct LoginScreen: View {
                                 .padding(.top, 14)
 
                             Text("Retailer Login")
-                                .font(.system(size: 24, weight: .heavy))
+                                .font(.appFont(size: 24, weight: .heavy))
                                 .foregroundColor(Color.spiceInk)
 
                             Text("Enter the mobile number registered with your shop. Approved retailers receive an OTP.")
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.appFont(size: 13, weight: .medium))
                                 .foregroundColor(Color.spiceMuted)
                                 .lineSpacing(3)
                         }
@@ -50,12 +50,12 @@ struct LoginScreen: View {
                         // Mobile Field
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Mobile Number")
-                                .font(.system(size: 11, weight: .bold))
+                                .font(.appFont(size: 11, weight: .bold))
                                 .foregroundColor(Color.spiceInk)
 
                             HStack(spacing: 8) {
                                 Text("+91")
-                                    .font(.system(size: 14, weight: .bold, design: .monospaced))
+                                    .font(.appFont(size: 14, weight: .bold, design: .monospaced))
                                     .foregroundColor(Color.spiceInk)
                                     .frame(width: 60, height: 50)
                                     .background(Color.white)
@@ -66,7 +66,7 @@ struct LoginScreen: View {
                                     .keyboardType(.numberPad)
                                     .textContentType(.telephoneNumber)
                                     .focused($isMobileFocused)
-                                    .font(.system(size: 15, weight: .semibold, design: .monospaced))
+                                    .font(.appFont(size: 15, weight: .semibold, design: .monospaced))
                                     .foregroundColor(Color.black)
                                     .tint(Color.spicePrimary)
                                     .padding(.horizontal, 14)
@@ -93,7 +93,7 @@ struct LoginScreen: View {
 
                             if let err = viewModel.mobileError {
                                 Text(err)
-                                    .font(.system(size: 11, weight: .medium))
+                                    .font(.appFont(size: 11, weight: .medium))
                                     .foregroundColor(Color.spiceDue)
                             }
                         }
@@ -124,7 +124,7 @@ struct LoginScreen: View {
                                 .fill(Color.spiceCardBorder)
                                 .frame(height: 1)
                             Text("OR")
-                                .font(.system(size: 11, weight: .bold))
+                                .font(.appFont(size: 11, weight: .bold))
                                 .foregroundColor(Color.spiceMuted)
                             Rectangle()
                                 .fill(Color.spiceCardBorder)
@@ -147,7 +147,7 @@ struct LoginScreen: View {
                         // Footer Rule Text
                         VStack(spacing: 4) {
                             Text("NO PASSWORD · NO REMEMBER ME · NO SOCIAL LOGIN")
-                                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                                .font(.appFont(size: 10, weight: .semibold, design: .monospaced))
                                 .foregroundColor(Color.spiceMuted.opacity(0.8))
                                 .frame(maxWidth: .infinity, alignment: .center)
                         }
@@ -185,15 +185,15 @@ struct LoginScreen: View {
                         Spacer()
                         Button(action: { viewModel.accountBlock = nil }) {
                             Image(systemName: "xmark")
-                                .font(.system(size: 11, weight: .bold))
+                                .font(.appFont(size: 11, weight: .bold))
                                 .foregroundColor(Color.spiceMuted)
                         }
                     }
                     Text("Your Account is Under Review")
-                        .font(.system(size: 14, weight: .heavy))
+                        .font(.appFont(size: 14, weight: .heavy))
                         .foregroundColor(Color.spiceInk)
                     Text(block.message?.isEmpty == false ? block.message! : "Your registration has been submitted and is being reviewed by our team. You will be able to place orders once approved.")
-                        .font(.system(size: 11.5, weight: .medium))
+                        .font(.appFont(size: 11.5, weight: .medium))
                         .foregroundColor(Color.spiceMuted)
                         .lineSpacing(2)
                     HStack(spacing: 8) {
@@ -214,15 +214,15 @@ struct LoginScreen: View {
                         Spacer()
                         Button(action: { viewModel.accountBlock = nil }) {
                             Image(systemName: "xmark")
-                                .font(.system(size: 11, weight: .bold))
+                                .font(.appFont(size: 11, weight: .bold))
                                 .foregroundColor(Color.spiceMuted)
                         }
                     }
                     Text("Registration Not Approved")
-                        .font(.system(size: 14, weight: .heavy))
+                        .font(.appFont(size: 14, weight: .heavy))
                         .foregroundColor(Color.spiceInk)
                     Text(block.message?.isEmpty == false ? block.message! : "Your retailer registration could not be approved at this time. Please contact our support team for more details.")
-                        .font(.system(size: 11.5, weight: .medium))
+                        .font(.appFont(size: 11.5, weight: .medium))
                         .foregroundColor(Color.spiceMuted)
                     SpicePrimaryButton(title: "Call Support", height: 36) {
                         if let url = URL(string: "tel://18002004455") {
@@ -240,15 +240,15 @@ struct LoginScreen: View {
                         Spacer()
                         Button(action: { viewModel.accountBlock = nil }) {
                             Image(systemName: "xmark")
-                                .font(.system(size: 11, weight: .bold))
+                                .font(.appFont(size: 11, weight: .bold))
                                 .foregroundColor(Color.spiceMuted)
                         }
                     }
                     Text("Account Temporarily Blocked")
-                        .font(.system(size: 14, weight: .heavy))
+                        .font(.appFont(size: 14, weight: .heavy))
                         .foregroundColor(Color.spiceInk)
                     Text(block.message?.isEmpty == false ? block.message! : "Your retailer account is currently inactive. Please contact customer support.")
-                        .font(.system(size: 11.5, weight: .medium))
+                        .font(.appFont(size: 11.5, weight: .medium))
                         .foregroundColor(Color.spiceMuted)
                     SpicePrimaryButton(title: "Call Support", height: 36) {
                         if let url = URL(string: "tel://18002004455") {
@@ -266,15 +266,15 @@ struct LoginScreen: View {
                         Spacer()
                         Button(action: { viewModel.accountBlock = nil }) {
                             Image(systemName: "xmark")
-                                .font(.system(size: 11, weight: .bold))
+                                .font(.appFont(size: 11, weight: .bold))
                                 .foregroundColor(Color.spiceMuted)
                         }
                     }
                     Text("Retailer Account Not Found")
-                        .font(.system(size: 14, weight: .heavy))
+                        .font(.appFont(size: 14, weight: .heavy))
                         .foregroundColor(Color.spiceInk)
                     Text(block.message?.isEmpty == false ? block.message! : "We could not find a registered retailer account for this mobile number. Register your shop to get started.")
-                        .font(.system(size: 11.5, weight: .medium))
+                        .font(.appFont(size: 11.5, weight: .medium))
                         .foregroundColor(Color.spiceMuted)
                     SpicePrimaryButton(title: "Register Now", height: 48) {
                         viewModel.accountBlock = nil

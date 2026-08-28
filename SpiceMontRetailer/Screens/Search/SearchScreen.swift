@@ -46,7 +46,7 @@ struct SearchScreen: View {
                 .foregroundStyle(AppTheme.textMuted)
 
             TextField("Search spices, masalas...", text: $viewModel.query)
-                .font(.system(size: 15))
+                .font(.appFont(size: 15))
                 .foregroundColor(Color.black)
                 .tint(Color.spicePrimary)
                 .textFieldStyle(.plain)
@@ -90,14 +90,14 @@ struct SearchScreen: View {
                     HStack(spacing: 10) {
                         Image(systemName: "magnifyingglass")
                             .foregroundStyle(AppTheme.textMuted)
-                            .font(.system(size: 14))
+                            .font(.appFont(size: 14))
                         Text(suggestion)
-                            .font(.system(size: 15))
+                            .font(.appFont(size: 15))
                             .foregroundStyle(AppTheme.textPrimary)
                         Spacer()
                         Image(systemName: "arrow.up.left")
                             .foregroundStyle(AppTheme.textMuted)
-                            .font(.system(size: 13))
+                            .font(.appFont(size: 13))
                     }
                 }
             }
@@ -135,7 +135,7 @@ struct SearchScreen: View {
 
                 if product.hasDiscount {
                     Text(product.discountText)
-                        .font(.system(size: 10, weight: .bold))
+                        .font(.appFont(size: 10, weight: .bold))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 3)
@@ -146,23 +146,23 @@ struct SearchScreen: View {
             }
 
             Text(product.name ?? "")
-                .font(.system(size: 13, weight: .medium))
+                .font(.appFont(size: 13, weight: .medium))
                 .foregroundStyle(AppTheme.textPrimary)
                 .lineLimit(2)
 
             if let unit = product.unit, !unit.isEmpty {
                 Text(unit)
-                    .font(.system(size: 11))
+                    .font(.appFont(size: 11))
                     .foregroundStyle(AppTheme.textMuted)
             }
 
             HStack(spacing: 4) {
                 Text(product.displayPrice)
-                    .font(.system(size: 14, weight: .bold))
+                    .font(.appFont(size: 14, weight: .bold))
                     .foregroundStyle(AppTheme.brandGreen)
                 if product.hasDiscount {
                     Text(product.displayMRP)
-                        .font(.system(size: 12))
+                        .font(.appFont(size: 12))
                         .foregroundStyle(AppTheme.textMuted)
                         .strikethrough()
                 }
@@ -182,13 +182,13 @@ struct SearchScreen: View {
     private var emptyState: some View {
         VStack(spacing: 12) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 48))
+                .font(.appFont(size: 48))
                 .foregroundStyle(AppTheme.textMuted)
             Text("No results found")
-                .font(.system(size: 16, weight: .medium))
+                .font(.appFont(size: 16, weight: .medium))
                 .foregroundStyle(AppTheme.textSecondary)
             Text("Try searching with different keywords")
-                .font(.system(size: 14))
+                .font(.appFont(size: 14))
                 .foregroundStyle(AppTheme.textMuted)
         }
         .frame(maxHeight: .infinity)
@@ -198,10 +198,10 @@ struct SearchScreen: View {
         VStack(spacing: 16) {
             Spacer()
             Image(systemName: "leaf.fill")
-                .font(.system(size: 48))
+                .font(.appFont(size: 48))
                 .foregroundStyle(AppTheme.brandGreen.opacity(0.3))
             Text("Search for spices, masalas,\ndry fruits & more")
-                .font(.system(size: 16, weight: .medium))
+                .font(.appFont(size: 16, weight: .medium))
                 .foregroundStyle(AppTheme.textSecondary)
                 .multilineTextAlignment(.center)
             Spacer()

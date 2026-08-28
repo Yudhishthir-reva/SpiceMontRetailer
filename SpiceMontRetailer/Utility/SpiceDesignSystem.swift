@@ -21,10 +21,10 @@ struct SpicePrimaryButton: View {
             HStack(spacing: 8) {
                 if let icon = icon {
                     Image(systemName: icon)
-                        .font(.system(size: height > 40 ? 15 : 12, weight: .bold))
+                        .font(.appFont(size: height > 40 ? 15 : 12, weight: .bold))
                 }
                 Text(title)
-                    .font(.system(size: height > 40 ? 14.5 : 12, weight: .heavy))
+                    .font(.appFont(size: height > 40 ? 14.5 : 12, weight: .heavy))
                     .tracking(0.2)
             }
             .foregroundColor(.white)
@@ -49,10 +49,10 @@ struct SpiceOutlinedButton: View {
             HStack(spacing: 6) {
                 if let icon = icon {
                     Image(systemName: icon)
-                        .font(.system(size: height > 40 ? 14 : 11, weight: .bold))
+                        .font(.appFont(size: height > 40 ? 14 : 11, weight: .bold))
                 }
                 Text(title)
-                    .font(.system(size: height > 40 ? 14 : 12, weight: .heavy))
+                    .font(.appFont(size: height > 40 ? 14 : 12, weight: .heavy))
             }
             .foregroundColor(color)
             .frame(maxWidth: .infinity)
@@ -78,10 +78,10 @@ struct SpiceGhostButton: View {
             HStack(spacing: 6) {
                 if let icon = icon {
                     Image(systemName: icon)
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.appFont(size: 11, weight: .semibold))
                 }
                 Text(title)
-                    .font(.system(size: 12, weight: .bold))
+                    .font(.appFont(size: 12, weight: .bold))
             }
             .foregroundColor(Color.spiceInk)
             .frame(maxWidth: .infinity)
@@ -154,7 +154,7 @@ struct SpiceStatusBadge: View {
 
     var body: some View {
         Text(status.uppercased().replacingOccurrences(of: "_", with: " "))
-            .font(.system(size: 10, weight: .bold))
+            .font(.appFont(size: 10, weight: .bold))
             .tracking(0.3)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
@@ -178,7 +178,7 @@ struct SpiceTopBar: View {
             if showBack {
                 Button(action: { onBack?() }) {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.appFont(size: 16, weight: .bold))
                         .foregroundColor(Color.spiceInk)
                         .frame(width: 32, height: 32)
                 }
@@ -186,13 +186,13 @@ struct SpiceTopBar: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 15, weight: .heavy))
+                    .font(.appFont(size: 15, weight: .heavy))
                     .foregroundColor(Color.spiceInk)
                     .lineLimit(1)
                 
                 if let subtitle = subtitle, !subtitle.isEmpty {
                     Text(subtitle)
-                        .font(.system(size: 10.5, weight: .medium))
+                        .font(.appFont(size: 10.5, weight: .medium))
                         .foregroundColor(Color.spiceMuted)
                         .lineLimit(1)
                 }
@@ -224,7 +224,7 @@ struct SpiceMonoText: View {
 
     var body: some View {
         Text(text)
-            .font(.system(size: size, weight: weight, design: .monospaced))
+            .font(.appFont(size: size, weight: weight, design: .monospaced))
             .foregroundColor(color)
     }
 }
@@ -240,16 +240,16 @@ struct SpiceKVRow: View {
     var body: some View {
         HStack {
             Text(key)
-                .font(.system(size: 12, weight: .semibold))
+                .font(.appFont(size: 12, weight: .semibold))
                 .foregroundColor(Color.spiceMuted)
             Spacer()
             if isMonoValue {
                 Text(value)
-                    .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                    .font(.appFont(size: 12, weight: .semibold, design: .monospaced))
                     .foregroundColor(valueColor)
             } else {
                 Text(value)
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.appFont(size: 12, weight: .semibold))
                     .foregroundColor(valueColor)
             }
         }
@@ -293,18 +293,18 @@ struct SpiceEmptyStateView: View {
         SpiceCard(backgroundColor: .white, borderColor: Color.spiceCardBorder.opacity(0.8)) {
             VStack(spacing: 10) {
                 Text(title)
-                    .font(.system(size: 13.5, weight: .heavy))
+                    .font(.appFont(size: 13.5, weight: .heavy))
                     .foregroundColor(Color.spiceInk)
 
                 Text(message)
-                    .font(.system(size: 11.5, weight: .medium))
+                    .font(.appFont(size: 11.5, weight: .medium))
                     .foregroundColor(Color.spiceMuted)
                     .multilineTextAlignment(.center)
 
                 if let btn = buttonTitle, let onAction = onAction {
                     Button(action: onAction) {
                         Text(btn)
-                            .font(.system(size: 12, weight: .bold))
+                            .font(.appFont(size: 12, weight: .bold))
                             .foregroundColor(.white)
                             .padding(.horizontal, 18)
                             .padding(.vertical, 9)
@@ -326,11 +326,11 @@ struct SpiceOfflineBanner: View {
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: "wifi.slash")
-                .font(.system(size: 12, weight: .bold))
+                .font(.appFont(size: 12, weight: .bold))
                 .foregroundColor(.white)
 
             Text("No Internet Connection · Working in Offline Mode")
-                .font(.system(size: 11, weight: .bold))
+                .font(.appFont(size: 11, weight: .bold))
                 .foregroundColor(.white)
 
             Spacer()
@@ -372,11 +372,11 @@ struct SpiceDateFilterChip: View {
             Button(action: { showSheet = true }) {
                 HStack(spacing: 6) {
                     Image(systemName: "calendar")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.appFont(size: 11, weight: .semibold))
                         .foregroundColor(selectedDate != nil ? Color.spicePrimary : Color.spiceMuted)
 
                     Text(label)
-                        .font(.system(size: 12, weight: .bold))
+                        .font(.appFont(size: 12, weight: .bold))
                         .foregroundColor(selectedDate != nil ? Color.spicePrimary : Color.spiceInk)
                 }
                 .padding(.horizontal, 14)
@@ -395,7 +395,7 @@ struct SpiceDateFilterChip: View {
                     selectedDate = nil
                 }) {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 14))
+                        .font(.appFont(size: 14))
                         .foregroundColor(Color.spiceMuted)
                 }
                 .buttonStyle(.plain)
@@ -422,7 +422,7 @@ struct SpiceDatePickerSheet: View {
                         dismiss()
                     }) {
                         Text("Any Date")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(.appFont(size: 12, weight: .bold))
                             .padding(.horizontal, 12)
                             .padding(.vertical, 7)
                             .background(selectedDate == nil ? Color.spicePrimary : Color.spiceBackground)
@@ -435,7 +435,7 @@ struct SpiceDatePickerSheet: View {
                         dismiss()
                     }) {
                         Text("Today")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(.appFont(size: 12, weight: .bold))
                             .padding(.horizontal, 12)
                             .padding(.vertical, 7)
                             .background(Color.spiceBackground)
@@ -450,7 +450,7 @@ struct SpiceDatePickerSheet: View {
                         dismiss()
                     }) {
                         Text("Yesterday")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(.appFont(size: 12, weight: .bold))
                             .padding(.horizontal, 12)
                             .padding(.vertical, 7)
                             .background(Color.spiceBackground)
@@ -622,11 +622,11 @@ public struct SpiceDateRangeFilterChip: View {
             Button(action: { showModal = true }) {
                 HStack(spacing: 6) {
                     Image(systemName: "calendar")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.appFont(size: 12, weight: .semibold))
                         .foregroundColor(selectedRange?.isActive == true ? Color.spicePrimary : Color.spiceMuted)
 
                     Text(label)
-                        .font(.system(size: 12.5, weight: .bold))
+                        .font(.appFont(size: 12.5, weight: .bold))
                         .foregroundColor(selectedRange?.isActive == true ? Color.spicePrimary : Color.spiceInk)
                 }
                 .padding(.horizontal, 14)
@@ -645,7 +645,7 @@ public struct SpiceDateRangeFilterChip: View {
                     selectedRange = nil
                 }) {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 14))
+                        .font(.appFont(size: 14))
                         .foregroundColor(Color.spiceMuted)
                 }
                 .buttonStyle(.plain)
@@ -719,12 +719,12 @@ public struct SpiceDateRangeModal: View {
             VStack(alignment: .leading, spacing: 14) {
                 // Title
                 Text("Select Date Range")
-                    .font(.system(size: 17, weight: .heavy))
+                    .font(.appFont(size: 17, weight: .heavy))
                     .foregroundColor(Color.spiceInk)
 
                 // Subtitle / Selected Range
                 Text(rangePreviewText)
-                    .font(.system(size: 13, weight: .bold))
+                    .font(.appFont(size: 13, weight: .bold))
                     .foregroundColor(Color.spicePrimary)
 
                 // 4 Preset Filter Chips
@@ -750,11 +750,11 @@ public struct SpiceDateRangeModal: View {
                 HStack {
                     HStack(spacing: 4) {
                         Text(monthTitle)
-                            .font(.system(size: 14.5, weight: .heavy))
+                            .font(.appFont(size: 14.5, weight: .heavy))
                             .foregroundColor(Color.spiceInk)
 
                         Image(systemName: "chevron.down")
-                            .font(.system(size: 10, weight: .bold))
+                            .font(.appFont(size: 10, weight: .bold))
                             .foregroundColor(Color.spiceInk)
                     }
 
@@ -767,7 +767,7 @@ public struct SpiceDateRangeModal: View {
                                 .frame(width: 32, height: 32)
                                 .overlay(
                                     Image(systemName: "chevron.left")
-                                        .font(.system(size: 11, weight: .bold))
+                                        .font(.appFont(size: 11, weight: .bold))
                                         .foregroundColor(Color.spiceInk)
                                 )
                         }
@@ -778,7 +778,7 @@ public struct SpiceDateRangeModal: View {
                                 .frame(width: 32, height: 32)
                                 .overlay(
                                     Image(systemName: "chevron.right")
-                                        .font(.system(size: 11, weight: .bold))
+                                        .font(.appFont(size: 11, weight: .bold))
                                         .foregroundColor(Color.spiceInk)
                                 )
                         }
@@ -790,7 +790,7 @@ public struct SpiceDateRangeModal: View {
                 HStack(spacing: 0) {
                     ForEach(weekdays, id: \.self) { day in
                         Text(day)
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.appFont(size: 12, weight: .medium))
                             .foregroundColor(Color.spiceMuted)
                             .frame(maxWidth: .infinity)
                     }
@@ -808,7 +808,7 @@ public struct SpiceDateRangeModal: View {
                         tempEnd = nil
                     }) {
                         Text("Clear")
-                            .font(.system(size: 14, weight: .heavy))
+                            .font(.appFont(size: 14, weight: .heavy))
                             .foregroundColor(Color.spiceInk)
                             .frame(maxWidth: .infinity)
                             .frame(height: 44)
@@ -831,7 +831,7 @@ public struct SpiceDateRangeModal: View {
                         isPresented = false
                     }) {
                         Text("Apply")
-                            .font(.system(size: 14, weight: .heavy))
+                            .font(.appFont(size: 14, weight: .heavy))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .frame(height: 44)
@@ -922,7 +922,7 @@ public struct SpiceDateRangeModal: View {
             }
 
             Text("\(dayNumber)")
-                .font(.system(size: 13.5, weight: (isStart || isEnd) ? .heavy : .medium))
+                .font(.appFont(size: 13.5, weight: (isStart || isEnd) ? .heavy : .medium))
                 .foregroundColor(
                     (isStart || isEnd) ? .white :
                     isInBetween ? Color.spicePrimary : Color.spiceInk
@@ -954,7 +954,7 @@ public struct SpiceDateRangeModal: View {
     private func presetButton(title: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 12, weight: .bold))
+                .font(.appFont(size: 12, weight: .bold))
                 .foregroundColor(Color.spicePrimary)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)

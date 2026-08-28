@@ -36,7 +36,7 @@ struct SchemesScreen: View {
                     ForEach(filters, id: \.self) { filter in
                         Button(action: { selectedFilter = filter }) {
                             Text(filter)
-                                .font(.system(size: 11.5, weight: .bold))
+                                .font(.appFont(size: 11.5, weight: .bold))
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 6)
                                 .background(selectedFilter == filter ? Color.spicePrimary : Color.white)
@@ -133,7 +133,7 @@ struct SchemesScreen: View {
                     .frame(height: 80)
                     .overlay(
                         Text("SPECIAL TRADE SCHEME")
-                            .font(.system(size: 11, weight: .heavy))
+                            .font(.appFont(size: 11, weight: .heavy))
                             .foregroundColor(.white)
                             .padding(10),
                         alignment: .bottomLeading
@@ -142,7 +142,7 @@ struct SchemesScreen: View {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
                         Text(scheme.title ?? "Trade Scheme")
-                            .font(.system(size: 14, weight: .heavy))
+                            .font(.appFont(size: 14, weight: .heavy))
                             .foregroundColor(Color.spiceInk)
                         Spacer()
                         SpiceStatusBadge(status: scheme.type?.uppercased() ?? "TRADE SCHEME")
@@ -150,7 +150,7 @@ struct SchemesScreen: View {
 
                     if let desc = scheme.description, !desc.isEmpty {
                         Text(desc)
-                            .font(.system(size: 11.5, weight: .medium))
+                            .font(.appFont(size: 11.5, weight: .medium))
                             .foregroundColor(Color.spiceMuted)
                             .lineLimit(2)
                     }
@@ -158,13 +158,13 @@ struct SchemesScreen: View {
                     HStack {
                         if let minVal = scheme.minOrderValue {
                             Text("Min Order: ₹\(String(format: "%.2f", minVal))")
-                                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                                .font(.appFont(size: 10, weight: .semibold, design: .monospaced))
                                 .foregroundColor(Color.spiceMuted)
                         }
                         Spacer()
                         if let exp = scheme.expiryDate, !exp.isEmpty {
                             Text("Valid till \(exp)")
-                                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                                .font(.appFont(size: 10, weight: .semibold, design: .monospaced))
                                 .foregroundColor(Color.spiceMuted)
                         }
                     }
@@ -194,11 +194,11 @@ struct SchemeDetailScreen: View {
                                 .overlay(
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text("SPECIAL TRADE SCHEME")
-                                            .font(.system(size: 13, weight: .heavy))
+                                            .font(.appFont(size: 13, weight: .heavy))
                                             .foregroundColor(.white)
                                         if let minVal = scheme.minOrderValue {
                                             Text("Min Order Value: ₹\(String(format: "%.2f", minVal))")
-                                                .font(.system(size: 10.5, weight: .semibold, design: .monospaced))
+                                                .font(.appFont(size: 10.5, weight: .semibold, design: .monospaced))
                                                 .foregroundColor(.white.opacity(0.9))
                                         }
                                     }
@@ -208,12 +208,12 @@ struct SchemeDetailScreen: View {
 
                             VStack(alignment: .leading, spacing: 6) {
                                 Text(scheme.title ?? "Trade Scheme")
-                                    .font(.system(size: 15, weight: .heavy))
+                                    .font(.appFont(size: 15, weight: .heavy))
                                     .foregroundColor(Color.spiceInk)
 
                                 if let desc = scheme.description {
                                     Text(desc)
-                                        .font(.system(size: 12, weight: .medium))
+                                        .font(.appFont(size: 12, weight: .medium))
                                         .foregroundColor(Color.spiceMuted)
                                         .lineSpacing(2)
                                 }
@@ -226,11 +226,11 @@ struct SchemeDetailScreen: View {
                     SpiceCard {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Terms & Conditions")
-                                .font(.system(size: 12.5, weight: .heavy))
+                                .font(.appFont(size: 12.5, weight: .heavy))
                                 .foregroundColor(Color.spiceInk)
 
                             Text("• Trade discount is automatically calculated and applied at checkout by the backend system.\n• Retailers must maintain approved account status to claim trade schemes.\n• Scheme applicable while stocks last.")
-                                .font(.system(size: 11, weight: .medium))
+                                .font(.appFont(size: 11, weight: .medium))
                                 .foregroundColor(Color.spiceMuted)
                                 .lineSpacing(3)
                         }
@@ -239,7 +239,7 @@ struct SchemeDetailScreen: View {
                     // Action Button
                     NavigationLink(destination: BrandSelectionScreen().toolbar(.hidden, for: .tabBar)) {
                         Text("Explore Eligible Products")
-                            .font(.system(size: 14, weight: .heavy))
+                            .font(.appFont(size: 14, weight: .heavy))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .frame(height: 50)

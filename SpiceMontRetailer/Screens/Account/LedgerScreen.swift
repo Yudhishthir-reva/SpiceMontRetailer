@@ -85,10 +85,10 @@ struct LedgerScreen: View {
                         HStack(spacing: 10) {
                             Image(systemName: "magnifyingglass")
                                 .foregroundColor(Color.spiceMuted)
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(.appFont(size: 14, weight: .semibold))
 
                             TextField("Search by order number", text: $searchText)
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.appFont(size: 13, weight: .medium))
                                 .foregroundColor(Color.black)
                                 .tint(Color.spicePrimary)
                         }
@@ -109,7 +109,7 @@ struct LedgerScreen: View {
                                         selectedPaymentFilter = chip
                                     }) {
                                         Text(chip)
-                                            .font(.system(size: 12.5, weight: .bold))
+                                            .font(.appFont(size: 12.5, weight: .bold))
                                             .padding(.horizontal, 14)
                                             .padding(.vertical, 7)
                                             .background(selectedPaymentFilter == chip ? Color.spicePrimary : Color.white)
@@ -134,7 +134,7 @@ struct LedgerScreen: View {
                                         selectedOrderStatusFilter = chip
                                     }) {
                                         Text(chip)
-                                            .font(.system(size: 12.5, weight: .bold))
+                                            .font(.appFont(size: 12.5, weight: .bold))
                                             .padding(.horizontal, 14)
                                             .padding(.vertical, 7)
                                             .background(selectedOrderStatusFilter == chip ? Color.spicePrimary : Color.white)
@@ -164,7 +164,7 @@ struct LedgerScreen: View {
                                 searchText = ""
                             }) {
                                 Text("Clear all")
-                                    .font(.system(size: 12.5, weight: .bold))
+                                    .font(.appFont(size: 12.5, weight: .bold))
                                     .foregroundColor(Color.spicePrimary)
                             }
                         }
@@ -224,7 +224,7 @@ struct LedgerScreen: View {
                     viewModel.loadAll()
                 }) {
                     Text("Refresh")
-                        .font(.system(size: 13.5, weight: .heavy))
+                        .font(.appFont(size: 13.5, weight: .heavy))
                         .foregroundColor(Color.spicePrimary)
                 }
             }
@@ -246,44 +246,44 @@ struct LedgerScreen: View {
 
         return VStack(alignment: .leading, spacing: 8) {
             Text("OUTSTANDING")
-                .font(.system(size: 10.5, weight: .heavy))
+                .font(.appFont(size: 10.5, weight: .heavy))
                 .foregroundColor(Color(hex: "#C8322B"))
                 .tracking(0.5)
 
             Text(filterSubtitleText)
-                .font(.system(size: 11.5, weight: .medium))
+                .font(.appFont(size: 11.5, weight: .medium))
                 .foregroundColor(Color(hex: "#C86A65"))
 
             Text("₹\(pending)")
-                .font(.system(size: 32, weight: .heavy, design: .rounded))
+                .font(.appFont(size: 32, weight: .heavy, design: .rounded))
                 .foregroundColor(Color(hex: "#C8322B"))
                 .padding(.vertical, 2)
 
             VStack(spacing: 6) {
                 HStack {
                     Text("Total Billed")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.appFont(size: 13, weight: .medium))
                         .foregroundColor(Color.spiceInk)
                     Spacer()
                     Text("₹\(billed)")
-                        .font(.system(size: 13.5, weight: .heavy, design: .monospaced))
+                        .font(.appFont(size: 13.5, weight: .heavy, design: .monospaced))
                         .foregroundColor(Color.spiceInk)
                 }
 
                 HStack {
                     Text("Total Paid")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.appFont(size: 13, weight: .medium))
                         .foregroundColor(Color.spiceInk)
                     Spacer()
                     Text("₹\(paid)")
-                        .font(.system(size: 13.5, weight: .heavy, design: .monospaced))
+                        .font(.appFont(size: 13.5, weight: .heavy, design: .monospaced))
                         .foregroundColor(Color.spiceInk)
                 }
             }
             .padding(.top, 4)
 
             Text("PAID BY")
-                .font(.system(size: 10, weight: .heavy))
+                .font(.appFont(size: 10, weight: .heavy))
                 .foregroundColor(Color(hex: "#C86A65"))
                 .tracking(0.5)
                 .padding(.top, 4)
@@ -292,11 +292,11 @@ struct LedgerScreen: View {
                 ForEach(["Cash", "Cheque", "UPI"], id: \.self) { mode in
                     HStack {
                         Text(mode)
-                            .font(.system(size: 12.5, weight: .medium))
+                            .font(.appFont(size: 12.5, weight: .medium))
                             .foregroundColor(Color.spiceInk)
                         Spacer()
                         Text("₹\(modes[mode] ?? "0.00")")
-                            .font(.system(size: 13, weight: .heavy, design: .monospaced))
+                            .font(.appFont(size: 13, weight: .heavy, design: .monospaced))
                             .foregroundColor(Color.spiceInk)
                     }
                 }
@@ -325,13 +325,13 @@ struct LedgerScreen: View {
             // 1. Top Row: Order # + Status Badge
             HStack {
                 Text(orderNum)
-                    .font(.system(size: 14.5, weight: .heavy, design: .monospaced))
+                    .font(.appFont(size: 14.5, weight: .heavy, design: .monospaced))
                     .foregroundColor(Color.spiceInk)
 
                 Spacer()
 
                 Text(statusText)
-                    .font(.system(size: 10, weight: .heavy, design: .monospaced))
+                    .font(.appFont(size: 10, weight: .heavy, design: .monospaced))
                     .foregroundColor(isPaid ? Color(hex: "#167E46") : Color(hex: "#B87314"))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3.5)
@@ -341,7 +341,7 @@ struct LedgerScreen: View {
 
             // 2. Subheader: Date · Order Status · Payment Mode
             Text(orderSubheader(order: order))
-                .font(.system(size: 12, weight: .medium))
+                .font(.appFont(size: 12, weight: .medium))
                 .foregroundColor(Color.spiceMuted)
 
             Divider().background(Color.spiceDivider)
@@ -350,31 +350,31 @@ struct LedgerScreen: View {
             VStack(spacing: 6) {
                 HStack {
                     Text("Billed")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.appFont(size: 13, weight: .medium))
                         .foregroundColor(Color.spiceInk)
                     Spacer()
                     Text(String(format: "₹%.2f", order.billedAmount ?? 0))
-                        .font(.system(size: 13.5, weight: .heavy, design: .monospaced))
+                        .font(.appFont(size: 13.5, weight: .heavy, design: .monospaced))
                         .foregroundColor(Color.spiceInk)
                 }
 
                 HStack {
                     Text("Paid")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.appFont(size: 13, weight: .medium))
                         .foregroundColor(Color.spiceInk)
                     Spacer()
                     Text(String(format: "₹%.2f", order.paidAmount ?? 0))
-                        .font(.system(size: 13.5, weight: .heavy, design: .monospaced))
+                        .font(.appFont(size: 13.5, weight: .heavy, design: .monospaced))
                         .foregroundColor(Color.spiceInk)
                 }
 
                 HStack {
                     Text("Pending")
-                        .font(.system(size: 14, weight: .heavy))
+                        .font(.appFont(size: 14, weight: .heavy))
                         .foregroundColor(Color.spiceInk)
                     Spacer()
                     Text(String(format: "₹%.2f", order.pendingAmount ?? 0))
-                        .font(.system(size: 15, weight: .heavy, design: .monospaced))
+                        .font(.appFont(size: 15, weight: .heavy, design: .monospaced))
                         .foregroundColor(Color.spiceInk)
                 }
             }
@@ -383,7 +383,7 @@ struct LedgerScreen: View {
             if isExpanded && hasPayments {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("PAYMENTS")
-                        .font(.system(size: 10, weight: .heavy))
+                        .font(.appFont(size: 10, weight: .heavy))
                         .foregroundColor(Color.spiceMuted)
                         .tracking(0.5)
 
@@ -391,26 +391,26 @@ struct LedgerScreen: View {
                         ForEach(payments) { payment in
                             HStack {
                                 Text("\(payment.paymentMode ?? "Cash") · \(payment.date ?? "")")
-                                    .font(.system(size: 12.5, weight: .medium))
+                                    .font(.appFont(size: 12.5, weight: .medium))
                                     .foregroundColor(Color.spiceInk)
 
                                 Spacer()
 
                                 Text(String(format: "₹%.2f", payment.amount ?? 0))
-                                    .font(.system(size: 13, weight: .heavy, design: .monospaced))
+                                    .font(.appFont(size: 13, weight: .heavy, design: .monospaced))
                                     .foregroundColor(Color.spicePrimary)
                             }
                         }
                     } else if let paid = order.paidAmount, paid > 0 {
                         HStack {
                             Text("\(order.paymentMode ?? "Cash") · \(formatDate(order.orderDate))")
-                                .font(.system(size: 12.5, weight: .medium))
+                                .font(.appFont(size: 12.5, weight: .medium))
                                 .foregroundColor(Color.spiceInk)
 
                             Spacer()
 
                             Text(String(format: "₹%.2f", paid))
-                                .font(.system(size: 13, weight: .heavy, design: .monospaced))
+                                .font(.appFont(size: 13, weight: .heavy, design: .monospaced))
                                 .foregroundColor(Color.spicePrimary)
                         }
                     }
@@ -433,7 +433,7 @@ struct LedgerScreen: View {
                         }
                     }) {
                         Text(isExpanded ? "Hide Payments" : "View Payments")
-                            .font(.system(size: 13, weight: .heavy))
+                            .font(.appFont(size: 13, weight: .heavy))
                             .foregroundColor(Color.spiceInk)
                             .frame(maxWidth: .infinity)
                             .frame(height: 38)
@@ -449,7 +449,7 @@ struct LedgerScreen: View {
 
                 NavigationLink(destination: OrderDetailScreen(orderId: order.orderId ?? order.id, orderNumber: order.orderNo)) {
                     Text("View Order Details")
-                        .font(.system(size: 13, weight: .heavy))
+                        .font(.appFont(size: 13, weight: .heavy))
                         .foregroundColor(Color.spicePrimary)
                         .frame(maxWidth: .infinity)
                         .frame(height: 38)

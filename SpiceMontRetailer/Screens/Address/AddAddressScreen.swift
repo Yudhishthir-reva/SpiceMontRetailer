@@ -44,7 +44,7 @@ struct AddAddressScreen: View {
                     SpiceCard {
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Shop & Contact Details")
-                                .font(.system(size: 13, weight: .heavy))
+                                .font(.appFont(size: 13, weight: .heavy))
                                 .foregroundColor(Color.spiceInk)
 
                             Divider()
@@ -62,7 +62,7 @@ struct AddAddressScreen: View {
                     SpiceCard {
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Delivery Location")
-                                .font(.system(size: 13, weight: .heavy))
+                                .font(.appFont(size: 13, weight: .heavy))
                                 .foregroundColor(Color.spiceInk)
 
                             Divider()
@@ -74,7 +74,7 @@ struct AddAddressScreen: View {
                                     HStack {
                                         TextField("6-digit PIN", text: $pincode)
                                             .keyboardType(.numberPad)
-                                            .font(.system(size: 13.5, weight: .semibold, design: .monospaced))
+                                            .font(.appFont(size: 13.5, weight: .semibold, design: .monospaced))
                                             .foregroundColor(Color.black)
                                             .tint(Color.spicePrimary)
                                             .onChange(of: pincode) { _, newValue in
@@ -97,7 +97,7 @@ struct AddAddressScreen: View {
                                 VStack(alignment: .leading, spacing: 6) {
                                     fieldLabel("CITY")
                                     TextField("City", text: $city)
-                                        .font(.system(size: 13.5, weight: .semibold))
+                                        .font(.appFont(size: 13.5, weight: .semibold))
                                         .foregroundColor(Color.black)
                                         .tint(Color.spicePrimary)
                                         .padding(10)
@@ -155,7 +155,7 @@ struct AddAddressScreen: View {
             fieldLabel(title)
             TextField(placeholder, text: text)
                 .keyboardType(keyboard)
-                .font(.system(size: 13, weight: .medium))
+                .font(.appFont(size: 13, weight: .medium))
                 .foregroundColor(Color.black)
                 .tint(Color.spicePrimary)
                 .padding(10)
@@ -168,7 +168,7 @@ struct AddAddressScreen: View {
 
     private func fieldLabel(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 10, weight: .bold))
+            .font(.appFont(size: 10, weight: .bold))
             .foregroundColor(Color.spiceMuted)
             .tracking(0.4)
     }
@@ -178,9 +178,9 @@ struct AddAddressScreen: View {
         return Button(action: { addressType = value }) {
             HStack(spacing: 4) {
                 Image(systemName: icon)
-                    .font(.system(size: 11))
+                    .font(.appFont(size: 11))
                 Text(label)
-                    .font(.system(size: 11.5, weight: .bold))
+                    .font(.appFont(size: 11.5, weight: .bold))
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 8)

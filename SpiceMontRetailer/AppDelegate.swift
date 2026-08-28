@@ -11,9 +11,12 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        AppFont.registerFontsIfNeeded()
+        UIView.appearance().overrideUserInterfaceStyle = .light
         registerForPushNotifications()
         NetworkMonitor.shared.start()
         AuthSessionManager.shared.start()
+        UIApplication.shared.addTapGestureToDismissKeyboard()
         return true
     }
 

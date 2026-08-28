@@ -36,18 +36,18 @@ struct SalesmanScreen: View {
                                     .frame(width: 72, height: 72)
                                     .overlay(
                                         Text(String(salesmanName.prefix(2)).uppercased())
-                                            .font(.system(size: 22, weight: .heavy))
+                                            .font(.appFont(size: 22, weight: .heavy))
                                             .foregroundColor(.white)
                                     )
 
                                 VStack(spacing: 4) {
                                     Text(salesmanName)
-                                        .font(.system(size: 16, weight: .heavy))
+                                        .font(.appFont(size: 16, weight: .heavy))
                                         .foregroundColor(Color.spiceInk)
 
                                     if !salesmanPhone.isEmpty {
                                         Text(salesmanPhone)
-                                            .font(.system(size: 14, weight: .bold, design: .monospaced))
+                                            .font(.appFont(size: 14, weight: .bold, design: .monospaced))
                                             .foregroundColor(Color.spicePrimary)
                                     }
 
@@ -88,7 +88,7 @@ struct SalesmanScreen: View {
                         HStack(alignment: .top, spacing: 8) {
                             Circle().fill(Color.spiceMuted).frame(width: 5, height: 5).padding(.top, 4)
                             Text("Salesman mapping is controlled by SpiceMonk admin and cannot be changed from the app.")
-                                .font(.system(size: 10.5, weight: .medium))
+                                .font(.appFont(size: 10.5, weight: .medium))
                                 .foregroundColor(Color.spiceMuted)
                                 .lineSpacing(2)
                         }
@@ -140,21 +140,21 @@ struct CustomerSupportScreen: View {
                                 .frame(width: 64, height: 64)
                                 .overlay(
                                     Image(systemName: "headset")
-                                        .font(.system(size: 26, weight: .bold))
+                                        .font(.appFont(size: 26, weight: .bold))
                                         .foregroundColor(Color.spicePrimary)
                                 )
 
                             VStack(spacing: 4) {
                                 Text("SpiceMonk Customer Care")
-                                    .font(.system(size: 16, weight: .heavy))
+                                    .font(.appFont(size: 16, weight: .heavy))
                                     .foregroundColor(Color.spiceInk)
 
                                 Text(supportPhone)
-                                    .font(.system(size: 16, weight: .heavy, design: .monospaced))
+                                    .font(.appFont(size: 16, weight: .heavy, design: .monospaced))
                                     .foregroundColor(Color.spicePrimary)
 
                                 Text("Monday – Saturday · 9:00 AM to 7:00 PM")
-                                    .font(.system(size: 11, weight: .medium))
+                                    .font(.appFont(size: 11, weight: .medium))
                                     .foregroundColor(Color.spiceMuted)
                             }
 
@@ -178,24 +178,24 @@ struct CustomerSupportScreen: View {
                                         .frame(width: 42, height: 42)
                                         .overlay(
                                             Text(String(salesmanName.prefix(2)).uppercased())
-                                                .font(.system(size: 14, weight: .heavy))
+                                                .font(.appFont(size: 14, weight: .heavy))
                                                 .foregroundColor(.white)
                                         )
 
                                     VStack(alignment: .leading, spacing: 3) {
                                         Text("Assigned Salesman")
-                                            .font(.system(size: 11, weight: .medium))
+                                            .font(.appFont(size: 11, weight: .medium))
                                             .foregroundColor(Color.spiceMuted)
 
                                         Text(salesmanName)
-                                            .font(.system(size: 13.5, weight: .heavy))
+                                            .font(.appFont(size: 13.5, weight: .heavy))
                                             .foregroundColor(Color.spiceInk)
                                     }
 
                                     Spacer()
 
                                     Image(systemName: "chevron.right")
-                                        .font(.system(size: 12, weight: .bold))
+                                        .font(.appFont(size: 12, weight: .bold))
                                         .foregroundColor(Color.spiceMuted)
                                 }
                             }
@@ -209,7 +209,7 @@ struct CustomerSupportScreen: View {
                             HStack(alignment: .top, spacing: 8) {
                                 Circle().fill(Color.spiceMuted).frame(width: 5, height: 5).padding(.top, 4)
                                 Text("Keep your Retailer ID \(sellerCode) and order number ready when you call.")
-                                    .font(.system(size: 10.5, weight: .medium))
+                                    .font(.appFont(size: 10.5, weight: .medium))
                                     .foregroundColor(Color.spiceMuted)
                                     .lineSpacing(2)
                             }

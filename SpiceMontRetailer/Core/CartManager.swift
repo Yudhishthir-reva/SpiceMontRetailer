@@ -469,11 +469,20 @@ final class CartManager: ObservableObject {
 
     // MARK: - Place Order
 
-    func placeOrder(addressId: Int? = nil, remark: String? = nil, completion: @escaping (Result<RetailerOrderPlaceData?, Error>) -> Void) {
+    func placeOrder(
+        addressId: Int? = nil,
+        remark: String? = nil,
+        paymentMode: Int = 0,
+        audioRemark: String? = nil,
+        completion: @escaping (Result<RetailerOrderPlaceData?, Error>) -> Void
+    ) {
         let headers = UserDefaultManager.shared.authHeader
-        var params: [String: Any] = [:]
+        var params: [String: Any] = [
+            "payment_mode": paymentMode
+        ]
         if let aId = addressId { params["address_id"] = aId }
         if let rem = remark, !rem.isEmpty { params["remark"] = rem }
+        if let audio = audioRemark, !audio.isEmpty { params["audio_remark"] = audio }
 
         let publisher: AnyPublisher<OrderPlaceResponse, Error> = networkService.request(
             APIRouter.orderPlace, params: params, headers: headers

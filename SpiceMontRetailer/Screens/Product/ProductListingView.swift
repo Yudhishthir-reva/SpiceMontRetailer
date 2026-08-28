@@ -67,10 +67,10 @@ struct ProductListingView: View {
                     HStack(spacing: 10) {
                         Image(systemName: "magnifyingglass")
                             .foregroundColor(Color.spiceMuted)
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.appFont(size: 14, weight: .semibold))
 
                         TextField("Search in \(categoryName)...", text: $searchText)
-                            .font(.system(size: 13, weight: .medium))
+                            .font(.appFont(size: 13, weight: .medium))
                             .foregroundColor(Color.black)
                             .tint(Color.spicePrimary)
 
@@ -78,7 +78,7 @@ struct ProductListingView: View {
                             Button(action: { searchText = "" }) {
                                 Image(systemName: "xmark.circle.fill")
                                     .foregroundColor(Color.spiceMuted)
-                                    .font(.system(size: 14))
+                                    .font(.appFont(size: 14))
                             }
                         }
                     }
@@ -100,7 +100,7 @@ struct ProductListingView: View {
                                     selectedFilter = chip
                                 }) {
                                     Text(chip)
-                                        .font(.system(size: 11.5, weight: .bold))
+                                        .font(.appFont(size: 11.5, weight: .bold))
                                         .padding(.horizontal, 12)
                                         .padding(.vertical, 6)
                                         .background(isSelected ? Color.spicePrimary : Color.white)
@@ -127,7 +127,7 @@ struct ProductListingView: View {
                         ProgressView()
                             .tint(Color.spicePrimary)
                         Text("Loading products...")
-                            .font(.system(size: 12.5, weight: .medium))
+                            .font(.appFont(size: 12.5, weight: .medium))
                             .foregroundColor(Color.spiceMuted)
                         Spacer()
                     }
@@ -211,7 +211,7 @@ struct ProductListingView: View {
                     // Pink Discount Pill Badge
                     if let discount = product.discountPercentage, !discount.isEmpty, discount != "0" {
                         Text("\(discount)% OFF")
-                            .font(.system(size: 9.5, weight: .heavy))
+                            .font(.appFont(size: 9.5, weight: .heavy))
                             .foregroundColor(Color(hex: "#C8322B"))
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2.5)
@@ -226,25 +226,25 @@ struct ProductListingView: View {
 
             // Product Name
             Text(product.name ?? "Spice Powder")
-                .font(.system(size: 13.5, weight: .heavy))
+                .font(.appFont(size: 13.5, weight: .heavy))
                 .foregroundColor(Color.spiceInk)
                 .lineLimit(1)
                 .padding(.top, 2)
 
             // Unit (e.g. 100 gms)
             Text(product.unit ?? "100 gms")
-                .font(.system(size: 11.5, weight: .medium))
+                .font(.appFont(size: 11.5, weight: .medium))
                 .foregroundColor(Color.spiceMuted)
 
             // Price & Strikethrough MRP
             HStack(spacing: 5) {
                 Text("₹\(product.price ?? "80.00")")
-                    .font(.system(size: 14, weight: .heavy, design: .monospaced))
+                    .font(.appFont(size: 14, weight: .heavy, design: .monospaced))
                     .foregroundColor(Color.spiceInk)
 
                 if let mrp = product.mrp, !mrp.isEmpty {
                     Text("₹\(mrp)")
-                        .font(.system(size: 12, weight: .medium, design: .monospaced))
+                        .font(.appFont(size: 12, weight: .medium, design: .monospaced))
                         .foregroundColor(Color.spiceMuted)
                         .strikethrough()
                 }
@@ -252,7 +252,7 @@ struct ProductListingView: View {
 
             // Stock Status
             Text(product.inStock == false ? "Out of stock" : "In stock")
-                .font(.system(size: 11.5, weight: .medium))
+                .font(.appFont(size: 11.5, weight: .medium))
                 .foregroundColor(product.inStock == false ? Color(hex: "#C8322B") : Color.spiceMuted)
                 .padding(.bottom, 2)
 
@@ -263,9 +263,9 @@ struct ProductListingView: View {
                 if inCartCount > 0 {
                     HStack(spacing: 4) {
                         Image(systemName: "checkmark")
-                            .font(.system(size: 10, weight: .black))
+                            .font(.appFont(size: 10, weight: .black))
                         Text("\(inCartCount) in Cart")
-                            .font(.system(size: 12, weight: .heavy))
+                            .font(.appFont(size: 12, weight: .heavy))
                     }
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
@@ -274,7 +274,7 @@ struct ProductListingView: View {
                     .cornerRadius(8)
                 } else {
                     Text("ADD")
-                        .font(.system(size: 12, weight: .heavy))
+                        .font(.appFont(size: 12, weight: .heavy))
                         .foregroundColor(Color(hex: "#167444"))
                         .frame(maxWidth: .infinity)
                         .frame(height: 34)
@@ -307,15 +307,15 @@ struct ProductListingView: View {
                 }) {
                     HStack {
                         Image(systemName: "cart.fill")
-                            .font(.system(size: 14, weight: .bold))
+                            .font(.appFont(size: 14, weight: .bold))
 
                         Text("\(cartManager.cartCount) \(cartManager.cartCount == 1 ? "unit" : "units") in cart")
-                            .font(.system(size: 13.5, weight: .heavy))
+                            .font(.appFont(size: 13.5, weight: .heavy))
 
                         Spacer()
 
                         Text("VIEW CART")
-                            .font(.system(size: 12.5, weight: .heavy))
+                            .font(.appFont(size: 12.5, weight: .heavy))
                             .tracking(0.5)
                     }
                     .foregroundColor(.white)

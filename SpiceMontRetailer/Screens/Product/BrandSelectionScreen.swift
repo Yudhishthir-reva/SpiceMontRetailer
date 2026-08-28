@@ -34,11 +34,11 @@ struct BrandSelectionScreen: View {
                     // MARK: - Step Subheader
                     HStack {
                         Text("All Brands")
-                            .font(.system(size: 15, weight: .heavy))
+                            .font(.appFont(size: 15, weight: .heavy))
                             .foregroundColor(Color.spiceInk)
                         Spacer()
                         Text("Step 1 of 3")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(.appFont(size: 12, weight: .bold))
                             .foregroundColor(Color.spicePrimary)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 3)
@@ -98,7 +98,7 @@ struct BrandSelectionScreen: View {
                                                     .frame(width: 58, height: 58)
                                             } else {
                                                 Image(systemName: "photo.slash")
-                                                    .font(.system(size: 36, weight: .light))
+                                                    .font(.appFont(size: 36, weight: .light))
                                                     .foregroundColor(Color.spiceMuted.opacity(0.4))
                                             }
                                         }
@@ -106,7 +106,7 @@ struct BrandSelectionScreen: View {
 
                                         // Brand Name
                                         Text(brand.name ?? "")
-                                            .font(.system(size: 13.5, weight: .bold))
+                                            .font(.appFont(size: 13.5, weight: .bold))
                                             .foregroundColor(Color.spiceInk)
                                             .multilineTextAlignment(.center)
                                             .lineLimit(1)
@@ -142,15 +142,15 @@ struct BrandSelectionScreen: View {
                     }) {
                         HStack {
                             Image(systemName: "cart.fill")
-                                .font(.system(size: 14, weight: .bold))
+                                .font(.appFont(size: 14, weight: .bold))
 
                             Text("\(cartManager.cartCount) \(cartManager.cartCount == 1 ? "unit" : "units") in cart")
-                                .font(.system(size: 13.5, weight: .heavy))
+                                .font(.appFont(size: 13.5, weight: .heavy))
 
                             Spacer()
 
                             Text("VIEW CART")
-                                .font(.system(size: 12.5, weight: .heavy))
+                                .font(.appFont(size: 12.5, weight: .heavy))
                                 .tracking(0.5)
                         }
                         .foregroundColor(.white)
@@ -186,7 +186,7 @@ struct BrandSelectionScreen: View {
                     cartManager.fetchCart()
                 }) {
                     Text("Refresh")
-                        .font(.system(size: 13.5, weight: .heavy))
+                        .font(.appFont(size: 13.5, weight: .heavy))
                         .foregroundColor(Color.spicePrimary)
                 }
             }

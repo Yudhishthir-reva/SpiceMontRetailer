@@ -35,11 +35,11 @@ struct OTPVerifyScreen: View {
                 VStack(alignment: .leading, spacing: 20) {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Enter the 6-digit OTP sent to")
-                            .font(.system(size: 13, weight: .medium))
+                            .font(.appFont(size: 13, weight: .medium))
                             .foregroundColor(Color.spiceMuted)
 
                         Text(maskedMobile)
-                            .font(.system(size: 14, weight: .bold, design: .monospaced))
+                            .font(.appFont(size: 14, weight: .bold, design: .monospaced))
                             .foregroundColor(Color.spiceInk)
                     }
                     .padding(.top, 14)
@@ -51,14 +51,14 @@ struct OTPVerifyScreen: View {
                     HStack {
                         if viewModel.resendSeconds > 0 {
                             Text("Resend OTP in ")
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(.appFont(size: 12, weight: .semibold))
                                 .foregroundColor(Color.spiceMuted) +
                             Text(String(format: "00:%02d", viewModel.resendSeconds))
-                                .font(.system(size: 12, weight: .bold, design: .monospaced))
+                                .font(.appFont(size: 12, weight: .bold, design: .monospaced))
                                 .foregroundColor(Color.spiceInk)
                         } else {
                             Text("Didn't receive OTP?")
-                                .font(.system(size: 12, weight: .medium))
+                                .font(.appFont(size: 12, weight: .medium))
                                 .foregroundColor(Color.spiceMuted)
                         }
 
@@ -70,7 +70,7 @@ struct OTPVerifyScreen: View {
                             }
                         }) {
                             Text("Resend OTP")
-                                .font(.system(size: 12, weight: .heavy))
+                                .font(.appFont(size: 12, weight: .heavy))
                                 .foregroundColor(viewModel.resendSeconds == 0 ? Color.spicePrimary : Color.spiceMuted.opacity(0.4))
                         }
                         .disabled(viewModel.resendSeconds > 0)
@@ -86,7 +86,7 @@ struct OTPVerifyScreen: View {
                     // Change Mobile Button
                     Button(action: { dismiss() }) {
                         Text("Change Mobile Number")
-                            .font(.system(size: 12.5, weight: .heavy))
+                            .font(.appFont(size: 12.5, weight: .heavy))
                             .foregroundColor(Color.spiceInk)
                             .frame(maxWidth: .infinity)
                     }
@@ -98,7 +98,7 @@ struct OTPVerifyScreen: View {
                             HStack(spacing: 8) {
                                 Circle().fill(Color.spiceDue).frame(width: 6, height: 6)
                                 Text(viewModel.toastMessage)
-                                    .font(.system(size: 11.5, weight: .semibold))
+                                    .font(.appFont(size: 11.5, weight: .semibold))
                                     .foregroundColor(Color.spiceDue)
                             }
                         }
@@ -132,11 +132,11 @@ struct OTPVerifyScreen: View {
                 ZStack {
                     if viewModel.digits[index].isEmpty {
                         Text("—")
-                            .font(.system(size: 16, weight: .bold, design: .monospaced))
+                            .font(.appFont(size: 16, weight: .bold, design: .monospaced))
                             .foregroundColor(Color.spiceMuted.opacity(0.4))
                     } else {
                         Text(viewModel.digits[index])
-                            .font(.system(size: 18, weight: .bold, design: .monospaced))
+                            .font(.appFont(size: 18, weight: .bold, design: .monospaced))
                             .foregroundColor(Color.spiceInk)
                     }
                 }

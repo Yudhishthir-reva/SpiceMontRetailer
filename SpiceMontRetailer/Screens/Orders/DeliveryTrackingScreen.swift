@@ -66,7 +66,7 @@ struct DeliveryTrackingScreen: View {
                                 HStack {
                                     Spacer()
                                     Text("View Order Details")
-                                        .font(.system(size: 14, weight: .bold))
+                                        .font(.appFont(size: 14, weight: .bold))
                                         .foregroundColor(Color.spiceInk)
                                     Spacer()
                                 }
@@ -116,7 +116,7 @@ struct DeliveryTrackingScreen: View {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: { loadTracking() }) {
                     Text("Refresh")
-                        .font(.system(size: 13.5, weight: .heavy))
+                        .font(.appFont(size: 13.5, weight: .heavy))
                         .foregroundColor(Color.spicePrimary)
                 }
             }
@@ -133,13 +133,13 @@ struct DeliveryTrackingScreen: View {
     private func orderHeaderCard(data: RetailerOrderTrackData) -> some View {
         HStack {
             Text(data.orderNo ?? orderNumberText)
-                .font(.system(size: 14.5, weight: .heavy, design: .monospaced))
+                .font(.appFont(size: 14.5, weight: .heavy, design: .monospaced))
                 .foregroundColor(Color.spiceInk)
 
             Spacer()
 
             Text(data.statusText?.uppercased() ?? "PENDING")
-                .font(.system(size: 10, weight: .heavy, design: .monospaced))
+                .font(.appFont(size: 10, weight: .heavy, design: .monospaced))
                 .foregroundColor(Color(hex: data.statusColorHex ?? "#405189"))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 3.5)
@@ -161,12 +161,12 @@ struct DeliveryTrackingScreen: View {
 
         return VStack(alignment: .leading, spacing: 14) {
             Text("Status Timeline")
-                .font(.system(size: 14, weight: .heavy))
+                .font(.appFont(size: 14, weight: .heavy))
                 .foregroundColor(Color.spiceInk)
 
             if timeline.isEmpty {
                 Text("Status timeline not available.")
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.appFont(size: 12, weight: .medium))
                     .foregroundColor(Color.spiceMuted)
                     .padding(.vertical, 8)
             } else {
@@ -198,25 +198,25 @@ struct DeliveryTrackingScreen: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.label ?? item.title ?? "Status Update")
-                    .font(.system(size: 13.5, weight: isDone || isActive ? .heavy : .semibold))
+                    .font(.appFont(size: 13.5, weight: isDone || isActive ? .heavy : .semibold))
                     .foregroundColor(isDone || isActive ? Color.spiceInk : Color(hex: "#9CA3AF"))
 
                 if let date = item.date, !date.isEmpty {
                     Text(date)
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.appFont(size: 11, weight: .medium))
                         .foregroundColor(Color.spiceMuted)
                 }
 
                 if let desc = item.description, !desc.isEmpty {
                     Text(desc)
-                        .font(.system(size: 11, weight: .regular))
+                        .font(.appFont(size: 11, weight: .regular))
                         .foregroundColor(Color.spiceMuted)
                         .lineLimit(2)
                 }
 
                 if isActive {
                     Text("Current status")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.appFont(size: 11, weight: .bold))
                         .foregroundColor(Color(hex: "#167444"))
                         .padding(.top, 1)
                 }
@@ -232,7 +232,7 @@ struct DeliveryTrackingScreen: View {
         VStack(spacing: 0) {
             if isDone {
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 18, weight: .bold))
+                    .font(.appFont(size: 18, weight: .bold))
                     .foregroundColor(Color(hex: "#167444"))
             } else if isActive {
                 Circle()
@@ -266,18 +266,18 @@ struct DeliveryTrackingScreen: View {
                 .frame(width: 48, height: 48)
                 .overlay(
                     Image(systemName: "bicycle")
-                        .font(.system(size: 20, weight: .semibold))
+                        .font(.appFont(size: 20, weight: .semibold))
                         .foregroundColor(Color.spicePrimary)
                 )
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(rider.name ?? "Delivery Rider")
-                    .font(.system(size: 13.5, weight: .heavy))
+                    .font(.appFont(size: 13.5, weight: .heavy))
                     .foregroundColor(Color.spiceInk)
 
                 if let vehicle = rider.vehicleNo, !vehicle.isEmpty {
                     Text("Vehicle: \(vehicle)")
-                        .font(.system(size: 11.5, weight: .medium))
+                        .font(.appFont(size: 11.5, weight: .medium))
                         .foregroundColor(Color.spiceMuted)
                 }
             }
@@ -289,7 +289,7 @@ struct DeliveryTrackingScreen: View {
                     UIApplication.shared.open(url)
                 }) {
                     Text("CALL")
-                        .font(.system(size: 11.5, weight: .heavy))
+                        .font(.appFont(size: 11.5, weight: .heavy))
                         .foregroundColor(Color.spicePrimary)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 7)

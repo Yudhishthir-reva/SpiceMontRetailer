@@ -219,19 +219,19 @@ struct RetailerRegistrationFlowView: View {
                 }
             }) {
                 Image(systemName: "chevron.left")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.appFont(size: 16, weight: .bold))
                     .foregroundColor(Color.spiceInk)
             }
 
             Text(currentStep == .review ? "Review Registration" : "Retailer Registration")
-                .font(.system(size: 15, weight: .heavy))
+                .font(.appFont(size: 15, weight: .heavy))
                 .foregroundColor(Color.spiceInk)
 
             Spacer()
 
             if currentStep.rawValue <= 3 {
                 Text("\(currentStep.rawValue) / 3")
-                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                    .font(.appFont(size: 11, weight: .semibold, design: .monospaced))
                     .foregroundColor(Color.spiceMuted)
             }
         }
@@ -257,7 +257,7 @@ struct RetailerRegistrationFlowView: View {
     private var personalStepView: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Personal Information")
-                .font(.system(size: 16, weight: .heavy))
+                .font(.appFont(size: 16, weight: .heavy))
                 .foregroundColor(Color.spiceInk)
 
             // Profile Picture Uploader
@@ -265,13 +265,28 @@ struct RetailerRegistrationFlowView: View {
 
             formField(label: "Full Name *", text: $fullName, placeholder: "e.g. Ramesh Kumar")
 
-            formField(label: "Email Address (Optional)", text: $email, placeholder: "e.g. ramesh@example.com", keyboardType: .emailAddress)
+            VStack(alignment: .leading, spacing: 4) {
+                formField(label: "Email Address (Optional)", text: $email, placeholder: "e.g. ramesh@example.com", keyboardType: .emailAddress)
+
+                if !email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !email.isValidEmail() {
+                    Text("Please enter a valid email address (e.g. name@example.com)")
+                        .font(.appFont(size: 11, weight: .medium))
+                        .foregroundColor(Color.spiceDue)
+                        .padding(.horizontal, 4)
+                }
+            }
 
             formField(label: "Mobile Number *", text: $mobile, placeholder: "10-digit mobile number", keyboardType: .numberPad, isMono: true)
+                .onChange(of: mobile) { _, newValue in
+                    let digits = String(newValue.filter(\.isNumber).prefix(10))
+                    if digits != newValue {
+                        mobile = digits
+                    }
+                }
 
             Toggle(isOn: $isWhatsAppSameAsMobile) {
                 Text("WhatsApp number is same as mobile")
-                    .font(.system(size: 12.5, weight: .medium))
+                    .font(.appFont(size: 12.5, weight: .medium))
                     .foregroundColor(Color.spiceInk)
             }
             .tint(Color.spicePrimary)
@@ -279,6 +294,12 @@ struct RetailerRegistrationFlowView: View {
 
             if !isWhatsAppSameAsMobile {
                 formField(label: "WhatsApp Number *", text: $whatsAppNumber, placeholder: "10-digit WhatsApp number", keyboardType: .numberPad, isMono: true)
+                    .onChange(of: whatsAppNumber) { _, newValue in
+                        let digits = String(newValue.filter(\.isNumber).prefix(10))
+                        if digits != newValue {
+                            whatsAppNumber = digits
+                        }
+                    }
             }
         }
     }
@@ -302,7 +323,7 @@ struct RetailerRegistrationFlowView: View {
                             .frame(width: 86, height: 86)
                             .overlay(
                                 Image(systemName: "person.crop.circle.badge.plus")
-                                    .font(.system(size: 38))
+                                    .font(.appFont(size: 38))
                                     .foregroundColor(Color.spicePrimary)
                             )
                             .overlay(Circle().stroke(Color.spiceCardBorder, lineWidth: 1.5))
@@ -314,7 +335,7 @@ struct RetailerRegistrationFlowView: View {
                         .frame(width: 28, height: 28)
                         .overlay(
                             Image(systemName: "camera.fill")
-                                .font(.system(size: 12, weight: .bold))
+                                .font(.appFont(size: 12, weight: .bold))
                                 .foregroundColor(.white)
                         )
                         .offset(x: 2, y: 2)
@@ -334,7 +355,7 @@ struct RetailerRegistrationFlowView: View {
                 HStack(spacing: 12) {
                     PhotosPicker(selection: $profilePhotoItem, matching: .images) {
                         Text("Change Photo")
-                            .font(.system(size: 11.5, weight: .bold))
+                            .font(.appFont(size: 11.5, weight: .bold))
                             .foregroundColor(Color.spicePrimary)
                     }
                     Text("·").foregroundColor(Color.spiceMuted)
@@ -343,13 +364,13 @@ struct RetailerRegistrationFlowView: View {
                         profilePhotoItem = nil
                     }) {
                         Text("Remove")
-                            .font(.system(size: 11.5, weight: .bold))
+                            .font(.appFont(size: 11.5, weight: .bold))
                             .foregroundColor(Color.spiceDue)
                     }
                 }
             } else {
                 Text("Tap to upload profile photo (Optional)")
-                    .font(.system(size: 11.5, weight: .medium))
+                    .font(.appFont(size: 11.5, weight: .medium))
                     .foregroundColor(Color.spiceMuted)
             }
         }
@@ -361,7 +382,7 @@ struct RetailerRegistrationFlowView: View {
     private var businessStepView: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Business Information")
-                .font(.system(size: 16, weight: .heavy))
+                .font(.appFont(size: 16, weight: .heavy))
                 .foregroundColor(Color.spiceInk)
 
             formField(label: "Shop Name *", text: $shopName, placeholder: "e.g. Shri Ganesh Kirana Store")
@@ -370,7 +391,7 @@ struct RetailerRegistrationFlowView: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
                     Text("GST Number (Optional)")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.appFont(size: 11, weight: .bold))
                         .foregroundColor(Color.spiceInk)
                     Spacer()
                     if !gstNumber.isEmpty {
@@ -379,25 +400,25 @@ struct RetailerRegistrationFlowView: View {
                                 Image(systemName: "checkmark.circle.fill")
                                 Text("Valid GSTIN")
                             }
-                            .font(.system(size: 10.5, weight: .bold))
+                            .font(.appFont(size: 10.5, weight: .bold))
                             .foregroundColor(Color.spicePrimary)
                         } else if gstNumber.count == 15 {
                             HStack(spacing: 3) {
                                 Image(systemName: "exclamationmark.triangle.fill")
                                 Text("Invalid Format")
                             }
-                            .font(.system(size: 10.5, weight: .bold))
+                            .font(.appFont(size: 10.5, weight: .bold))
                             .foregroundColor(Color.spiceDue)
                         } else {
                             Text("\(gstNumber.count)/15 digits")
-                                .font(.system(size: 10.5, weight: .semibold, design: .monospaced))
+                                .font(.appFont(size: 10.5, weight: .semibold, design: .monospaced))
                                 .foregroundColor(Color.spiceMuted)
                         }
                     }
                 }
 
                 TextField("15-digit GSTIN (e.g. 27ABCDE1234F1Z5)", text: $gstNumber)
-                    .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                    .font(.appFont(size: 13, weight: .semibold, design: .monospaced))
                     .foregroundColor(Color.black)
                     .tint(Color.spicePrimary)
                     .textInputAutocapitalization(.characters)
@@ -424,7 +445,7 @@ struct RetailerRegistrationFlowView: View {
 
                 if !gstNumber.isEmpty && !gstNumber.isValidGSTNumber() {
                     Text(gstNumber.count == 15 ? "Invalid GSTIN format. Example: 27ABCDE1234F1Z5" : "GSTIN must be 15 characters (e.g. 27ABCDE1234F1Z5)")
-                        .font(.system(size: 10.5, weight: .medium))
+                        .font(.appFont(size: 10.5, weight: .medium))
                         .foregroundColor(gstNumber.count == 15 ? Color.spiceDue : Color.spiceMuted)
                 }
             }
@@ -436,7 +457,7 @@ struct RetailerRegistrationFlowView: View {
                 // State Picker
                 VStack(alignment: .leading, spacing: 6) {
                     Text("State *")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.appFont(size: 11, weight: .bold))
                         .foregroundColor(Color.spiceInk)
 
                     Menu {
@@ -458,12 +479,12 @@ struct RetailerRegistrationFlowView: View {
                     } label: {
                         HStack {
                             Text(selectedStateName.isEmpty ? "Select State" : selectedStateName)
-                                .font(.system(size: 12.5, weight: .medium))
+                                .font(.appFont(size: 12.5, weight: .medium))
                                 .foregroundColor(selectedStateName == "Select State" ? Color.spiceMuted : Color.spiceInk)
                                 .lineLimit(1)
                             Spacer()
                             Image(systemName: "chevron.down")
-                                .font(.system(size: 10, weight: .bold))
+                                .font(.appFont(size: 10, weight: .bold))
                                 .foregroundColor(Color.spiceMuted)
                         }
                         .padding(12)
@@ -476,7 +497,7 @@ struct RetailerRegistrationFlowView: View {
                 // City Picker
                 VStack(alignment: .leading, spacing: 6) {
                     Text("City *")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.appFont(size: 11, weight: .bold))
                         .foregroundColor(Color.spiceInk)
 
                     Menu {
@@ -495,12 +516,12 @@ struct RetailerRegistrationFlowView: View {
                     } label: {
                         HStack {
                             Text(selectedCityName.isEmpty ? "Select City" : selectedCityName)
-                                .font(.system(size: 12.5, weight: .medium))
+                                .font(.appFont(size: 12.5, weight: .medium))
                                 .foregroundColor(selectedCityName == "Select City" ? Color.spiceMuted : Color.spiceInk)
                                 .lineLimit(1)
                             Spacer()
                             Image(systemName: "chevron.down")
-                                .font(.system(size: 10, weight: .bold))
+                                .font(.appFont(size: 10, weight: .bold))
                                 .foregroundColor(Color.spiceMuted)
                         }
                         .padding(12)
@@ -514,7 +535,7 @@ struct RetailerRegistrationFlowView: View {
             Divider().padding(.vertical, 4)
 
             Text("Shop GPS Location (Optional)")
-                .font(.system(size: 16, weight: .heavy))
+                .font(.appFont(size: 16, weight: .heavy))
                 .foregroundColor(Color.spiceInk)
 
             SpiceCard {
@@ -523,7 +544,7 @@ struct RetailerRegistrationFlowView: View {
                         Image(systemName: "location.fill")
                             .foregroundColor(Color.spicePrimary)
                         Text("Live GPS Location")
-                            .font(.system(size: 13, weight: .heavy))
+                            .font(.appFont(size: 13, weight: .heavy))
                             .foregroundColor(Color.spiceInk)
                         Spacer()
                         if !latitude.isEmpty && !longitude.isEmpty {
@@ -536,7 +557,7 @@ struct RetailerRegistrationFlowView: View {
                         SpiceKVRow(key: "Longitude", value: longitude, isMonoValue: true)
                     } else {
                         Text("Capture your shop's GPS coordinates for faster order delivery dispatch.")
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.appFont(size: 12, weight: .medium))
                             .foregroundColor(Color.spiceMuted)
                     }
 
@@ -552,7 +573,7 @@ struct RetailerRegistrationFlowView: View {
                                 }
                                 Text(gpsManager.isFetching ? "Locating..." : (latitude.isEmpty ? "Capture via GPS" : "Re-Capture GPS"))
                             }
-                            .font(.system(size: 12.5, weight: .heavy))
+                            .font(.appFont(size: 12.5, weight: .heavy))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .frame(height: 38)
@@ -570,11 +591,11 @@ struct RetailerRegistrationFlowView: View {
     private var documentsStepView: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("KYC Documents")
-                .font(.system(size: 16, weight: .heavy))
+                .font(.appFont(size: 16, weight: .heavy))
                 .foregroundColor(Color.spiceInk)
 
             Text("Upload clear photos of your identity proof (Optional, speeds up verification)")
-                .font(.system(size: 12, weight: .medium))
+                .font(.appFont(size: 12, weight: .medium))
                 .foregroundColor(Color.spiceMuted)
 
             // Profile Picture Card (if uploaded in Step 1 or to upload here)
@@ -592,19 +613,19 @@ struct RetailerRegistrationFlowView: View {
                             .frame(width: 56, height: 56)
                             .overlay(
                                 Image(systemName: "person.crop.circle")
-                                    .font(.system(size: 28))
+                                    .font(.appFont(size: 28))
                                     .foregroundColor(Color.spicePrimary)
                             )
                     }
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Profile Photo")
-                            .font(.system(size: 12, weight: .heavy))
+                            .font(.appFont(size: 12, weight: .heavy))
                             .foregroundColor(Color.spiceInk)
 
                         if let photoData = profilePhotoData {
                             Text("\(Double(photoData.count) / 1024.0 / 1024.0, specifier: "%.1f") MB · Selected")
-                                .font(.system(size: 10, design: .monospaced))
+                                .font(.appFont(size: 10, design: .monospaced))
                                 .foregroundColor(Color.spiceMuted)
 
                             Button(action: {
@@ -613,13 +634,13 @@ struct RetailerRegistrationFlowView: View {
                             }) {
                                 Text("Remove")
                                     .foregroundColor(Color.spiceDue)
-                                    .font(.system(size: 11, weight: .heavy))
+                                    .font(.appFont(size: 11, weight: .heavy))
                             }
                         } else {
                             PhotosPicker(selection: $profilePhotoItem, matching: .images) {
                                 Text("Upload Photo")
                                     .foregroundColor(Color.spicePrimary)
-                                    .font(.system(size: 11, weight: .heavy))
+                                    .font(.appFont(size: 11, weight: .heavy))
                             }
                         }
                     }
@@ -651,12 +672,12 @@ struct RetailerRegistrationFlowView: View {
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Aadhaar / ID Front")
-                            .font(.system(size: 12, weight: .heavy))
+                            .font(.appFont(size: 12, weight: .heavy))
                             .foregroundColor(Color.spiceInk)
 
                         if let frontData = aadhaarFrontData {
                             Text("\(Double(frontData.count) / 1024.0 / 1024.0, specifier: "%.1f") MB · Selected")
-                                .font(.system(size: 10, design: .monospaced))
+                                .font(.appFont(size: 10, design: .monospaced))
                                 .foregroundColor(Color.spiceMuted)
 
                             Button(action: {
@@ -665,13 +686,13 @@ struct RetailerRegistrationFlowView: View {
                             }) {
                                 Text("Remove")
                                     .foregroundColor(Color.spiceDue)
-                                    .font(.system(size: 11, weight: .heavy))
+                                    .font(.appFont(size: 11, weight: .heavy))
                             }
                         } else {
                             PhotosPicker(selection: $aadhaarFrontItem, matching: .images) {
                                 Text("Upload Photo")
                                     .foregroundColor(Color.spicePrimary)
-                                    .font(.system(size: 11, weight: .heavy))
+                                    .font(.appFont(size: 11, weight: .heavy))
                             }
                         }
                     }
@@ -712,12 +733,12 @@ struct RetailerRegistrationFlowView: View {
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Aadhaar / ID Back")
-                            .font(.system(size: 12, weight: .heavy))
+                            .font(.appFont(size: 12, weight: .heavy))
                             .foregroundColor(Color.spiceInk)
 
                         if let backData = aadhaarBackData {
                             Text("\(Double(backData.count) / 1024.0 / 1024.0, specifier: "%.1f") MB · Selected")
-                                .font(.system(size: 10, design: .monospaced))
+                                .font(.appFont(size: 10, design: .monospaced))
                                 .foregroundColor(Color.spiceMuted)
 
                             Button(action: {
@@ -726,13 +747,13 @@ struct RetailerRegistrationFlowView: View {
                             }) {
                                 Text("Remove")
                                     .foregroundColor(Color.spiceDue)
-                                    .font(.system(size: 11, weight: .heavy))
+                                    .font(.appFont(size: 11, weight: .heavy))
                             }
                         } else {
                             PhotosPicker(selection: $aadhaarBackItem, matching: .images) {
                                 Text("Upload Photo")
                                     .foregroundColor(Color.spicePrimary)
-                                    .font(.system(size: 11, weight: .heavy))
+                                    .font(.appFont(size: 11, weight: .heavy))
                             }
                         }
                     }
@@ -756,10 +777,10 @@ struct RetailerRegistrationFlowView: View {
             Button(action: { isDeclared.toggle() }) {
                 HStack(alignment: .top, spacing: 10) {
                     Image(systemName: isDeclared ? "checkmark.square.fill" : "square")
-                        .font(.system(size: 18))
+                        .font(.appFont(size: 18))
                         .foregroundColor(isDeclared ? Color.spicePrimary : Color.spiceMuted)
                     Text("I hereby declare that I am an authorized retailer and the information provided above is true and correct.")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.appFont(size: 12, weight: .medium))
                         .foregroundColor(Color.spiceInk)
                         .multilineTextAlignment(.leading)
                 }
@@ -774,10 +795,10 @@ struct RetailerRegistrationFlowView: View {
             SpiceCard {
                 VStack(alignment: .leading, spacing: 10) {
                     HStack {
-                        Text("Personal Information").font(.system(size: 13, weight: .heavy))
+                        Text("Personal Information").font(.appFont(size: 13, weight: .heavy))
                         Spacer()
                         Button("Edit") { currentStep = .personal }
-                            .font(.system(size: 11, weight: .heavy))
+                            .font(.appFont(size: 11, weight: .heavy))
                             .foregroundColor(Color.spicePrimary)
                     }
                     Divider()
@@ -793,10 +814,10 @@ struct RetailerRegistrationFlowView: View {
 
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(fullName)
-                                    .font(.system(size: 14, weight: .heavy))
+                                    .font(.appFont(size: 14, weight: .heavy))
                                     .foregroundColor(Color.spiceInk)
                                 Text("+91 \(mobile)")
-                                    .font(.system(size: 12, weight: .medium, design: .monospaced))
+                                    .font(.appFont(size: 12, weight: .medium, design: .monospaced))
                                     .foregroundColor(Color.spiceMuted)
                             }
                         }
@@ -817,10 +838,10 @@ struct RetailerRegistrationFlowView: View {
             SpiceCard {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Text("Business Information").font(.system(size: 13, weight: .heavy))
+                        Text("Business Information").font(.appFont(size: 13, weight: .heavy))
                         Spacer()
                         Button("Edit") { currentStep = .business }
-                            .font(.system(size: 11, weight: .heavy))
+                            .font(.appFont(size: 11, weight: .heavy))
                             .foregroundColor(Color.spicePrimary)
                     }
                     Divider()
@@ -840,10 +861,10 @@ struct RetailerRegistrationFlowView: View {
             SpiceCard {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Text("Verification Documents").font(.system(size: 13, weight: .heavy))
+                        Text("Verification Documents").font(.appFont(size: 13, weight: .heavy))
                         Spacer()
                         Button("Edit") { currentStep = .documents }
-                            .font(.system(size: 11, weight: .heavy))
+                            .font(.appFont(size: 11, weight: .heavy))
                             .foregroundColor(Color.spicePrimary)
                     }
                     Divider()
@@ -867,17 +888,17 @@ struct RetailerRegistrationFlowView: View {
                     .frame(width: 84, height: 84)
 
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 48))
+                    .font(.appFont(size: 48))
                     .foregroundColor(Color.spicePrimary)
             }
 
             VStack(spacing: 6) {
                 Text("Registration Submitted!")
-                    .font(.system(size: 20, weight: .heavy))
+                    .font(.appFont(size: 20, weight: .heavy))
                     .foregroundColor(Color.spiceInk)
 
                 Text(submittedMessage)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.appFont(size: 13, weight: .medium))
                     .foregroundColor(Color.spiceMuted)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 16)
@@ -935,17 +956,23 @@ struct RetailerRegistrationFlowView: View {
         case .personal:
             let cleanName = fullName.trimmingCharacters(in: .whitespacesAndNewlines)
             let cleanMobile = mobile.trimmingCharacters(in: .whitespacesAndNewlines)
+            let cleanEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
+
             if cleanName.isEmpty {
                 showToast("Please enter your full name.")
                 return
             }
-            if cleanMobile.count < 10 {
+            if !cleanEmail.isEmpty && !cleanEmail.isValidEmail() {
+                showToast("Please enter a valid email address (e.g. name@example.com) or leave it blank.")
+                return
+            }
+            if cleanMobile.count != 10 {
                 showToast("Please enter a valid 10-digit mobile number.")
                 return
             }
             if !isWhatsAppSameAsMobile {
                 let cleanWA = whatsAppNumber.trimmingCharacters(in: .whitespacesAndNewlines)
-                if cleanWA.count < 10 {
+                if cleanWA.count != 10 {
                     showToast("Please enter a valid 10-digit WhatsApp number.")
                     return
                 }
@@ -1080,10 +1107,10 @@ struct RetailerRegistrationFlowView: View {
     ) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(label)
-                .font(.system(size: 11, weight: .bold))
+                .font(.appFont(size: 11, weight: .bold))
                 .foregroundColor(Color.spiceInk)
             TextField(placeholder, text: text)
-                .font(isMono ? .system(size: 13, weight: .semibold, design: .monospaced) : .system(size: 13, weight: .medium))
+                .font(isMono ? .appFont(size: 13, weight: .semibold, design: .monospaced) : .appFont(size: 13, weight: .medium))
                 .foregroundColor(Color.black)
                 .tint(Color.spicePrimary)
                 .keyboardType(keyboardType)

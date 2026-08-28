@@ -67,13 +67,13 @@ struct ProductDetailScreen: View {
                             // MARK: - Product Title & Subtitle
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(prod.name ?? "")
-                                    .font(.system(size: 20, weight: .heavy))
+                                    .font(.appFont(size: 20, weight: .heavy))
                                     .foregroundColor(Color.spiceInk)
 
                                 let brand = prod.brandName ?? "Spice Monk"
                                 let category = prod.categoryName ?? "Blended Spices"
                                 Text("\(brand) · \(category)")
-                                    .font(.system(size: 13, weight: .medium))
+                                    .font(.appFont(size: 13, weight: .medium))
                                     .foregroundColor(Color.spiceMuted)
                             }
                             .padding(.top, 2)
@@ -82,7 +82,7 @@ struct ProductDetailScreen: View {
                             if !variants.isEmpty {
                                 VStack(alignment: .leading, spacing: 14) {
                                     Text("Pack Size")
-                                        .font(.system(size: 14.5, weight: .heavy))
+                                        .font(.appFont(size: 14.5, weight: .heavy))
                                         .foregroundColor(Color.spiceInk)
 
                                     VStack(spacing: 16) {
@@ -112,7 +112,7 @@ struct ProductDetailScreen: View {
                         ProgressView()
                             .tint(Color.spicePrimary)
                         Text("Loading product details...")
-                            .font(.system(size: 13, weight: .medium))
+                            .font(.appFont(size: 13, weight: .medium))
                             .foregroundColor(Color.spiceMuted)
                         Spacer()
                     }
@@ -216,25 +216,25 @@ struct ProductDetailScreen: View {
             // Row 1: Unit Name (Left) + Stock Status (Right)
             HStack {
                 Text(variant.unit ?? "100 gms")
-                    .font(.system(size: 15, weight: .heavy))
+                    .font(.appFont(size: 15, weight: .heavy))
                     .foregroundColor(Color.spiceInk)
 
                 Spacer()
 
                 Text(isUnavailable ? "Out of stock" : "In stock")
-                    .font(.system(size: 12.5, weight: .bold))
+                    .font(.appFont(size: 12.5, weight: .bold))
                     .foregroundColor(isUnavailable ? Color(hex: "#C8322B") : Color(hex: "#167E46"))
             }
 
             // Row 2: Price & Strikethrough MRP
             HStack(spacing: 6) {
                 Text("₹\(variant.price ?? "0.00")")
-                    .font(.system(size: 14, weight: .heavy, design: .monospaced))
+                    .font(.appFont(size: 14, weight: .heavy, design: .monospaced))
                     .foregroundColor(Color.spiceInk)
 
                 if let mrp = variant.mrp, !mrp.isEmpty {
                     Text("₹\(mrp)")
-                        .font(.system(size: 13, weight: .medium, design: .monospaced))
+                        .font(.appFont(size: 13, weight: .medium, design: .monospaced))
                         .foregroundColor(Color.spiceMuted)
                         .strikethrough()
                 }
@@ -242,7 +242,7 @@ struct ProductDetailScreen: View {
 
             // Row 3: "Order" Label
             Text("Order")
-                .font(.system(size: 12, weight: .medium))
+                .font(.appFont(size: 12, weight: .medium))
                 .foregroundColor(Color.spiceMuted)
                 .padding(.top, 2)
 
@@ -293,13 +293,13 @@ struct ProductDetailScreen: View {
                             }
                         }
                     ))
-                    .font(.system(size: 13.5, weight: .bold))
+                    .font(.appFont(size: 13.5, weight: .bold))
                     .foregroundColor(Color.spiceInk)
                     .keyboardType(.decimalPad)
                     .disabled(isUnavailable)
 
                     Text("Kg")
-                        .font(.system(size: 12.5, weight: .medium))
+                        .font(.appFont(size: 12.5, weight: .medium))
                         .foregroundColor(Color.spiceMuted)
                 }
                 .padding(.horizontal, 12)
@@ -355,13 +355,13 @@ struct ProductDetailScreen: View {
                             }
                         }
                     ))
-                    .font(.system(size: 13.5, weight: .bold))
+                    .font(.appFont(size: 13.5, weight: .bold))
                     .foregroundColor(Color.spiceInk)
                     .keyboardType(.numberPad)
                     .disabled(isUnavailable)
 
                     Text("Pkt")
-                        .font(.system(size: 12.5, weight: .medium))
+                        .font(.appFont(size: 12.5, weight: .medium))
                         .foregroundColor(Color.spiceMuted)
                 }
                 .padding(.horizontal, 12)
@@ -380,11 +380,11 @@ struct ProductDetailScreen: View {
     private func descriptionCard(description: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Description")
-                .font(.system(size: 15, weight: .heavy))
+                .font(.appFont(size: 15, weight: .heavy))
                 .foregroundColor(Color.spiceInk)
 
             Text(description)
-                .font(.system(size: 13, weight: .medium))
+                .font(.appFont(size: 13, weight: .medium))
                 .foregroundColor(Color.spiceInk.opacity(0.85))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -401,7 +401,7 @@ struct ProductDetailScreen: View {
     private func specificationsCard(product: Product) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Specifications")
-                .font(.system(size: 15, weight: .heavy))
+                .font(.appFont(size: 15, weight: .heavy))
                 .foregroundColor(Color.spiceInk)
 
             specRow(key: "Pack Size", value: variants.first?.unit ?? product.unit ?? "100 gms")
@@ -423,7 +423,7 @@ struct ProductDetailScreen: View {
     private func specRow(key: String, value: String, isMono: Bool = false) -> some View {
         HStack {
             Text(key)
-                .font(.system(size: 13, weight: .medium))
+                .font(.appFont(size: 13, weight: .medium))
                 .foregroundColor(Color.spiceMuted)
 
             Spacer()
@@ -431,8 +431,8 @@ struct ProductDetailScreen: View {
             Text(value)
                 .font(
                     isMono ?
-                        .system(size: 13, weight: .heavy, design: .monospaced) :
-                        .system(size: 13, weight: .bold)
+                        .appFont(size: 13, weight: .heavy, design: .monospaced) :
+                        .appFont(size: 13, weight: .bold)
                 )
                 .foregroundColor(Color.spiceInk)
         }
@@ -448,15 +448,15 @@ struct ProductDetailScreen: View {
                 }) {
                     HStack {
                         Image(systemName: "cart.fill")
-                            .font(.system(size: 14, weight: .bold))
+                            .font(.appFont(size: 14, weight: .bold))
 
                         Text("\(cartManager.cartCount) \(cartManager.cartCount == 1 ? "unit" : "units") in cart")
-                            .font(.system(size: 13.5, weight: .heavy))
+                            .font(.appFont(size: 13.5, weight: .heavy))
 
                         Spacer()
 
                         Text("VIEW CART")
-                            .font(.system(size: 12.5, weight: .heavy))
+                            .font(.appFont(size: 12.5, weight: .heavy))
                             .tracking(0.5)
                     }
                     .foregroundColor(.white)

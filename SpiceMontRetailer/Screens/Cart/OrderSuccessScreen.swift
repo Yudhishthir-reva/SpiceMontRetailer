@@ -32,16 +32,16 @@ struct OrderSuccessScreen: View {
                         .frame(width: 74, height: 74)
                         .overlay(
                             Image(systemName: "checkmark")
-                                .font(.system(size: 32, weight: .bold))
+                                .font(.appFont(size: 32, weight: .bold))
                                 .foregroundColor(.white)
                         )
 
                     Text("Order Placed Successfully")
-                        .font(.system(size: 21, weight: .heavy))
+                        .font(.appFont(size: 21, weight: .heavy))
                         .foregroundColor(Color.spiceInk)
 
                     Text("Your order has been sent to SpiceMonk for processing. You will be notified as the status changes.")
-                        .font(.system(size: 12.5, weight: .medium))
+                        .font(.appFont(size: 12.5, weight: .medium))
                         .foregroundColor(Color.spiceMuted)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 20)
@@ -51,7 +51,7 @@ struct OrderSuccessScreen: View {
                         VStack(alignment: .leading, spacing: 10) {
                             HStack {
                                 Text(orderNumber)
-                                    .font(.system(size: 14, weight: .heavy, design: .monospaced))
+                                    .font(.appFont(size: 14, weight: .heavy, design: .monospaced))
                                     .foregroundColor(Color.spiceInk)
                                 Spacer()
                                 SpiceStatusBadge(status: "PLACED")

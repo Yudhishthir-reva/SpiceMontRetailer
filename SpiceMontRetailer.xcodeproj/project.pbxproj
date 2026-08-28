@@ -71,6 +71,17 @@
 		C5F10F6E303D950000525CC1 /* PackSizeSelectionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5F10F6D303D950000525CC1 /* PackSizeSelectionSheet.swift */; };
 		C5F10F70303D960000525CC1 /* UnitConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5F10F6F303D960000525CC1 /* UnitConverter.swift */; };
 		C5F10F72303D970000525CC1 /* AuthSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5F10F71303D970000525CC1 /* AuthSessionManager.swift */; };
+		C5F10F74303D980000525CC1 /* AppFont.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5F10F73303D980000525CC1 /* AppFont.swift */; };
+		C5F10F78303D980000525CC1 /* DMSans-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = C5F10F77303D980000525CC1 /* DMSans-Regular.ttf */; };
+		C5F10F7A303D980000525CC1 /* DMSans-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = C5F10F79303D980000525CC1 /* DMSans-Medium.ttf */; };
+		C5F10F7C303D980000525CC1 /* DMSans-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = C5F10F7B303D980000525CC1 /* DMSans-Bold.ttf */; };
+		C5F10F7E303D980000525CC1 /* DMSans-Italic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = C5F10F7D303D980000525CC1 /* DMSans-Italic.ttf */; };
+		C5F10F80303D980000525CC1 /* DMSans-BoldItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = C5F10F7F303D980000525CC1 /* DMSans-BoldItalic.ttf */; };
+		C5F10F82303D980000525CC1 /* DMSans-Variable.ttf in Resources */ = {isa = PBXBuildFile; fileRef = C5F10F81303D980000525CC1 /* DMSans-Variable.ttf */; };
+		C5F10F84303D990000525CC1 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = C5F10F83303D990000525CC1 /* LaunchScreen.storyboard */; };
+		C5F10F86303D9A0000525CC1 /* AppConfigManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5F10F85303D9A0000525CC1 /* AppConfigManager.swift */; };
+		C5F10F88303D9B0000525CC1 /* AppStatusDialogs.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5F10F87303D9B0000525CC1 /* AppStatusDialogs.swift */; };
+		C5F10F8A303D9C0000525CC1 /* AudioRemarkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5F10F89303D9C0000525CC1 /* AudioRemarkManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -140,6 +151,17 @@
 		C5F10F6D303D950000525CC1 /* PackSizeSelectionSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackSizeSelectionSheet.swift; sourceTree = "<group>"; };
 		C5F10F6F303D960000525CC1 /* UnitConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnitConverter.swift; sourceTree = "<group>"; };
 		C5F10F71303D970000525CC1 /* AuthSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthSessionManager.swift; sourceTree = "<group>"; };
+		C5F10F73303D980000525CC1 /* AppFont.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppFont.swift; sourceTree = "<group>"; };
+		C5F10F77303D980000525CC1 /* DMSans-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "DMSans-Regular.ttf"; sourceTree = "<group>"; };
+		C5F10F79303D980000525CC1 /* DMSans-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "DMSans-Medium.ttf"; sourceTree = "<group>"; };
+		C5F10F7B303D980000525CC1 /* DMSans-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "DMSans-Bold.ttf"; sourceTree = "<group>"; };
+		C5F10F7D303D980000525CC1 /* DMSans-Italic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "DMSans-Italic.ttf"; sourceTree = "<group>"; };
+		C5F10F7F303D980000525CC1 /* DMSans-BoldItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "DMSans-BoldItalic.ttf"; sourceTree = "<group>"; };
+		C5F10F81303D980000525CC1 /* DMSans-Variable.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "DMSans-Variable.ttf"; sourceTree = "<group>"; };
+		C5F10F83303D990000525CC1 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
+		C5F10F85303D9A0000525CC1 /* AppConfigManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfigManager.swift; sourceTree = "<group>"; };
+		C5F10F87303D9B0000525CC1 /* AppStatusDialogs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStatusDialogs.swift; sourceTree = "<group>"; };
+		C5F10F89303D9C0000525CC1 /* AudioRemarkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRemarkManager.swift; sourceTree = "<group>"; };
 		CB5697D51143704000A868C9 /* Pods_SpiceMontRetailer.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SpiceMontRetailer.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -213,6 +235,9 @@
 				C58CD045303B20690038A272 /* CartManager.swift */,
 				C5F10F6F303D960000525CC1 /* UnitConverter.swift */,
 				C5F10F71303D970000525CC1 /* AuthSessionManager.swift */,
+				C5F10F85303D9A0000525CC1 /* AppConfigManager.swift */,
+				C5F10F87303D9B0000525CC1 /* AppStatusDialogs.swift */,
+				C5F10F89303D9C0000525CC1 /* AudioRemarkManager.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -230,6 +255,7 @@
 		C58CCFF3303B14C70038A272 /* Utility */ = {
 			isa = PBXGroup;
 			children = (
+				C5F10F73303D980000525CC1 /* AppFont.swift */,
 				C58CD9000303B200E0038A272 /* SpiceDesignSystem.swift */,
 				C58CCFEB303B14C70038A272 /* AlertToast.swift */,
 				C58CCFEC303B14C70038A272 /* AnimatedBrandBackground.swift */,
@@ -250,8 +276,10 @@
 				C58CCFE6303B14C70038A272 /* Core */,
 				C58CCFEA303B14C70038A272 /* Extensions */,
 				C58CCFF3303B14C70038A272 /* Utility */,
+				C5F10F75303D980000525CC1 /* Resources */,
 				C58CCFF4303B14C70038A272 /* AppDelegate.swift */,
 				C58CCFF5303B14C70038A272 /* Assets.xcassets */,
+				C5F10F83303D990000525CC1 /* LaunchScreen.storyboard */,
 				C58CCFF6303B14C70038A272 /* SpiceMontRetailerApp.swift */,
 			);
 			path = SpiceMontRetailer;
@@ -396,6 +424,27 @@
 			path = Pods;
 			sourceTree = "<group>";
 		};
+		C5F10F76303D980000525CC1 /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				C5F10F77303D980000525CC1 /* DMSans-Regular.ttf */,
+				C5F10F79303D980000525CC1 /* DMSans-Medium.ttf */,
+				C5F10F7B303D980000525CC1 /* DMSans-Bold.ttf */,
+				C5F10F7D303D980000525CC1 /* DMSans-Italic.ttf */,
+				C5F10F7F303D980000525CC1 /* DMSans-BoldItalic.ttf */,
+				C5F10F81303D980000525CC1 /* DMSans-Variable.ttf */,
+			);
+			path = Fonts;
+			sourceTree = "<group>";
+		};
+		C5F10F75303D980000525CC1 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				C5F10F76303D980000525CC1 /* Fonts */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -457,6 +506,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				C58CD00E303B14C70038A272 /* Assets.xcassets in Resources */,
+				C5F10F78303D980000525CC1 /* DMSans-Regular.ttf in Resources */,
+				C5F10F7A303D980000525CC1 /* DMSans-Medium.ttf in Resources */,
+				C5F10F7C303D980000525CC1 /* DMSans-Bold.ttf in Resources */,
+				C5F10F7E303D980000525CC1 /* DMSans-Italic.ttf in Resources */,
+				C5F10F80303D980000525CC1 /* DMSans-BoldItalic.ttf in Resources */,
+				C5F10F82303D980000525CC1 /* DMSans-Variable.ttf in Resources */,
+				C5F10F84303D990000525CC1 /* LaunchScreen.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -510,6 +566,10 @@
 				C5F10F6E303D950000525CC1 /* PackSizeSelectionSheet.swift in Sources */,
 				C5F10F70303D960000525CC1 /* UnitConverter.swift in Sources */,
 				C5F10F72303D970000525CC1 /* AuthSessionManager.swift in Sources */,
+				C5F10F74303D980000525CC1 /* AppFont.swift in Sources */,
+				C5F10F86303D9A0000525CC1 /* AppConfigManager.swift in Sources */,
+				C5F10F88303D9B0000525CC1 /* AppStatusDialogs.swift in Sources */,
+				C5F10F8A303D9C0000525CC1 /* AudioRemarkManager.swift in Sources */,
 				C58CCFFB303B14C70038A272 /* RequestConstant.swift in Sources */,
 				C5F10F6A303D801100525CC1 /* PaymentsScreen.swift in Sources */,
 				C58CCFFC303B14C70038A272 /* APIRouter.swift in Sources */,
@@ -692,12 +752,20 @@
 				DEVELOPMENT_TEAM = TP9YK56DA7;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Spice Monk Retailer";
+				INFOPLIST_KEY_NSCameraUsageDescription = "We need camera access to take photos of KYC documents and shop profile.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "We need your shop GPS location to verify delivery address and dispatch orders accurately.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "We need access to your microphone to record voice instructions and audio notes for your orders.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "We need access to your photo library to select photos of documents and shop profile.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "We use speech recognition to convert voice notes and search queries.";
+				INFOPLIST_KEY_UIAppFonts = "DMSans-Regular.ttf DMSans-Medium.ttf DMSans-Bold.ttf DMSans-Italic.ttf DMSans-BoldItalic.ttf DMSans-Variable.ttf";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = NO;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -731,12 +799,20 @@
 				DEVELOPMENT_TEAM = TP9YK56DA7;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Spice Monk Retailer";
+				INFOPLIST_KEY_NSCameraUsageDescription = "We need camera access to take photos of KYC documents and shop profile.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "We need your shop GPS location to verify delivery address and dispatch orders accurately.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "We need access to your microphone to record voice instructions and audio notes for your orders.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "We need access to your photo library to select photos of documents and shop profile.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "We use speech recognition to convert voice notes and search queries.";
+				INFOPLIST_KEY_UIAppFonts = "DMSans-Regular.ttf DMSans-Medium.ttf DMSans-Bold.ttf DMSans-Italic.ttf DMSans-BoldItalic.ttf DMSans-Variable.ttf";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = NO;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

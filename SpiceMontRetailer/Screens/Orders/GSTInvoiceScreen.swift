@@ -23,17 +23,17 @@ struct GSTInvoiceScreen: View {
                             HStack {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text("Tax Invoice")
-                                        .font(.system(size: 14, weight: .heavy))
+                                        .font(.appFont(size: 14, weight: .heavy))
                                         .foregroundColor(Color.spiceInk)
                                     Text(invoiceNumber)
-                                        .font(.system(size: 11.5, weight: .bold, design: .monospaced))
+                                        .font(.appFont(size: 11.5, weight: .bold, design: .monospaced))
                                         .foregroundColor(Color.spiceMuted)
                                 }
                                 Spacer()
                                 RoundedRectangle(cornerRadius: 8)
                                     .fill(LinearGradient(colors: [Color.spicePrimary, Color.spicePrimaryDark], startPoint: .topLeading, endPoint: .bottomTrailing))
                                     .frame(width: 40, height: 40)
-                                    .overlay(Text("S").font(.system(size: 18, weight: .heavy)).foregroundColor(.white))
+                                    .overlay(Text("S").font(.appFont(size: 18, weight: .heavy)).foregroundColor(.white))
                             }
 
                             Divider()
@@ -41,13 +41,13 @@ struct GSTInvoiceScreen: View {
                             HStack(alignment: .top, spacing: 14) {
                                 VStack(alignment: .leading, spacing: 3) {
                                     Text("SELLER")
-                                        .font(.system(size: 9.5, weight: .bold))
+                                        .font(.appFont(size: 9.5, weight: .bold))
                                         .foregroundColor(Color.spiceMuted)
                                     Text("SPICEMONK INDIA PVT LTD")
-                                        .font(.system(size: 11, weight: .heavy))
+                                        .font(.appFont(size: 11, weight: .heavy))
                                         .foregroundColor(Color.spiceInk)
                                     Text("GSTIN: 27AAACS1429B1ZB")
-                                        .font(.system(size: 9.5, weight: .medium, design: .monospaced))
+                                        .font(.appFont(size: 9.5, weight: .medium, design: .monospaced))
                                         .foregroundColor(Color.spiceMuted)
                                 }
 
@@ -55,13 +55,13 @@ struct GSTInvoiceScreen: View {
 
                                 VStack(alignment: .trailing, spacing: 3) {
                                     Text("BUYER")
-                                        .font(.system(size: 9.5, weight: .bold))
+                                        .font(.appFont(size: 9.5, weight: .bold))
                                         .foregroundColor(Color.spiceMuted)
                                     Text("Sharma Kirana Store")
-                                        .font(.system(size: 11, weight: .heavy))
+                                        .font(.appFont(size: 11, weight: .heavy))
                                         .foregroundColor(Color.spiceInk)
                                     Text("GSTIN: 27AABCS1234F1Z5")
-                                        .font(.system(size: 9.5, weight: .medium, design: .monospaced))
+                                        .font(.appFont(size: 9.5, weight: .medium, design: .monospaced))
                                         .foregroundColor(Color.spiceMuted)
                                 }
                             }
@@ -74,16 +74,16 @@ struct GSTInvoiceScreen: View {
                             // Header Row
                             HStack {
                                 Text("ITEM")
-                                    .font(.system(size: 9.5, weight: .heavy))
+                                    .font(.appFont(size: 9.5, weight: .heavy))
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                 Text("QTY")
-                                    .font(.system(size: 9.5, weight: .heavy))
+                                    .font(.appFont(size: 9.5, weight: .heavy))
                                     .frame(width: 32, alignment: .trailing)
                                 Text("RATE")
-                                    .font(.system(size: 9.5, weight: .heavy))
+                                    .font(.appFont(size: 9.5, weight: .heavy))
                                     .frame(width: 60, alignment: .trailing)
                                 Text("TOTAL")
-                                    .font(.system(size: 9.5, weight: .heavy))
+                                    .font(.appFont(size: 9.5, weight: .heavy))
                                     .frame(width: 68, alignment: .trailing)
                             }
                             .foregroundColor(Color.spiceMuted)
@@ -112,11 +112,11 @@ struct GSTInvoiceScreen: View {
                             Divider()
                             HStack {
                                 Text("Invoice Total")
-                                    .font(.system(size: 13, weight: .heavy))
+                                    .font(.appFont(size: 13, weight: .heavy))
                                     .foregroundColor(Color.spiceInk)
                                 Spacer()
                                 Text("₹8,450.00")
-                                    .font(.system(size: 16, weight: .heavy, design: .monospaced))
+                                    .font(.appFont(size: 16, weight: .heavy, design: .monospaced))
                                     .foregroundColor(Color.spiceInk)
                             }
                         }
@@ -140,24 +140,24 @@ struct GSTInvoiceScreen: View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(name)
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.appFont(size: 11, weight: .bold))
                     .foregroundColor(Color.spiceInk)
                 Text(hsn)
-                    .font(.system(size: 9, weight: .medium, design: .monospaced))
+                    .font(.appFont(size: 9, weight: .medium, design: .monospaced))
                     .foregroundColor(Color.spiceMuted)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
             Text("\(qty)")
-                .font(.system(size: 10.5, weight: .semibold, design: .monospaced))
+                .font(.appFont(size: 10.5, weight: .semibold, design: .monospaced))
                 .frame(width: 32, alignment: .trailing)
 
             Text(String(format: "%.2f", rate))
-                .font(.system(size: 10.5, weight: .semibold, design: .monospaced))
+                .font(.appFont(size: 10.5, weight: .semibold, design: .monospaced))
                 .frame(width: 60, alignment: .trailing)
 
             Text(String(format: "%.2f", total))
-                .font(.system(size: 10.5, weight: .heavy, design: .monospaced))
+                .font(.appFont(size: 10.5, weight: .heavy, design: .monospaced))
                 .frame(width: 68, alignment: .trailing)
         }
         .padding(.horizontal, 12)

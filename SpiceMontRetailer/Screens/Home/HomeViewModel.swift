@@ -84,11 +84,17 @@ class HomeViewModel: ObservableObject {
         isLoading = true
         let headers = defaults.authHeader
 
+        AppConfigManager.shared.checkStatus { [weak self] statusData in
+            if let number = statusData?.customerSupport?.number, !number.isEmpty {
+                self?.customerSupportPhone = number
+            }
+        }
+
         service.fetchRetailerHome(headers: headers)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] completion in
                 self?.isLoading = false
-                if case .failure(let error) = completion {
+                if case .failure = completion {
                     // Try legacy format if retailer home fails
                     self?.loadLegacyHome()
                 }

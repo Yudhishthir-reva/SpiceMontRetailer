@@ -71,7 +71,7 @@ struct CheckoutScreen: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text("Delivery Address")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.appFont(size: 16, weight: .bold))
                     .foregroundStyle(AppTheme.textPrimary)
                 Spacer()
                 Button { viewModel.showAddAddress = true } label: {
@@ -79,7 +79,7 @@ struct CheckoutScreen: View {
                         Image(systemName: "plus")
                         Text("Add New")
                     }
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.appFont(size: 13, weight: .medium))
                     .foregroundStyle(AppTheme.brandGreen)
                 }
             }
@@ -94,7 +94,7 @@ struct CheckoutScreen: View {
                         Image(systemName: "plus.circle.fill")
                             .foregroundStyle(AppTheme.brandGreen)
                         Text("Add delivery address")
-                            .font(.system(size: 14))
+                            .font(.appFont(size: 14))
                             .foregroundStyle(AppTheme.textPrimary)
                     }
                     .frame(maxWidth: .infinity)
@@ -131,16 +131,16 @@ struct CheckoutScreen: View {
             HStack(alignment: .top, spacing: 10) {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .foregroundStyle(isSelected ? AppTheme.brandGreen : AppTheme.textMuted)
-                    .font(.system(size: 20))
+                    .font(.appFont(size: 20))
 
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
                         Text(address.name ?? "")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.appFont(size: 14, weight: .semibold))
                             .foregroundStyle(AppTheme.textPrimary)
                         if address.isDefault == true {
                             Text("DEFAULT")
-                                .font(.system(size: 9, weight: .bold))
+                                .font(.appFont(size: 9, weight: .bold))
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
@@ -149,12 +149,12 @@ struct CheckoutScreen: View {
                         }
                     }
                     Text(address.fullAddress)
-                        .font(.system(size: 13))
+                        .font(.appFont(size: 13))
                         .foregroundStyle(AppTheme.textSecondary)
                         .lineLimit(2)
                     if let phone = address.phone, !phone.isEmpty {
                         Text(phone)
-                            .font(.system(size: 12))
+                            .font(.appFont(size: 12))
                             .foregroundStyle(AppTheme.textMuted)
                     }
                 }
@@ -175,7 +175,7 @@ struct CheckoutScreen: View {
     private var paymentMethodSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Payment Method")
-                .font(.system(size: 16, weight: .bold))
+                .font(.appFont(size: 16, weight: .bold))
                 .foregroundStyle(AppTheme.textPrimary)
 
             ForEach(["cod", "online"], id: \.self) { method in
@@ -185,17 +185,17 @@ struct CheckoutScreen: View {
                     HStack(spacing: 10) {
                         Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                             .foregroundStyle(isSelected ? AppTheme.brandGreen : AppTheme.textMuted)
-                            .font(.system(size: 20))
+                            .font(.appFont(size: 20))
 
                         Image(systemName: method == "cod" ? "banknote.fill" : "creditcard.fill")
                             .foregroundStyle(AppTheme.brandGreen)
 
                         VStack(alignment: .leading, spacing: 2) {
                             Text(method == "cod" ? "Cash on Delivery" : "Pay Online")
-                                .font(.system(size: 14, weight: .medium))
+                                .font(.appFont(size: 14, weight: .medium))
                                 .foregroundStyle(AppTheme.textPrimary)
                             Text(method == "cod" ? "Pay when you receive" : "UPI, Cards, Net Banking")
-                                .font(.system(size: 12))
+                                .font(.appFont(size: 12))
                                 .foregroundStyle(AppTheme.textMuted)
                         }
 
@@ -226,21 +226,21 @@ struct CheckoutScreen: View {
     private var orderSummary: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Order Summary")
-                .font(.system(size: 16, weight: .bold))
+                .font(.appFont(size: 16, weight: .bold))
                 .foregroundStyle(AppTheme.textPrimary)
 
-            ForEach(cartManager.items) { item in
+            ForEach(cartManager.items, id: \.identifier) { item in
                 HStack {
                     Text(item.product?.name ?? "")
-                        .font(.system(size: 13))
+                        .font(.appFont(size: 13))
                         .foregroundStyle(AppTheme.textSecondary)
                         .lineLimit(1)
                     Spacer()
                     Text("×\(item.quantity ?? 0)")
-                        .font(.system(size: 13))
+                        .font(.appFont(size: 13))
                         .foregroundStyle(AppTheme.textMuted)
                     Text(item.product?.displayPrice ?? "")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.appFont(size: 13, weight: .medium))
                         .foregroundStyle(AppTheme.textPrimary)
                         .frame(width: 60, alignment: .trailing)
                 }
@@ -250,10 +250,10 @@ struct CheckoutScreen: View {
 
             HStack {
                 Text("Total")
-                    .font(.system(size: 15, weight: .bold))
+                    .font(.appFont(size: 15, weight: .bold))
                 Spacer()
                 Text(cartManager.total.priceLabel)
-                    .font(.system(size: 15, weight: .bold))
+                    .font(.appFont(size: 15, weight: .bold))
                     .foregroundStyle(AppTheme.brandGreen)
             }
         }
@@ -272,10 +272,10 @@ struct CheckoutScreen: View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
                 Text(cartManager.total.priceLabel)
-                    .font(.system(size: 18, weight: .bold))
+                    .font(.appFont(size: 18, weight: .bold))
                     .foregroundStyle(AppTheme.textPrimary)
                 Text(viewModel.paymentMethod == "cod" ? "Cash on Delivery" : "Pay Online")
-                    .font(.system(size: 12))
+                    .font(.appFont(size: 12))
                     .foregroundStyle(AppTheme.textSecondary)
             }
             Spacer()

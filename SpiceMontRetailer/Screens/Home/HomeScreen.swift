@@ -49,10 +49,10 @@ struct HomeScreen: View {
 
                     VStack(alignment: .leading, spacing: 0) {
                         Text("SpiceMonk")
-                            .font(.system(size: 16.5, weight: .heavy))
+                            .font(.appFont(size: 16.5, weight: .heavy))
                             .foregroundColor(Color.spiceInk)
                         Text("BUSINESS")
-                            .font(.system(size: 9.5, weight: .heavy))
+                            .font(.appFont(size: 9.5, weight: .heavy))
                             .foregroundColor(Color.spicePrimary)
                             .tracking(1.0)
                     }
@@ -64,7 +64,7 @@ struct HomeScreen: View {
                         loadLiveDashboard()
                     }) {
                         Image(systemName: "arrow.clockwise")
-                            .font(.system(size: 16, weight: .bold))
+                            .font(.appFont(size: 16, weight: .bold))
                             .foregroundColor(Color.spiceInk)
                             .padding(6)
                     }
@@ -74,7 +74,7 @@ struct HomeScreen: View {
                         showNotifications = true
                     }) {
                         Image(systemName: "bell")
-                            .font(.system(size: 18, weight: .semibold))
+                            .font(.appFont(size: 18, weight: .semibold))
                             .foregroundColor(Color.spiceInk)
                             .padding(6)
                     }
@@ -82,7 +82,7 @@ struct HomeScreen: View {
                     // Account Button
                     NavigationLink(destination: AccountScreen()) {
                         Image(systemName: "person.crop.circle")
-                            .font(.system(size: 21, weight: .regular))
+                            .font(.appFont(size: 21, weight: .regular))
                             .foregroundColor(Color.spiceInk)
                             .padding(6)
                     }
@@ -199,16 +199,16 @@ struct HomeScreen: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(greetingText)
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.appFont(size: 12, weight: .medium))
                         .foregroundColor(Color.spiceMuted)
 
                     Text(shopNameText)
-                        .font(.system(size: 16.5, weight: .heavy))
+                        .font(.appFont(size: 16.5, weight: .heavy))
                         .foregroundColor(Color.spiceInk)
 
                     if !addressText.isEmpty {
                         Text(addressText)
-                            .font(.system(size: 11, weight: .regular))
+                            .font(.appFont(size: 11, weight: .regular))
                             .foregroundColor(Color.spiceMuted)
                             .lineLimit(2)
                             .multilineTextAlignment(.leading)
@@ -221,7 +221,7 @@ struct HomeScreen: View {
                 HStack(spacing: 8) {
                     if !sellerCodeText.isEmpty {
                         Text(sellerCodeText)
-                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .font(.appFont(size: 11, weight: .bold, design: .monospaced))
                             .foregroundColor(Color(hex: "#374151"))
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
@@ -231,7 +231,7 @@ struct HomeScreen: View {
 
                     if !viewModel.salesmanName.isEmpty {
                         Text("Salesman: \(viewModel.salesmanName)")
-                            .font(.system(size: 11, weight: .bold))
+                            .font(.appFont(size: 11, weight: .bold))
                             .foregroundColor(Color(hex: "#374151"))
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
@@ -259,17 +259,17 @@ struct HomeScreen: View {
         return NavigationLink(destination: LedgerScreen().toolbar(.hidden, for: .tabBar)) {
             VStack(alignment: .leading, spacing: 12) {
                 Text(title.uppercased())
-                    .font(.system(size: 10.5, weight: .bold))
+                    .font(.appFont(size: 10.5, weight: .bold))
                     .foregroundColor(Color(hex: "#A8E5C4"))
                     .tracking(0.6)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("₹\(formatCurrency(pendingStr))")
-                        .font(.system(size: 30, weight: .heavy, design: .rounded))
+                        .font(.appFont(size: 30, weight: .heavy, design: .rounded))
                         .foregroundColor(.white)
 
                     Text("Pending")
-                        .font(.system(size: 11.5, weight: .medium))
+                        .font(.appFont(size: 11.5, weight: .medium))
                         .foregroundColor(Color.white.opacity(0.85))
                 }
 
@@ -277,12 +277,12 @@ struct HomeScreen: View {
                 HStack {
                     VStack(alignment: .leading, spacing: 3) {
                         Text("TOTAL BILLED")
-                            .font(.system(size: 9.5, weight: .heavy))
+                            .font(.appFont(size: 9.5, weight: .heavy))
                             .foregroundColor(Color(hex: "#A8E5C4"))
                             .tracking(0.5)
 
                         Text("₹\(formatCurrency(billedStr))")
-                            .font(.system(size: 13.5, weight: .heavy))
+                            .font(.appFont(size: 13.5, weight: .heavy))
                             .foregroundColor(.white)
                     }
 
@@ -290,12 +290,12 @@ struct HomeScreen: View {
 
                     VStack(alignment: .leading, spacing: 3) {
                         Text("PAID")
-                            .font(.system(size: 9.5, weight: .heavy))
+                            .font(.appFont(size: 9.5, weight: .heavy))
                             .foregroundColor(Color(hex: "#A8E5C4"))
                             .tracking(0.5)
 
                         Text("₹\(formatCurrency(paidStr))")
-                            .font(.system(size: 13.5, weight: .heavy))
+                            .font(.appFont(size: 13.5, weight: .heavy))
                             .foregroundColor(.white)
                     }
                 }
@@ -307,13 +307,13 @@ struct HomeScreen: View {
                 // View Ledger Action Bar
                 HStack {
                     Text("View Ledger")
-                        .font(.system(size: 13, weight: .bold))
+                        .font(.appFont(size: 13, weight: .bold))
                         .foregroundColor(.white)
 
                     Spacer()
 
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.appFont(size: 11, weight: .bold))
                         .foregroundColor(.white)
                 }
                 .padding(.horizontal, 14)
@@ -347,24 +347,24 @@ struct HomeScreen: View {
                     .frame(width: 36, height: 36)
                     .overlay(
                         Image(systemName: "plus")
-                            .font(.system(size: 15, weight: .heavy))
+                            .font(.appFont(size: 15, weight: .heavy))
                             .foregroundColor(.white)
                     )
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(cleanLabel)
-                        .font(.system(size: 15, weight: .heavy))
+                        .font(.appFont(size: 15, weight: .heavy))
                         .foregroundColor(.white)
 
                     Text("Browse brands and build your order")
-                        .font(.system(size: 11.5, weight: .medium))
+                        .font(.appFont(size: 11.5, weight: .medium))
                         .foregroundColor(Color.white.opacity(0.85))
                 }
 
                 Spacer()
 
                 Image(systemName: "arrow.right")
-                    .font(.system(size: 14, weight: .bold))
+                    .font(.appFont(size: 14, weight: .bold))
                     .foregroundColor(.white)
             }
             .padding(.horizontal, 16)
@@ -385,7 +385,7 @@ struct HomeScreen: View {
     private func quickActionsSection(items: [RetailerQuickActionItem], title: String) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title)
-                .font(.system(size: 15, weight: .heavy))
+                .font(.appFont(size: 15, weight: .heavy))
                 .foregroundColor(Color.spiceInk)
 
             HStack(spacing: 10) {
@@ -431,14 +431,14 @@ struct HomeScreen: View {
                                 .frame(width: 26, height: 26)
                         } else {
                             Image(systemName: fallbackIcon)
-                                .font(.system(size: 18, weight: .semibold))
+                                .font(.appFont(size: 18, weight: .semibold))
                                 .foregroundColor(Color(hex: tintHex))
                         }
                     }
                 )
 
             Text(label)
-                .font(.system(size: 12, weight: .bold))
+                .font(.appFont(size: 12, weight: .bold))
                 .foregroundColor(Color.spiceInk)
         }
         .frame(maxWidth: .infinity)
@@ -460,19 +460,19 @@ struct HomeScreen: View {
 
         return VStack(alignment: .leading, spacing: 10) {
             Text(title)
-                .font(.system(size: 15, weight: .heavy))
+                .font(.appFont(size: 15, weight: .heavy))
                 .foregroundColor(Color.spiceInk)
 
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
                     Text(orderNum)
-                        .font(.system(size: 13.5, weight: .heavy, design: .monospaced))
+                        .font(.appFont(size: 13.5, weight: .heavy, design: .monospaced))
                         .foregroundColor(Color.spiceInk)
 
                     Spacer()
 
                     Text(statusStr)
-                        .font(.system(size: 10, weight: .heavy, design: .monospaced))
+                        .font(.appFont(size: 10, weight: .heavy, design: .monospaced))
                         .foregroundColor(Color(hex: "#B87314"))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
@@ -483,16 +483,16 @@ struct HomeScreen: View {
                 HStack(spacing: 6) {
                     if !dateStr.isEmpty {
                         Text(dateStr)
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.appFont(size: 12, weight: .medium))
                             .foregroundColor(Color.spiceMuted)
 
                         Text("·")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(.appFont(size: 12, weight: .bold))
                             .foregroundColor(Color.spiceMuted)
                     }
 
                     Text("₹\(priceStr)")
-                        .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                        .font(.appFont(size: 12, weight: .semibold, design: .monospaced))
                         .foregroundColor(Color.spiceMuted)
                 }
 
@@ -500,7 +500,7 @@ struct HomeScreen: View {
                 HStack(spacing: 10) {
                     NavigationLink(destination: DeliveryTrackingScreen(orderId: orderData.idNum, orderNumber: orderNum)) {
                         Text("Track Order")
-                            .font(.system(size: 13, weight: .heavy))
+                            .font(.appFont(size: 13, weight: .heavy))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .frame(height: 38)
@@ -511,7 +511,7 @@ struct HomeScreen: View {
 
                     NavigationLink(destination: OrderDetailScreen(orderId: orderData.idNum, orderNumber: orderNum)) {
                         Text("View Details")
-                            .font(.system(size: 13, weight: .heavy))
+                            .font(.appFont(size: 13, weight: .heavy))
                             .foregroundColor(Color.spiceInk)
                             .frame(maxWidth: .infinity)
                             .frame(height: 38)
@@ -540,7 +540,7 @@ struct HomeScreen: View {
     private func topBannersSection(banners: [RetailerBannerItem], title: String) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title)
-                .font(.system(size: 15, weight: .heavy))
+                .font(.appFont(size: 15, weight: .heavy))
                 .foregroundColor(Color.spiceInk)
 
             ScrollView(.horizontal, showsIndicators: false) {
@@ -565,14 +565,14 @@ struct HomeScreen: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text(title)
-                    .font(.system(size: 15, weight: .heavy))
+                    .font(.appFont(size: 15, weight: .heavy))
                     .foregroundColor(Color.spiceInk)
 
                 Spacer()
 
                 NavigationLink(destination: OrdersScreen().toolbar(.hidden, for: .tabBar)) {
                     Text("View All")
-                        .font(.system(size: 12.5, weight: .heavy))
+                        .font(.appFont(size: 12.5, weight: .heavy))
                         .foregroundColor(Color.spicePrimary)
                 }
             }
@@ -601,7 +601,7 @@ struct HomeScreen: View {
 
         return VStack(alignment: .leading, spacing: 10) {
             Text(title)
-                .font(.system(size: 15, weight: .heavy))
+                .font(.appFont(size: 15, weight: .heavy))
                 .foregroundColor(Color.spiceInk)
 
             HStack(spacing: 12) {
@@ -616,18 +616,18 @@ struct HomeScreen: View {
                     .frame(width: 44, height: 44)
                     .overlay(
                         Image(systemName: "person.fill")
-                            .font(.system(size: 20))
+                            .font(.appFont(size: 20))
                             .foregroundColor(.white)
                     )
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(name)
-                        .font(.system(size: 14.5, weight: .heavy))
+                        .font(.appFont(size: 14.5, weight: .heavy))
                         .foregroundColor(Color.spiceInk)
 
                     if !phone.isEmpty {
                         Text(phone)
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.appFont(size: 12, weight: .medium))
                             .foregroundColor(Color.spiceMuted)
                     }
                 }
@@ -642,9 +642,9 @@ struct HomeScreen: View {
                     }) {
                         HStack(spacing: 5) {
                             Image(systemName: "phone.fill")
-                                .font(.system(size: 10, weight: .bold))
+                                .font(.appFont(size: 10, weight: .bold))
                             Text("CALL")
-                                .font(.system(size: 11, weight: .heavy))
+                                .font(.appFont(size: 11, weight: .heavy))
                         }
                         .foregroundColor(Color.spicePrimary)
                         .padding(.horizontal, 12)
@@ -671,12 +671,12 @@ struct HomeScreen: View {
         return HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 14.5, weight: .heavy))
+                    .font(.appFont(size: 14.5, weight: .heavy))
                     .foregroundColor(Color.spiceInk)
 
                 if !phone.isEmpty {
                     Text(phone)
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.appFont(size: 12, weight: .medium))
                         .foregroundColor(Color.spiceMuted)
                 }
             }
@@ -690,7 +690,7 @@ struct HomeScreen: View {
                     }
                 }) {
                     Text("Call Customer Care")
-                        .font(.system(size: 12.5, weight: .heavy))
+                        .font(.appFont(size: 12.5, weight: .heavy))
                         .foregroundColor(Color.spicePrimary)
                 }
             }
@@ -709,13 +709,13 @@ struct HomeScreen: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text(orderNumber)
-                    .font(.system(size: 13.5, weight: .heavy, design: .monospaced))
+                    .font(.appFont(size: 13.5, weight: .heavy, design: .monospaced))
                     .foregroundColor(Color.spiceInk)
 
                 Spacer()
 
                 Text(status)
-                    .font(.system(size: 10, weight: .heavy, design: .monospaced))
+                    .font(.appFont(size: 10, weight: .heavy, design: .monospaced))
                     .foregroundColor(Color(hex: "#B87314"))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
@@ -726,16 +726,16 @@ struct HomeScreen: View {
             HStack(spacing: 6) {
                 if !date.isEmpty {
                     Text(date)
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.appFont(size: 12, weight: .medium))
                         .foregroundColor(Color.spiceMuted)
 
                     Text("·")
-                        .font(.system(size: 12, weight: .bold))
+                        .font(.appFont(size: 12, weight: .bold))
                         .foregroundColor(Color.spiceMuted)
                 }
 
                 Text(amount)
-                    .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                    .font(.appFont(size: 12, weight: .semibold, design: .monospaced))
                     .foregroundColor(Color.spiceMuted)
             }
         }
@@ -775,19 +775,19 @@ struct HomeScreen: View {
                 .frame(width: 64, height: 64)
                 .overlay(
                     Image(systemName: "hourglass")
-                        .font(.system(size: 28, weight: .bold))
+                        .font(.appFont(size: 28, weight: .bold))
                         .foregroundColor(Color.spiceAmber)
                 )
 
             SpiceStatusBadge(status: "PENDING_REVIEW")
 
             Text("Your Account is Under Review")
-                .font(.system(size: 18, weight: .heavy))
+                .font(.appFont(size: 18, weight: .heavy))
                 .foregroundColor(Color.spiceInk)
                 .multilineTextAlignment(.center)
 
             Text(viewModel.accountPendingMessage.isEmpty ? "Your retailer registration has been submitted and is being reviewed by our team. You will be able to place orders once approved." : viewModel.accountPendingMessage)
-                .font(.system(size: 12.5, weight: .medium))
+                .font(.appFont(size: 12.5, weight: .medium))
                 .foregroundColor(Color.spiceMuted)
                 .multilineTextAlignment(.center)
                 .lineSpacing(3)

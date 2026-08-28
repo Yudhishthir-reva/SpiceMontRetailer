@@ -67,14 +67,14 @@ struct NotificationScreen: View {
                                 .frame(width: 38, height: 38)
                                 .overlay(
                                     Image(systemName: item.type == "order" ? "shippingbox.fill" : (item.type == "scheme" ? "tag.fill" : "person.fill"))
-                                        .font(.system(size: 14, weight: .bold))
+                                        .font(.appFont(size: 14, weight: .bold))
                                         .foregroundColor(item.isUnread ? Color.spicePrimary : Color.spiceMuted)
                                 )
 
                             VStack(alignment: .leading, spacing: 3) {
                                 HStack {
                                     Text(item.title)
-                                        .font(.system(size: 13, weight: .heavy))
+                                        .font(.appFont(size: 13, weight: .heavy))
                                         .foregroundColor(Color.spiceInk)
 
                                     Spacer()
@@ -87,12 +87,12 @@ struct NotificationScreen: View {
                                 }
 
                                 Text(item.message)
-                                    .font(.system(size: 11, weight: .medium))
+                                    .font(.appFont(size: 11, weight: .medium))
                                     .foregroundColor(Color.spiceInk.opacity(0.85))
                                     .lineSpacing(2)
 
                                 Text(item.time)
-                                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                                    .font(.appFont(size: 10, weight: .medium, design: .monospaced))
                                     .foregroundColor(Color.spiceMuted)
                                     .padding(.top, 2)
                             }
@@ -122,7 +122,7 @@ struct NotificationScreen: View {
                     }
                 }) {
                     Text("Mark All Read")
-                        .font(.system(size: 11.5, weight: .heavy))
+                        .font(.appFont(size: 11.5, weight: .heavy))
                         .foregroundColor(Color.spicePrimary)
                 }
             }

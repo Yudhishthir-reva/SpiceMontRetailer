@@ -18,6 +18,9 @@ struct CartScreen: View {
     @State private var placedOrderData: RetailerOrderPlaceData? = nil
     @State private var isShowToast: Bool = false
     @State private var toastMessage: String = ""
+    @State private var deliveryRemark: String = ""
+    @State private var selectedPaymentMode: Int = 0
+    @StateObject private var audioRecorder = AudioRemarkManager.shared
 
     // Dynamic Schemes from API
     @State private var availableSchemes: [RetailerOfferScheme] = []
@@ -80,18 +83,18 @@ struct CartScreen: View {
                 HStack(alignment: .center, spacing: 12) {
                     Button(action: { dismiss() }) {
                         Image(systemName: "chevron.left")
-                            .font(.system(size: 16, weight: .bold))
+                            .font(.appFont(size: 16, weight: .bold))
                             .foregroundColor(Color.spiceInk)
                             .padding(4)
                     }
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Cart & Checkout")
-                            .font(.system(size: 17, weight: .heavy))
+                            .font(.appFont(size: 17, weight: .heavy))
                             .foregroundColor(Color.spiceInk)
 
                         Text("\(totalProductsCount) products · \(totalUnitsCount) units")
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.appFont(size: 12, weight: .medium))
                             .foregroundColor(Color.spiceMuted)
                     }
 
@@ -102,7 +105,7 @@ struct CartScreen: View {
                             showClearAlert = true
                         }) {
                             Text("Clear")
-                                .font(.system(size: 13, weight: .heavy))
+                                .font(.appFont(size: 13, weight: .heavy))
                                 .foregroundColor(Color.spicePrimary)
                         }
                     }
@@ -130,12 +133,15 @@ struct CartScreen: View {
                             // Delivery Address Card
                             deliveryAddressCard
 
+                            // Delivery Remark & Audio Note Card
+                            deliveryRemarkCard
+
                             // Order Summary Card
                             orderSummaryCard
 
                             // Note Text
                             Text("No online payment is collected in the app. Payment and settlement are managed separately by SpiceMonk.")
-                                .font(.system(size: 11.5, weight: .medium))
+                                .font(.appFont(size: 11.5, weight: .medium))
                                 .foregroundColor(Color.spiceMuted)
                                 .lineSpacing(2)
                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -245,17 +251,17 @@ struct CartScreen: View {
                 // Title and Unit Details
                 VStack(alignment: .leading, spacing: 3) {
                     Text(title)
-                        .font(.system(size: 14.5, weight: .heavy))
+                        .font(.appFont(size: 14.5, weight: .heavy))
                         .foregroundColor(Color.spiceInk)
                         .lineLimit(2)
 
                     Text("\(unitText) · \(unitPriceText)")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.appFont(size: 12, weight: .medium))
                         .foregroundColor(Color.spiceMuted)
 
                     if maxAvailable < 9999 {
                         Text("\(maxAvailable) in stock")
-                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .font(.appFont(size: 11, weight: .bold, design: .monospaced))
                             .foregroundColor(maxAvailable <= 5 ? Color.spiceDue : Color.spicePrimary)
                     }
                 }
@@ -274,7 +280,7 @@ struct CartScreen: View {
                     }
                 }) {
                     Text("Remove")
-                        .font(.system(size: 12, weight: .bold))
+                        .font(.appFont(size: 12, weight: .bold))
                         .foregroundColor(Color.spiceMuted)
                         .padding(.top, 2)
                 }
@@ -300,14 +306,14 @@ struct CartScreen: View {
                         }
                     }) {
                         Image(systemName: "minus")
-                            .font(.system(size: 11, weight: .bold))
+                            .font(.appFont(size: 11, weight: .bold))
                             .foregroundColor(.white)
                             .frame(width: 32, height: 32)
                     }
                     .buttonStyle(.plain)
 
                     Text("\(qty)")
-                        .font(.system(size: 13, weight: .heavy, design: .monospaced))
+                        .font(.appFont(size: 13, weight: .heavy, design: .monospaced))
                         .foregroundColor(.white)
                         .frame(minWidth: 32)
 
@@ -329,7 +335,7 @@ struct CartScreen: View {
                         }
                     }) {
                         Image(systemName: "plus")
-                            .font(.system(size: 11, weight: .bold))
+                            .font(.appFont(size: 11, weight: .bold))
                             .foregroundColor(qty >= maxAvailable ? Color.white.opacity(0.35) : .white)
                             .frame(width: 32, height: 32)
                     }
@@ -342,7 +348,7 @@ struct CartScreen: View {
 
                 // Line Total Price
                 Text(String(format: "₹%.2f", lineTotal))
-                    .font(.system(size: 15.5, weight: .heavy, design: .monospaced))
+                    .font(.appFont(size: 15.5, weight: .heavy, design: .monospaced))
                     .foregroundColor(Color.spiceInk)
             }
         }
@@ -363,7 +369,7 @@ struct CartScreen: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
                     Text("Applied Scheme")
-                        .font(.system(size: 14, weight: .heavy))
+                        .font(.appFont(size: 14, weight: .heavy))
                         .foregroundColor(Color(hex: "#167444"))
 
                     Spacer()
@@ -372,19 +378,19 @@ struct CartScreen: View {
                         handleRemoveOffer()
                     }) {
                         Text("Remove")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(.appFont(size: 12, weight: .bold))
                             .foregroundColor(Color.spicePrimary)
                     }
                     .buttonStyle(.plain)
                 }
 
                 Text(applied.schemeTitle ?? "Offer Applied")
-                    .font(.system(size: 13, weight: .bold))
+                    .font(.appFont(size: 13, weight: .bold))
                     .foregroundColor(Color.spiceInk)
 
                 if let desc = applied.discountText, !desc.isEmpty {
                     Text(desc)
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.appFont(size: 12, weight: .medium))
                         .foregroundColor(Color.spiceMuted)
                 }
             }
@@ -405,16 +411,16 @@ struct CartScreen: View {
                 // Eligible Scheme Card
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Scheme Available")
-                        .font(.system(size: 14, weight: .heavy))
+                        .font(.appFont(size: 14, weight: .heavy))
                         .foregroundColor(Color(hex: "#167444"))
 
                     Text(scheme.title ?? "Special Offer")
-                        .font(.system(size: 13, weight: .bold))
+                        .font(.appFont(size: 13, weight: .bold))
                         .foregroundColor(Color.spiceInk)
 
                     if let desc = scheme.description, !desc.isEmpty {
                         Text(desc)
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.appFont(size: 12, weight: .medium))
                             .foregroundColor(Color.spiceMuted)
                     }
 
@@ -422,7 +428,7 @@ struct CartScreen: View {
                         showSchemeSheet = true
                     }) {
                         Text("Apply Scheme")
-                            .font(.system(size: 13, weight: .heavy))
+                            .font(.appFont(size: 13, weight: .heavy))
                             .foregroundColor(Color(hex: "#167444"))
                             .padding(.top, 2)
                     }
@@ -440,16 +446,16 @@ struct CartScreen: View {
                 // Eligible Quantity Slab Card
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Scheme Available")
-                        .font(.system(size: 14, weight: .heavy))
+                        .font(.appFont(size: 14, weight: .heavy))
                         .foregroundColor(Color(hex: "#167444"))
 
                     Text(slab.title ?? "Quantity Offer")
-                        .font(.system(size: 13, weight: .bold))
+                        .font(.appFont(size: 13, weight: .bold))
                         .foregroundColor(Color.spiceInk)
 
                     if let desc = slab.description ?? slab.giftDescription, !desc.isEmpty {
                         Text(desc)
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.appFont(size: 12, weight: .medium))
                             .foregroundColor(Color.spiceMuted)
                     }
 
@@ -457,7 +463,7 @@ struct CartScreen: View {
                         showSchemeSheet = true
                     }) {
                         Text("Apply Scheme")
-                            .font(.system(size: 13, weight: .heavy))
+                            .font(.appFont(size: 13, weight: .heavy))
                             .foregroundColor(Color(hex: "#167444"))
                             .padding(.top, 2)
                     }
@@ -477,13 +483,13 @@ struct CartScreen: View {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Text("Scheme Available")
-                            .font(.system(size: 14, weight: .heavy))
+                            .font(.appFont(size: 14, weight: .heavy))
                             .foregroundColor(Color(hex: "#8B5014"))
 
                         Spacer()
 
                         Text("₹\(Int(productTotal)) / ₹\(Int(target))")
-                            .font(.system(size: 12.5, weight: .heavy, design: .monospaced))
+                            .font(.appFont(size: 12.5, weight: .heavy, design: .monospaced))
                             .foregroundColor(Color(hex: "#8B5014"))
                     }
 
@@ -503,14 +509,14 @@ struct CartScreen: View {
                     .padding(.vertical, 2)
 
                     Text(firstScheme.title ?? firstScheme.description ?? "Add more items to unlock offer")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.appFont(size: 13, weight: .medium))
                         .foregroundColor(Color.spiceInk.opacity(0.85))
 
                     Button(action: {
                         showSchemeSheet = true
                     }) {
                         Text("View All Schemes")
-                            .font(.system(size: 13, weight: .heavy))
+                            .font(.appFont(size: 13, weight: .heavy))
                             .foregroundColor(Color(hex: "#8B5014"))
                             .padding(.top, 2)
                     }
@@ -532,26 +538,130 @@ struct CartScreen: View {
     private var deliveryAddressCard: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Delivery Address")
-                .font(.system(size: 14.5, weight: .heavy))
+                .font(.appFont(size: 14.5, weight: .heavy))
                 .foregroundColor(Color.spiceInk)
 
             if !userName.isEmpty {
                 Text(userName)
-                    .font(.system(size: 13.5, weight: .bold))
+                    .font(.appFont(size: 13.5, weight: .bold))
                     .foregroundColor(Color.spiceInk)
             }
 
             if !userAddress.isEmpty {
                 Text(userAddress)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.appFont(size: 12, weight: .medium))
                     .foregroundColor(Color.spiceMuted)
                     .lineSpacing(2)
             }
 
             if !userPhone.isEmpty {
                 Text(userPhone)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.appFont(size: 12, weight: .medium))
                     .foregroundColor(Color.spiceMuted)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(Color.white)
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.spiceCardBorder, lineWidth: 1)
+        )
+    }
+
+    // MARK: - Delivery Remark & Voice Note Card
+    private var deliveryRemarkCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Image(systemName: "note.text")
+                    .foregroundColor(Color.spicePrimary)
+                    .font(.appFont(size: 14, weight: .bold))
+                Text("Delivery Remark / Instructions")
+                    .font(.appFont(size: 14.5, weight: .heavy))
+                    .foregroundColor(Color.spiceInk)
+                Spacer()
+            }
+
+            // Text Remark Input
+            TextField("e.g. Please deliver before 6pm", text: $deliveryRemark)
+                .font(.appFont(size: 13, weight: .medium))
+                .foregroundColor(Color.black)
+                .tint(Color.spicePrimary)
+                .padding(10)
+                .background(Color(hex: "#F7F9F7"))
+                .cornerRadius(10)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color.spiceCardBorder, lineWidth: 1)
+                )
+
+            // Audio Voice Note Row
+            HStack(spacing: 10) {
+                if audioRecorder.isRecording {
+                    HStack(spacing: 8) {
+                        Circle()
+                            .fill(Color.spiceDue)
+                            .frame(width: 8, height: 8)
+                        Text("Recording... \(audioRecorder.formattedDuration)")
+                            .font(.appFont(size: 12, weight: .bold, design: .monospaced))
+                            .foregroundColor(Color.spiceDue)
+                        Spacer()
+                        Button(action: {
+                            audioRecorder.stopRecording()
+                        }) {
+                            Text("Done")
+                                .font(.appFont(size: 11.5, weight: .heavy))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 4)
+                                .background(Color.spicePrimary)
+                                .cornerRadius(6)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(8)
+                    .background(Color.spiceDue.opacity(0.08))
+                    .cornerRadius(8)
+                } else if audioRecorder.hasRecordedAudio {
+                    HStack(spacing: 8) {
+                        Image(systemName: "waveform")
+                            .foregroundColor(Color.spicePrimary)
+                            .font(.appFont(size: 13, weight: .bold))
+                        Text("Voice Note Attached")
+                            .font(.appFont(size: 12, weight: .bold))
+                            .foregroundColor(Color.spiceInk)
+                        Spacer()
+                        Button(action: {
+                            audioRecorder.clearRecording()
+                        }) {
+                            Image(systemName: "trash.fill")
+                                .foregroundColor(Color.spiceDue)
+                                .font(.appFont(size: 12))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(8)
+                    .background(Color.spicePrimaryLight)
+                    .cornerRadius(8)
+                } else {
+                    Button(action: {
+                        audioRecorder.startRecording()
+                    }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "mic.fill")
+                                .font(.appFont(size: 12, weight: .bold))
+                            Text("Add Voice Note")
+                                .font(.appFont(size: 12, weight: .heavy))
+                        }
+                        .foregroundColor(Color.spicePrimary)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.spicePrimaryLight)
+                        .cornerRadius(8)
+                    }
+                    .buttonStyle(.plain)
+                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -568,27 +678,27 @@ struct CartScreen: View {
     private var orderSummaryCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Order Summary")
-                .font(.system(size: 14.5, weight: .heavy))
+                .font(.appFont(size: 14.5, weight: .heavy))
                 .foregroundColor(Color.spiceInk)
 
             HStack {
                 Text("Product Total")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.appFont(size: 13, weight: .medium))
                     .foregroundColor(Color.spiceMuted)
                 Spacer()
                 Text(String(format: "₹%.2f", productTotal))
-                    .font(.system(size: 13.5, weight: .heavy, design: .monospaced))
+                    .font(.appFont(size: 13.5, weight: .heavy, design: .monospaced))
                     .foregroundColor(Color.spiceInk)
             }
 
             if let offer = cartManager.appliedOffer, let discount = offer.discountAmount, discount > 0 {
                 HStack {
                     Text("Scheme Discount")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.appFont(size: 13, weight: .medium))
                         .foregroundColor(Color.spicePrimary)
                     Spacer()
                     Text(String(format: "-₹%.2f", discount))
-                        .font(.system(size: 13.5, weight: .heavy, design: .monospaced))
+                        .font(.appFont(size: 13.5, weight: .heavy, design: .monospaced))
                         .foregroundColor(Color.spicePrimary)
                 }
             }
@@ -597,11 +707,11 @@ struct CartScreen: View {
 
             HStack {
                 Text("Final Order Amount")
-                    .font(.system(size: 14, weight: .heavy))
+                    .font(.appFont(size: 14, weight: .heavy))
                     .foregroundColor(Color.spiceInk)
                 Spacer()
                 Text(String(format: "₹%.2f", finalAmount))
-                    .font(.system(size: 15.5, weight: .heavy, design: .monospaced))
+                    .font(.appFont(size: 15.5, weight: .heavy, design: .monospaced))
                     .foregroundColor(Color.spiceInk)
             }
         }
@@ -622,12 +732,12 @@ struct CartScreen: View {
             HStack(alignment: .center, spacing: 16) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("TOTAL")
-                        .font(.system(size: 10, weight: .heavy))
+                        .font(.appFont(size: 10, weight: .heavy))
                         .foregroundColor(Color.spiceMuted)
                         .tracking(0.5)
 
                     Text(String(format: "₹%.2f", finalAmount))
-                        .font(.system(size: 18, weight: .heavy, design: .monospaced))
+                        .font(.appFont(size: 18, weight: .heavy, design: .monospaced))
                         .foregroundColor(Color.spiceInk)
                 }
 
@@ -642,7 +752,7 @@ struct CartScreen: View {
                                 .tint(.white)
                         } else {
                             Text("Place Order")
-                                .font(.system(size: 14, weight: .heavy))
+                                .font(.appFont(size: 14, weight: .heavy))
                         }
                     }
                     .foregroundColor(.white)
@@ -710,10 +820,20 @@ struct CartScreen: View {
         }
 
         var params: [String: Any] = [
+            "payment_mode": selectedPaymentMode,
             "items": itemsPayload,
             "subtotal": productTotal,
             "final_amount": finalAmount
         ]
+
+        let cleanRemark = deliveryRemark.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !cleanRemark.isEmpty {
+            params["remark"] = cleanRemark
+        }
+
+        if !audioRecorder.recordedAudioBase64.isEmpty {
+            params["audio_remark"] = audioRecorder.recordedAudioBase64
+        }
 
         if let appliedOffer = cartManager.appliedOffer {
             if let offerId = appliedOffer.id {
@@ -735,6 +855,8 @@ struct CartScreen: View {
                 if response.status == true {
                     placedOrderData = response.data
                     cartManager.clearCart()
+                    audioRecorder.clearRecording()
+                    deliveryRemark = ""
                     orderPlacedSuccess = true
                 } else {
                     toastMessage = response.message ?? "Failed to place order"

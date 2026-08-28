@@ -51,6 +51,9 @@ struct PaymentsScreen: View {
                         // MARK: - Top Total Paid Summary Mint Card
                         totalPaidSummaryCard
 
+                        // MARK: - Bank & UPI Account Details Card
+                        accountDetailsCard
+
                         // MARK: - Payment Mode Filter Chips
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 8) {
@@ -59,7 +62,7 @@ struct PaymentsScreen: View {
                                         selectedModeFilter = mode
                                     }) {
                                         Text(mode)
-                                            .font(.system(size: 12.5, weight: .bold))
+                                            .font(.appFont(size: 12.5, weight: .bold))
                                             .padding(.horizontal, 14)
                                             .padding(.vertical, 7)
                                             .background(selectedModeFilter == mode ? Color.spicePrimary : Color.white)
@@ -88,7 +91,7 @@ struct PaymentsScreen: View {
                                     selectedModeFilter = "All Modes"
                                 }) {
                                     Text("Clear all")
-                                        .font(.system(size: 12, weight: .bold))
+                                        .font(.appFont(size: 12, weight: .bold))
                                         .foregroundColor(Color.spicePrimary)
                                 }
                             }
@@ -147,15 +150,17 @@ struct PaymentsScreen: View {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: {
                     viewModel.loadPayments()
+                    AppConfigManager.shared.checkStatus()
                 }) {
                     Text("Refresh")
-                        .font(.system(size: 13.5, weight: .heavy))
+                        .font(.appFont(size: 13.5, weight: .heavy))
                         .foregroundColor(Color.spicePrimary)
                 }
             }
         }
         .onAppear {
             viewModel.loadPayments()
+            AppConfigManager.shared.checkStatus()
         }
         .toast(isPresenting: $viewModel.isShowToast, duration: 2.0, offsetY: 10, alert: {
             AlertToast(displayMode: .banner(.pop), type: .regular, title: viewModel.toastMessage)
@@ -169,22 +174,22 @@ struct PaymentsScreen: View {
 
         return VStack(alignment: .leading, spacing: 10) {
             Text("TOTAL PAID")
-                .font(.system(size: 11, weight: .heavy))
+                .font(.appFont(size: 11, weight: .heavy))
                 .foregroundColor(Color(hex: "#167444"))
                 .tracking(0.5)
 
             Text("All time")
-                .font(.system(size: 11.5, weight: .medium))
+                .font(.appFont(size: 11.5, weight: .medium))
                 .foregroundColor(Color(hex: "#5B8A6E"))
 
             Text("₹\(totalPaid)")
-                .font(.system(size: 32, weight: .heavy, design: .rounded))
+                .font(.appFont(size: 32, weight: .heavy, design: .rounded))
                 .foregroundColor(Color(hex: "#167444"))
 
             Divider().background(Color(hex: "#C8E8D2")).padding(.vertical, 2)
 
             Text("PAID BY")
-                .font(.system(size: 10, weight: .heavy))
+                .font(.appFont(size: 10, weight: .heavy))
                 .foregroundColor(Color(hex: "#5B8A6E"))
                 .tracking(0.5)
                 .padding(.top, 2)
@@ -192,11 +197,11 @@ struct PaymentsScreen: View {
             ForEach(["Cash", "Cheque", "UPI"], id: \.self) { mode in
                 HStack {
                     Text(mode)
-                        .font(.system(size: 12.5, weight: .medium))
+                        .font(.appFont(size: 12.5, weight: .medium))
                         .foregroundColor(Color.spiceInk)
                     Spacer()
                     Text("₹\(modes[mode] ?? "0.00")")
-                        .font(.system(size: 13, weight: .heavy, design: .monospaced))
+                        .font(.appFont(size: 13, weight: .heavy, design: .monospaced))
                         .foregroundColor(Color.spiceInk)
                 }
             }
@@ -210,6 +215,45 @@ struct PaymentsScreen: View {
         )
     }
 
+    // MARK: - Bank & UPI Account Details Card
+    @ViewBuilder
+    private var accountDetailsCard: some View {
+        if let details = AppConfigManager.shared.accountDetails,
+           (details.accountName?.isEmpty == false || details.bankName?.isEmpty == false || details.upiId?.isEmpty == false) {
+            SpiceCard {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "building.columns.fill")
+                            .font(.appFont(size: 14, weight: .bold))
+                            .foregroundColor(Color.spicePrimary)
+                        Text("Company Bank & Payment Details")
+                            .font(.appFont(size: 13, weight: .heavy))
+                            .foregroundColor(Color.spiceInk)
+                        Spacer()
+                    }
+
+                    Divider()
+
+                    if let bank = details.bankName, !bank.isEmpty {
+                        SpiceKVRow(key: "Bank Name", value: bank)
+                    }
+                    if let name = details.accountName, !name.isEmpty {
+                        SpiceKVRow(key: "Account Holder", value: name)
+                    }
+                    if let ifsc = details.ifscCode, !ifsc.isEmpty {
+                        SpiceKVRow(key: "IFSC Code", value: ifsc, isMonoValue: true)
+                    }
+                    if let branch = details.branchName, !branch.isEmpty {
+                        SpiceKVRow(key: "Branch", value: branch)
+                    }
+                    if let upi = details.upiId, !upi.isEmpty {
+                        SpiceKVRow(key: "UPI ID", value: upi, isMonoValue: true)
+                    }
+                }
+            }
+        }
+    }
+
     // MARK: - Payment Transaction Card View
     @ViewBuilder
     private func paymentCardView(txn: RetailerPaymentTransactionItem) -> some View {
@@ -217,13 +261,13 @@ struct PaymentsScreen: View {
             // Top Row: Amount + Mode Badge
             HStack {
                 Text(String(format: "₹%.2f", txn.amount ?? 0))
-                    .font(.system(size: 15.5, weight: .heavy, design: .monospaced))
+                    .font(.appFont(size: 15.5, weight: .heavy, design: .monospaced))
                     .foregroundColor(Color(hex: "#167444"))
 
                 Spacer()
 
                 Text(txn.paymentMode?.uppercased() ?? "CASH")
-                    .font(.system(size: 10.5, weight: .heavy, design: .monospaced))
+                    .font(.appFont(size: 10.5, weight: .heavy, design: .monospaced))
                     .foregroundColor(Color(hex: "#6B7280"))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3.5)
@@ -233,7 +277,7 @@ struct PaymentsScreen: View {
 
             // Subtitle
             Text(formatDate(txn.date))
-                .font(.system(size: 12, weight: .medium))
+                .font(.appFont(size: 12, weight: .medium))
                 .foregroundColor(Color.spiceMuted)
 
             Divider().background(Color.spiceDivider)
@@ -242,31 +286,31 @@ struct PaymentsScreen: View {
             VStack(spacing: 6) {
                 HStack {
                     Text("Order")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.appFont(size: 13, weight: .medium))
                         .foregroundColor(Color.spiceInk)
                     Spacer()
                     Text(txn.orderNo ?? "#\(txn.orderId ?? txn.id ?? 0)")
-                        .font(.system(size: 13.5, weight: .heavy, design: .monospaced))
+                        .font(.appFont(size: 13.5, weight: .heavy, design: .monospaced))
                         .foregroundColor(Color.spiceInk)
                 }
 
                 HStack {
                     Text("Order Date")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.appFont(size: 13, weight: .medium))
                         .foregroundColor(Color.spiceInk)
                     Spacer()
                     Text(formatDate(txn.orderDate ?? txn.date))
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.appFont(size: 13, weight: .semibold))
                         .foregroundColor(Color.spiceInk)
                 }
 
                 HStack {
                     Text("Discount")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.appFont(size: 13, weight: .medium))
                         .foregroundColor(Color.spiceInk)
                     Spacer()
                     Text(String(format: "₹%.2f", txn.discount ?? 0))
-                        .font(.system(size: 13, weight: .heavy, design: .monospaced))
+                        .font(.appFont(size: 13, weight: .heavy, design: .monospaced))
                         .foregroundColor(Color.spiceInk)
                 }
             }
@@ -276,7 +320,7 @@ struct PaymentsScreen: View {
                 HStack {
                     Spacer()
                     Text("View Order Details")
-                        .font(.system(size: 13, weight: .heavy))
+                        .font(.appFont(size: 13, weight: .heavy))
                         .foregroundColor(Color.spicePrimary)
                     Spacer()
                 }

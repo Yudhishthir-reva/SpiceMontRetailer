@@ -90,11 +90,11 @@ struct AccountScreen: View {
                         }) {
                             HStack(spacing: 8) {
                                 Image(systemName: "rectangle.portrait.and.arrow.right")
-                                    .font(.system(size: 14, weight: .bold))
+                                    .font(.appFont(size: 14, weight: .bold))
                                     .foregroundColor(Color(hex: "#C8322B"))
 
                                 Text("Logout Account")
-                                    .font(.system(size: 14, weight: .heavy))
+                                    .font(.appFont(size: 14, weight: .heavy))
                                     .foregroundColor(Color(hex: "#C8322B"))
                             }
                             .frame(maxWidth: .infinity)
@@ -110,7 +110,7 @@ struct AccountScreen: View {
 
                         // MARK: - Version Text
                         Text("SpiceMonk Business · v1.0.0")
-                            .font(.system(size: 11.5, weight: .medium, design: .monospaced))
+                            .font(.appFont(size: 11.5, weight: .medium, design: .monospaced))
                             .foregroundColor(Color.spiceMuted)
                             .padding(.top, 2)
                             .padding(.bottom, 24)
@@ -160,11 +160,11 @@ struct AccountScreen: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(displayName)
-                    .font(.system(size: 17, weight: .heavy))
+                    .font(.appFont(size: 17, weight: .heavy))
                     .foregroundColor(Color.spiceInk)
 
                 Text(displayShopName)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.appFont(size: 13, weight: .medium))
                     .foregroundColor(Color.spiceMuted)
             }
 
@@ -172,7 +172,7 @@ struct AccountScreen: View {
 
             if isApproved {
                 Text("APPROVED")
-                    .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                    .font(.appFont(size: 11, weight: .heavy, design: .monospaced))
                     .foregroundColor(Color(hex: "#167444"))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
@@ -180,7 +180,7 @@ struct AccountScreen: View {
                     .cornerRadius(6)
             } else {
                 Text("PENDING")
-                    .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                    .font(.appFont(size: 11, weight: .heavy, design: .monospaced))
                     .foregroundColor(Color.spiceAmber)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
@@ -201,7 +201,7 @@ struct AccountScreen: View {
     private var personalInfoCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Personal Information")
-                .font(.system(size: 15, weight: .heavy))
+                .font(.appFont(size: 15, weight: .heavy))
                 .foregroundColor(Color.spiceInk)
 
             VStack(spacing: 10) {
@@ -212,7 +212,7 @@ struct AccountScreen: View {
             }
 
             Text("To change any of your profile details, please ask SpiceMonk admin.")
-                .font(.system(size: 11.5, weight: .medium))
+                .font(.appFont(size: 11.5, weight: .medium))
                 .foregroundColor(Color.spiceMuted)
                 .lineSpacing(2)
                 .padding(.top, 4)
@@ -230,7 +230,7 @@ struct AccountScreen: View {
     private var businessInfoCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Business Information")
-                .font(.system(size: 15, weight: .heavy))
+                .font(.appFont(size: 15, weight: .heavy))
                 .foregroundColor(Color.spiceInk)
 
             VStack(spacing: 10) {
@@ -243,7 +243,7 @@ struct AccountScreen: View {
             }
 
             Text("To change any of your profile details, please ask SpiceMonk admin.")
-                .font(.system(size: 11.5, weight: .medium))
+                .font(.appFont(size: 11.5, weight: .medium))
                 .foregroundColor(Color.spiceMuted)
                 .lineSpacing(2)
                 .padding(.top, 4)
@@ -301,18 +301,18 @@ struct AccountScreen: View {
     private func menuRow(icon: String, title: String) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 14, weight: .semibold))
+                .font(.appFont(size: 14, weight: .semibold))
                 .foregroundColor(Color.spiceInk)
                 .frame(width: 22)
 
             Text(title)
-                .font(.system(size: 13.5, weight: .bold))
+                .font(.appFont(size: 13.5, weight: .bold))
                 .foregroundColor(Color.spiceInk)
 
             Spacer()
 
             Image(systemName: "chevron.right")
-                .font(.system(size: 12, weight: .bold))
+                .font(.appFont(size: 12, weight: .bold))
                 .foregroundColor(Color.spiceMuted.opacity(0.7))
         }
         .padding(.horizontal, 16)
@@ -324,7 +324,7 @@ struct AccountScreen: View {
     private func infoRow(key: String, value: String, isMono: Bool = false, isBoldValue: Bool = false, multiline: Bool = false) -> some View {
         HStack(alignment: multiline ? .top : .center, spacing: 12) {
             Text(key)
-                .font(.system(size: 13, weight: .medium))
+                .font(.appFont(size: 13, weight: .medium))
                 .foregroundColor(Color.spiceMuted)
                 .frame(width: multiline ? 80 : nil, alignment: .leading)
 
@@ -333,8 +333,8 @@ struct AccountScreen: View {
             Text(value)
                 .font(
                     isMono ?
-                        .system(size: 13, weight: isBoldValue ? .heavy : .semibold, design: .monospaced) :
-                        .system(size: 13, weight: isBoldValue ? .heavy : .semibold)
+                        .appFont(size: 13, weight: isBoldValue ? .heavy : .semibold, design: .monospaced) :
+                        .appFont(size: 13, weight: isBoldValue ? .heavy : .semibold)
                 )
                 .foregroundColor(Color.spiceInk)
                 .multilineTextAlignment(multiline ? .trailing : .trailing)
@@ -376,11 +376,11 @@ struct AccountScreen: View {
 
             VStack(alignment: .leading, spacing: 14) {
                 Text("Are you sure you want to logout?")
-                    .font(.system(size: 16, weight: .heavy))
+                    .font(.appFont(size: 16, weight: .heavy))
                     .foregroundColor(Color.spiceInk)
 
                 Text("You will need to verify your mobile number with an OTP to login again.")
-                    .font(.system(size: 12.5, weight: .medium))
+                    .font(.appFont(size: 12.5, weight: .medium))
                     .foregroundColor(Color.spiceMuted)
                     .lineSpacing(2)
 
@@ -389,7 +389,7 @@ struct AccountScreen: View {
                         showLogoutModal = false
                     }) {
                         Text("Cancel")
-                            .font(.system(size: 13, weight: .bold))
+                            .font(.appFont(size: 13, weight: .bold))
                             .foregroundColor(Color.spiceInk)
                             .frame(maxWidth: .infinity)
                             .frame(height: 42)
@@ -403,7 +403,7 @@ struct AccountScreen: View {
                         performLogout()
                     }) {
                         Text("Logout")
-                            .font(.system(size: 13, weight: .heavy))
+                            .font(.appFont(size: 13, weight: .heavy))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .frame(height: 42)

@@ -38,7 +38,7 @@ struct SchemePickerSheet: View {
                     VStack(alignment: .leading, spacing: 4) {
                         HStack {
                             Text("Available Offers")
-                                .font(.system(size: 18, weight: .heavy))
+                                .font(.appFont(size: 18, weight: .heavy))
                                 .foregroundColor(Color.spiceInk)
 
                             Spacer()
@@ -47,14 +47,14 @@ struct SchemePickerSheet: View {
                                 loadAvailableOffers()
                             }) {
                                 Image(systemName: "arrow.clockwise")
-                                    .font(.system(size: 15, weight: .bold))
+                                    .font(.appFont(size: 15, weight: .bold))
                                     .foregroundColor(Color.spiceInk)
                                     .padding(4)
                             }
                         }
 
                         Text("One offer applies at a time. Pick the one worth most to you.")
-                            .font(.system(size: 12.5, weight: .medium))
+                            .font(.appFont(size: 12.5, weight: .medium))
                             .foregroundColor(Color.spiceMuted)
                     }
                     .padding(.horizontal, 16)
@@ -70,7 +70,7 @@ struct SchemePickerSheet: View {
                             ProgressView()
                                 .tint(Color.spicePrimary)
                             Text("Loading available offers...")
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.appFont(size: 13, weight: .medium))
                                 .foregroundColor(Color.spiceMuted)
                             Spacer()
                         }
@@ -98,7 +98,7 @@ struct SchemePickerSheet: View {
                                     VStack(alignment: .leading, spacing: 6) {
                                         HStack {
                                             Text("Applied Offer")
-                                                .font(.system(size: 13.5, weight: .heavy))
+                                                .font(.appFont(size: 13.5, weight: .heavy))
                                                 .foregroundColor(Color(hex: "#167444"))
 
                                             Spacer()
@@ -107,19 +107,19 @@ struct SchemePickerSheet: View {
                                                 handleRemoveOffer()
                                             }) {
                                                 Text("Remove")
-                                                    .font(.system(size: 12, weight: .bold))
+                                                    .font(.appFont(size: 12, weight: .bold))
                                                     .foregroundColor(Color.spicePrimary)
                                             }
                                             .buttonStyle(.plain)
                                         }
 
                                         Text(applied.schemeTitle ?? "Offer Applied")
-                                            .font(.system(size: 13, weight: .bold))
+                                            .font(.appFont(size: 13, weight: .bold))
                                             .foregroundColor(Color.spiceInk)
 
                                         if let desc = applied.discountText, !desc.isEmpty {
                                             Text(desc)
-                                                .font(.system(size: 12, weight: .medium))
+                                                .font(.appFont(size: 12, weight: .medium))
                                                 .foregroundColor(Color.spiceMuted)
                                         }
                                     }
@@ -147,7 +147,7 @@ struct SchemePickerSheet: View {
                                     dismiss()
                                 }) {
                                     Text("View All Schemes")
-                                        .font(.system(size: 14, weight: .heavy))
+                                        .font(.appFont(size: 14, weight: .heavy))
                                         .foregroundColor(Color.spiceInk)
                                         .frame(maxWidth: .infinity)
                                         .frame(height: 44)
@@ -192,7 +192,7 @@ struct SchemePickerSheet: View {
             // Badges Row: [ ORDER VALUE ] [ LOCKED / ELIGIBLE ]
             HStack {
                 Text("ORDER VALUE")
-                    .font(.system(size: 10, weight: .heavy))
+                    .font(.appFont(size: 10, weight: .heavy))
                     .foregroundColor(Color.spiceMuted)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
@@ -203,7 +203,7 @@ struct SchemePickerSheet: View {
 
                 if isEligible {
                     Text("ELIGIBLE")
-                        .font(.system(size: 10, weight: .heavy))
+                        .font(.appFont(size: 10, weight: .heavy))
                         .foregroundColor(Color(hex: "#167E46"))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
@@ -211,7 +211,7 @@ struct SchemePickerSheet: View {
                         .cornerRadius(5)
                 } else {
                     Text("LOCKED")
-                        .font(.system(size: 10, weight: .heavy))
+                        .font(.appFont(size: 10, weight: .heavy))
                         .foregroundColor(Color(hex: "#B87314"))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
@@ -222,12 +222,12 @@ struct SchemePickerSheet: View {
 
             // Scheme Title
             Text(scheme.title ?? "Special Offer")
-                .font(.system(size: 14.5, weight: .heavy))
+                .font(.appFont(size: 14.5, weight: .heavy))
                 .foregroundColor(Color.spiceInk)
 
             // Minimum Requirement
             Text("Minimum order ₹\(Int(minVal))")
-                .font(.system(size: 12, weight: .medium))
+                .font(.appFont(size: 12, weight: .medium))
                 .foregroundColor(Color.spiceMuted)
 
             if !isEligible {
@@ -248,7 +248,7 @@ struct SchemePickerSheet: View {
 
                 // Unlock Shortfall Text
                 Text("Add ₹\(String(format: "%.2f", shortfall)) more to unlock")
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.appFont(size: 12, weight: .medium))
                     .foregroundColor(Color(hex: "#8B5014"))
             } else {
                 // Apply Offer Button
@@ -256,7 +256,7 @@ struct SchemePickerSheet: View {
                     applyScheme(scheme)
                 }) {
                     Text("Apply Offer")
-                        .font(.system(size: 13, weight: .heavy))
+                        .font(.appFont(size: 13, weight: .heavy))
                         .foregroundColor(Color.spicePrimary)
                         .frame(maxWidth: .infinity)
                         .frame(height: 38)
@@ -292,7 +292,7 @@ struct SchemePickerSheet: View {
             // Badges Row: [ QUANTITY SLAB ] [ LOCKED / ELIGIBLE ]
             HStack {
                 Text("QUANTITY SLAB")
-                    .font(.system(size: 10, weight: .heavy))
+                    .font(.appFont(size: 10, weight: .heavy))
                     .foregroundColor(Color.spiceMuted)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
@@ -303,7 +303,7 @@ struct SchemePickerSheet: View {
 
                 if isEligible {
                     Text("ELIGIBLE")
-                        .font(.system(size: 10, weight: .heavy))
+                        .font(.appFont(size: 10, weight: .heavy))
                         .foregroundColor(Color(hex: "#167E46"))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
@@ -311,7 +311,7 @@ struct SchemePickerSheet: View {
                         .cornerRadius(5)
                 } else {
                     Text("LOCKED")
-                        .font(.system(size: 10, weight: .heavy))
+                        .font(.appFont(size: 10, weight: .heavy))
                         .foregroundColor(Color(hex: "#B87314"))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
@@ -322,12 +322,12 @@ struct SchemePickerSheet: View {
 
             // Slab Title
             Text(slab.title ?? "Quantity Offer")
-                .font(.system(size: 14.5, weight: .heavy))
+                .font(.appFont(size: 14.5, weight: .heavy))
                 .foregroundColor(Color.spiceInk)
 
             // Minimum Requirement
             Text("Minimum \(minQty) units")
-                .font(.system(size: 12, weight: .medium))
+                .font(.appFont(size: 12, weight: .medium))
                 .foregroundColor(Color.spiceMuted)
 
             if !isEligible {
@@ -348,19 +348,19 @@ struct SchemePickerSheet: View {
 
                 // Unlock Shortfall Text
                 Text("Add \(shortfallUnits) more units to unlock")
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.appFont(size: 12, weight: .medium))
                     .foregroundColor(Color(hex: "#8B5014"))
 
                 if let gift = slab.giftDescription ?? slab.description, !gift.isEmpty {
                     Text("Gift: \(gift)")
-                        .font(.system(size: 12, weight: .bold))
+                        .font(.appFont(size: 12, weight: .bold))
                         .foregroundColor(Color(hex: "#167444"))
                 }
             } else {
                 // Reward Text
                 if let gift = slab.giftDescription ?? slab.description, !gift.isEmpty {
                     Text("You get \(gift)")
-                        .font(.system(size: 12.5, weight: .bold))
+                        .font(.appFont(size: 12.5, weight: .bold))
                         .foregroundColor(Color(hex: "#167444"))
                 }
 
@@ -369,7 +369,7 @@ struct SchemePickerSheet: View {
                     applySlab(slab)
                 }) {
                     Text("Apply Offer")
-                        .font(.system(size: 13, weight: .heavy))
+                        .font(.appFont(size: 13, weight: .heavy))
                         .foregroundColor(Color.spicePrimary)
                         .frame(maxWidth: .infinity)
                         .frame(height: 38)

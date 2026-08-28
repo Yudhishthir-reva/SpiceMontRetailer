@@ -113,7 +113,7 @@ struct RemoteImage: View {
         ZStack {
             Color(hex: "#EEF2EF")
             Image(systemName: "photo")
-                .font(.system(size: 26, weight: .light))
+                .font(.appFont(size: 26, weight: .light))
                 .foregroundColor(Color.spiceMuted.opacity(0.35))
         }
     }
