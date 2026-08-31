@@ -170,6 +170,18 @@ class NetworkServiceManager: NetworkServiceManagable {
                 body.append(Data("Content-Type: image/jpeg\r\n\r\n".utf8))
                 body.append(data)
                 body.append(Data("\r\n".utf8))
+            } else if let dict = value as? [String: Any],
+                      let jsonData = try? JSONSerialization.data(withJSONObject: dict, options: []),
+                      let jsonString = String(data: jsonData, encoding: .utf8) {
+                body.append(Data("--\(boundary)\r\n".utf8))
+                body.append(Data("Content-Disposition: form-data; name=\"\(key)\"\r\n\r\n".utf8))
+                body.append(Data("\(jsonString)\r\n".utf8))
+            } else if let array = value as? [Any],
+                      let jsonData = try? JSONSerialization.data(withJSONObject: array, options: []),
+                      let jsonString = String(data: jsonData, encoding: .utf8) {
+                body.append(Data("--\(boundary)\r\n".utf8))
+                body.append(Data("Content-Disposition: form-data; name=\"\(key)\"\r\n\r\n".utf8))
+                body.append(Data("\(jsonString)\r\n".utf8))
             } else {
                 let stringValue = String(describing: value)
                 body.append(Data("--\(boundary)\r\n".utf8))
@@ -200,6 +212,16 @@ class NetworkServiceManager: NetworkServiceManagable {
             .compactMap { (key, value) in
                 if value is Data || value is MultipartFile || value is [MultipartFile] {
                     return nil
+                }
+                if let dict = value as? [String: Any],
+                   let jsonData = try? JSONSerialization.data(withJSONObject: dict, options: []),
+                   let jsonString = String(data: jsonData, encoding: .utf8) {
+                    return (key: key, value: jsonString)
+                }
+                if let array = value as? [Any],
+                   let jsonData = try? JSONSerialization.data(withJSONObject: array, options: []),
+                   let jsonString = String(data: jsonData, encoding: .utf8) {
+                    return (key: key, value: jsonString)
                 }
                 return (key: key, value: String(describing: value))
             }

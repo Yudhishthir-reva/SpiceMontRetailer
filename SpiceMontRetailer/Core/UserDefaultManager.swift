@@ -4,6 +4,8 @@
 //
 
 import Foundation
+import UIKit
+import FirebaseMessaging
 
 class UserDefaultManager {
 
@@ -30,6 +32,8 @@ class UserDefaultManager {
         case aadharFront
         case aadharBack
         case sellerStatus
+        case deviceId
+        case fcmToken
     }
 
     func setUserDefaultsString(value: String, key: PersistenceKeys) {
@@ -75,6 +79,59 @@ class UserDefaultManager {
         let token = getUserDefaultsString(key: .authToken)
         guard !token.isEmptyString else { return [:] }
         return ["Authorization": "Bearer \(token)"]
+    }
+
+    var fcmToken: String {
+        let stored = getUserDefaultsString(key: .fcmToken)
+        if !stored.isEmpty {
+            return stored
+        }
+        if let liveToken = Messaging.messaging().fcmToken, !liveToken.isEmpty {
+            setUserDefaultsString(value: liveToken, key: .fcmToken)
+            return liveToken
+        }
+        return ""
+    }
+
+    var deviceId: String {
+        let fcm = fcmToken
+        if !fcm.isEmpty {
+            return fcm
+        }
+        let existing = getUserDefaultsString(key: .deviceId)
+        if !existing.isEmpty {
+            return existing
+        }
+        let newId = UIDevice.current.identifierForVendor?.uuidString ?? UUID().uuidString
+        setUserDefaultsString(value: newId, key: .deviceId)
+        return newId
+    }
+
+    var deviceModel: String {
+        var systemInfo = utsname()
+        uname(&systemInfo)
+        let machineMirror = Mirror(reflecting: systemInfo.machine)
+        let identifier = machineMirror.children.reduce("") { identifier, element in
+            guard let value = element.value as? Int8, value != 0 else { return identifier }
+            return identifier + String(UnicodeScalar(UInt8(value)))
+        }
+        if !identifier.isEmpty {
+            return identifier
+        }
+        return UIDevice.current.model
+    }
+
+    var deviceInfoJSONString: String {
+        let id = !fcmToken.isEmpty ? fcmToken : deviceId
+        let dict: [String: String] = [
+            "deviceId": id,
+            "deviceModel": deviceModel
+        ]
+        if let data = try? JSONSerialization.data(withJSONObject: dict, options: []),
+           let json = String(data: data, encoding: .utf8) {
+            return json
+        }
+        return "{\"deviceId\":\"\(id)\",\"deviceModel\":\"\(deviceModel)\"}"
     }
 
     func resetUserData() {

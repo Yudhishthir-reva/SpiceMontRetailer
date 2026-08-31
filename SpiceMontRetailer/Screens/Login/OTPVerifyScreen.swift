@@ -245,9 +245,19 @@ class OTPVerifyViewModel: ObservableObject {
         }
 
         isVerifying = true
-        let params: [String: Any] = ["mobile": mobile, "otp": otp]
+        let deviceInfo = defaults.deviceInfoJSONString
+        print("📱 [Verify OTP] Sending params with device_info: \(deviceInfo)")
 
-        service.verifyOTP(params: params, headers: [:])
+        let params: [String: Any] = [
+            "mobile": mobile,
+            "otp": otp,
+            "device_info": deviceInfo
+        ]
+
+        var headers = defaults.authHeader
+        headers["Accept"] = "application/json"
+
+        service.verifyOTP(params: params, headers: headers)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] completion in
                 self?.isVerifying = false
