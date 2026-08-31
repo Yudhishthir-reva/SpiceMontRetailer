@@ -39,6 +39,30 @@ final class CartManager: ObservableObject {
         self.networkService = networkService
     }
 
+    /// Matches a CartItem against productId + optional variant fields.
+    /// Handles nil variantId/variantName (simple products without variants).
+    private func itemMatchesVariant(_ item: CartItem, productId: Int, variantId: Int?, variantName: String?) -> Bool {
+        guard item.productId == productId else { return false }
+        // Both have variantId → match on variantId
+        if item.variantId != nil && variantId != nil {
+            return item.variantId == variantId
+        }
+        // Both have variantName → match on variantName
+        if item.variantName != nil && variantName != nil {
+            return item.variantName?.lowercased().trimmingCharacters(in: .whitespaces) == variantName?.lowercased().trimmingCharacters(in: .whitespaces)
+        }
+        // Both have NO variant info → simple product, match on productId alone
+        if item.variantId == nil && variantId == nil && item.variantName == nil && variantName == nil {
+            return true
+        }
+        // Fallback: one side has variant, other doesn't → try matching what's available
+        if item.variantId != nil && item.variantId == variantId { return true }
+        if item.variantName != nil && variantName != nil {
+            return item.variantName?.lowercased().trimmingCharacters(in: .whitespaces) == variantName?.lowercased().trimmingCharacters(in: .whitespaces)
+        }
+        return false
+    }
+
     func registerStock(productId: Int, variantId: Int? = nil, variantName: String? = nil, stock: Int) {
         guard stock >= 0 else { return }
         if let vId = variantId {
@@ -121,11 +145,7 @@ final class CartManager: ObservableObject {
         if resolvedMaxAvl == nil {
             if let cached = getStock(productId: productId, variantId: variantId, variantName: variantName), cached >= 0 {
                 resolvedMaxAvl = cached
-            } else if let existing = items.first(where: {
-                $0.productId == productId &&
-                (($0.variantId != nil && variantId != nil && $0.variantId == variantId) ||
-                 ($0.variantName != nil && variantName != nil && $0.variantName?.lowercased().trimmingCharacters(in: .whitespaces) == variantName?.lowercased().trimmingCharacters(in: .whitespaces)))
-            }) {
+            } else if let existing = items.first(where: { itemMatchesVariant($0, productId: productId, variantId: variantId, variantName: variantName) }) {
                 resolvedMaxAvl = existing.maxStock
             } else if let pAvl = product?.availableQuantity, pAvl >= 0 {
                 resolvedMaxAvl = pAvl
@@ -141,11 +161,7 @@ final class CartManager: ObservableObject {
 
         if finalQty <= 0 {
             // Optimistically set to 0 locally without immediately destroying server item
-            if let idx = items.firstIndex(where: {
-                $0.productId == productId &&
-                (($0.variantId != nil && variantId != nil && $0.variantId == variantId) ||
-                 ($0.variantName != nil && variantName != nil && $0.variantName == variantName))
-            }) {
+            if let idx = items.firstIndex(where: { itemMatchesVariant($0, productId: productId, variantId: variantId, variantName: variantName) }) {
                 items[idx].quantity = 0
                 recalculateTotals()
             }
@@ -155,9 +171,7 @@ final class CartManager: ObservableObject {
             let workItem = DispatchWorkItem { [weak self] in
                 self?.executeBackendRemoval(productId: productId, variantId: variantId, variantName: variantName)
                 self?.items.removeAll(where: {
-                    $0.productId == productId &&
-                    (($0.variantId != nil && variantId != nil && $0.variantId == variantId) ||
-                     ($0.variantName != nil && variantName != nil && $0.variantName == variantName)) &&
+                    (self?.itemMatchesVariant($0, productId: productId, variantId: variantId, variantName: variantName) ?? false) &&
                     ($0.quantity ?? 0) <= 0
                 })
                 self?.recalculateTotals()
@@ -170,11 +184,7 @@ final class CartManager: ObservableObject {
         }
 
         // 1. Instant optimistic update
-        if let idx = items.firstIndex(where: {
-            $0.productId == productId &&
-            (($0.variantId != nil && variantId != nil && $0.variantId == variantId) ||
-             ($0.variantName != nil && variantName != nil && $0.variantName == variantName))
-        }) {
+        if let idx = items.firstIndex(where: { itemMatchesVariant($0, productId: productId, variantId: variantId, variantName: variantName) }) {
             items[idx].quantity = finalQty
             let priceVal = Double(items[idx].price ?? items[idx].perPrice ?? price ?? "0") ?? 0
             items[idx].totalPrice = String(format: "%.2f", priceVal * Double(finalQty))
@@ -221,11 +231,7 @@ final class CartManager: ObservableObject {
         debounceTasks.removeValue(forKey: key)
 
         var removedServerId: Int? = nil
-        if let idx = items.firstIndex(where: {
-            $0.productId == productId &&
-            (($0.variantId != nil && variantId != nil && $0.variantId == variantId) ||
-             ($0.variantName != nil && variantName != nil && $0.variantName == variantName))
-        }) {
+        if let idx = items.firstIndex(where: { itemMatchesVariant($0, productId: productId, variantId: variantId, variantName: variantName) }) {
             removedServerId = items[idx].id
             items.remove(at: idx)
             recalculateTotals()
@@ -259,7 +265,8 @@ final class CartManager: ObservableObject {
         if let existing = items.first(where: {
             $0.productId == productId &&
             (($0.variantId != nil && variantId != nil && $0.variantId == variantId) ||
-             ($0.variantName != nil && variantName != nil && $0.variantName == variantName))
+             ($0.variantName != nil && variantName != nil && $0.variantName == variantName) ||
+             ($0.variantId == nil && variantId == nil && $0.variantName == nil && variantName == nil))
         }), let cartId = existing.id, cartId > 0 {
             updateCartItem(cartId: cartId, quantity: quantity)
             return
@@ -291,7 +298,8 @@ final class CartManager: ObservableObject {
         if let existing = items.first(where: {
             $0.productId == productId &&
             (($0.variantId != nil && variantId != nil && $0.variantId == variantId) ||
-             ($0.variantName != nil && variantName != nil && $0.variantName == variantName))
+             ($0.variantName != nil && variantName != nil && $0.variantName == variantName) ||
+             ($0.variantId == nil && variantId == nil && $0.variantName == nil && variantName == nil))
         }), let cartId = existing.id, cartId > 0 {
             removeCartItem(cartId: cartId)
             return
@@ -525,10 +533,23 @@ final class CartManager: ObservableObject {
                 }
 
                 if let idx = merged.firstIndex(where: {
+                    // Match by cart id
                     ($0.id != nil && serverItem.id != nil && $0.id == serverItem.id) ||
-                    ($0.productId == serverItem.productId &&
-                     (($0.variantId != nil && serverItem.variantId != nil && $0.variantId == serverItem.variantId) ||
-                      ($0.variantName != nil && serverItem.variantName != nil && $0.variantName?.lowercased().trimmingCharacters(in: .whitespaces) == serverItem.variantName?.lowercased().trimmingCharacters(in: .whitespaces))))
+                    // Match by productId + variant
+                    ($0.productId == serverItem.productId && $0.productId != nil && (
+                        // Both have variantId → match on variantId
+                        ($0.variantId != nil && serverItem.variantId != nil && $0.variantId == serverItem.variantId) ||
+                        // Both have variantName → match on variantName
+                        ($0.variantName != nil && serverItem.variantName != nil && $0.variantName?.lowercased().trimmingCharacters(in: .whitespaces) == serverItem.variantName?.lowercased().trimmingCharacters(in: .whitespaces)) ||
+                        // Both have NO variant info → simple product, match on productId alone
+                        ($0.variantId == nil && serverItem.variantId == nil && $0.variantName == nil && serverItem.variantName == nil) ||
+                        // Local item has no id yet (optimistic) → match by productId + either variant field
+                        ($0.id == nil && (
+                            ($0.variantId != nil && $0.variantId == serverItem.variantId) ||
+                            ($0.variantName != nil && $0.variantName?.lowercased().trimmingCharacters(in: .whitespaces) == serverItem.variantName?.lowercased().trimmingCharacters(in: .whitespaces)) ||
+                            ($0.variantId == nil && $0.variantName == nil)
+                        ))
+                    ))
                 }) {
                     merged[idx].id = serverItem.id ?? merged[idx].id
                     if let sp = serverItem.price { merged[idx].price = sp }
@@ -564,11 +585,7 @@ final class CartManager: ObservableObject {
 
     func quantityForProduct(_ productId: Int, variantId: Int? = nil, variantName: String? = nil) -> Int {
         if variantId != nil || variantName != nil {
-            if let item = items.first(where: {
-                $0.productId == productId &&
-                (($0.variantId != nil && variantId != nil && $0.variantId == variantId) ||
-                 ($0.variantName != nil && variantName != nil && $0.variantName?.lowercased().trimmingCharacters(in: .whitespaces) == variantName?.lowercased().trimmingCharacters(in: .whitespaces)))
-            }) {
+            if let item = items.first(where: { itemMatchesVariant($0, productId: productId, variantId: variantId, variantName: variantName) }) {
                 return item.quantity ?? 0
             }
             return 0

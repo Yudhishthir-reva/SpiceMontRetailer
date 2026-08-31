@@ -858,76 +858,29 @@ struct BannerCarouselSectionView: View {
     let title: String
     let onBannerTap: (RetailerBannerItem) -> Void
 
-    @State private var currentIndex: Int = 0
-    private let timer = Timer.publish(every: 4.0, on: .main, in: .common).autoconnect()
-
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title)
                 .font(.appFont(size: 15, weight: .heavy))
                 .foregroundColor(Color.spiceInk)
 
-            if banners.count == 1, let banner = banners.first {
-                Button(action: {
-                    onBannerTap(banner)
-                }) {
-                    RemoteImage(url: banner.image, contentMode: .fill)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 145)
-                        .clipped()
-                        .cornerRadius(14)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 14)
-                                .stroke(Color.spiceCardBorder.opacity(0.8), lineWidth: 1)
-                        )
-                }
-                .buttonStyle(.plain)
-            } else if banners.count > 1 {
-                VStack(spacing: 8) {
-                    TabView(selection: $currentIndex) {
-                        ForEach(Array(banners.enumerated()), id: \.offset) { index, banner in
-                            Button(action: {
-                                onBannerTap(banner)
-                            }) {
-                                RemoteImage(url: banner.image, contentMode: .fill)
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 145)
-                                    .clipped()
-                                    .cornerRadius(14)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 14)
-                                            .stroke(Color.spiceCardBorder.opacity(0.8), lineWidth: 1)
-                                    )
-                            }
-                            .buttonStyle(.plain)
-                            .tag(index)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(banners) { banner in
+                        Button(action: {
+                            onBannerTap(banner)
+                        }) {
+                            RemoteImage(url: banner.image, contentMode: .fill)
+                                .frame(width: banners.count == 1 ? UIScreen.main.bounds.width - 32 : UIScreen.main.bounds.width - 56, height: 145)
+                                .clipped()
+                                .cornerRadius(14)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 14)
+                                        .stroke(Color.spiceCardBorder.opacity(0.8), lineWidth: 1)
+                                )
                         }
+                        .buttonStyle(.plain)
                     }
-                    .tabViewStyle(.page(indexDisplayMode: .never))
-                    .frame(height: 145)
-                    .onReceive(timer) { _ in
-                        guard banners.count > 1 else { return }
-                        withAnimation(.easeInOut(duration: 0.45)) {
-                            currentIndex = (currentIndex + 1) % banners.count
-                        }
-                    }
-
-                    // Indicator Dots
-                    HStack(spacing: 6) {
-                        ForEach(0..<banners.count, id: \.self) { idx in
-                            Capsule()
-                                .fill(idx == currentIndex ? Color.spicePrimary : Color.spiceCardBorder.opacity(0.8))
-                                .frame(width: idx == currentIndex ? 18 : 6, height: 6)
-                                .animation(.spring(response: 0.35, dampingFraction: 0.7), value: currentIndex)
-                                .onTapGesture {
-                                    withAnimation(.easeInOut(duration: 0.35)) {
-                                        currentIndex = idx
-                                    }
-                                }
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, 2)
                 }
             }
         }
