@@ -69,6 +69,8 @@ public class PaymentRequestManager: ObservableObject {
         message: String,
         paymentMode: String = "UPI",
         referenceNumber: String = "",
+        attachmentData: Data? = nil,
+        attachmentFileName: String? = nil,
         attachment: String? = nil,
         completion: @escaping (Bool, String) -> Void
     ) {
@@ -84,7 +86,13 @@ public class PaymentRequestManager: ObservableObject {
             ? message
             : "\(message) (Ref/UTR: \(referenceNumber), Mode: \(paymentMode))".trimmingCharacters(in: .whitespaces)
 
-        orderService.submitPaymentRequest(amount: amount, message: fullMessage.isEmpty ? "Payment submission" : fullMessage, headers: headers)
+        orderService.submitPaymentRequest(
+            amount: amount,
+            message: fullMessage.isEmpty ? "Payment submission" : fullMessage,
+            attachmentData: attachmentData,
+            attachmentFileName: attachmentFileName,
+            headers: headers
+        )
             .receive(on: DispatchQueue.main)
             .sink { [weak self] completionResult in
                 guard let self = self else { return }

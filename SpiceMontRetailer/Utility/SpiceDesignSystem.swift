@@ -258,26 +258,53 @@ struct SpiceKVRow: View {
 
 // MARK: - Skeleton Shimmer
 
+struct SpiceShimmerEffect: ViewModifier {
+    @State private var phase: CGFloat = -1.0
+
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                GeometryReader { geo in
+                    LinearGradient(
+                        gradient: Gradient(stops: [
+                            .init(color: .clear, location: 0.0),
+                            .init(color: Color.white.opacity(0.55), location: 0.5),
+                            .init(color: .clear, location: 1.0)
+                        ]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                    .rotationEffect(.degrees(20))
+                    .offset(x: phase * max(geo.size.width, 100) * 2)
+                    .frame(width: max(geo.size.width, 100) * 1.5, height: max(geo.size.height, 50) * 1.5)
+                }
+            )
+            .mask(content)
+            .onAppear {
+                withAnimation(Animation.linear(duration: 1.4).repeatForever(autoreverses: false)) {
+                    phase = 1.0
+                }
+            }
+    }
+}
+
+extension View {
+    func spiceShimmer() -> some View {
+        self.modifier(SpiceShimmerEffect())
+    }
+}
+
 struct SpiceSkeletonBox: View {
     var width: CGFloat? = nil
     var height: CGFloat = 16
     var cornerRadius: CGFloat = 6
 
-    @State private var isAnimating: Bool = false
-
     var body: some View {
         RoundedRectangle(cornerRadius: cornerRadius)
-            .fill(Color.spiceLightGray)
+            .fill(Color(hex: "#E5E7EB"))
             .frame(height: height)
             .frame(maxWidth: width ?? .infinity)
-            .opacity(isAnimating ? 0.5 : 1.0)
-            .animation(
-                Animation.easeInOut(duration: 0.8).repeatForever(autoreverses: true),
-                value: isAnimating
-            )
-            .onAppear {
-                isAnimating = true
-            }
+            .spiceShimmer()
     }
 }
 

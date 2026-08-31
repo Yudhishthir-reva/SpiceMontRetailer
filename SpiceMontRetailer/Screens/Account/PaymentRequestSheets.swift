@@ -6,6 +6,13 @@
 //
 
 import SwiftUI
+import PhotosUI
+
+// MARK: - Identifiable URL wrapper for full-screen sheet preview
+struct IdentifiableAttachmentURL: Identifiable {
+    let id = UUID()
+    let url: URL
+}
 
 // MARK: - Submit Payment Request Sheet
 
@@ -22,6 +29,11 @@ struct SubmitPaymentRequestSheet: View {
     @State private var messageText: String = ""
     @State private var errorMessage: String = ""
     @State private var isSuccess: Bool = false
+
+    // Attachment State
+    @State private var selectedPhotoItem: PhotosPickerItem? = nil
+    @State private var selectedPhotoData: Data? = nil
+    @State private var selectedImage: UIImage? = nil
 
     private let paymentModes = ["UPI", "Bank Transfer", "Cash", "Cheque"]
 
@@ -124,7 +136,7 @@ struct SubmitPaymentRequestSheet: View {
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 12)
                                         .stroke(Color.spiceCardBorder, lineWidth: 1)
-                                )
+                                 )
                         }
 
                         // 4. Note / Message
@@ -145,6 +157,112 @@ struct SubmitPaymentRequestSheet: View {
                                     RoundedRectangle(cornerRadius: 12)
                                         .stroke(Color.spiceCardBorder, lineWidth: 1)
                                 )
+                        }
+
+                        // 5. Attachment / Proof of Payment (Photo / Screenshot)
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Text("ATTACHMENT / RECEIPT (OPTIONAL)")
+                                    .font(.appFont(size: 11, weight: .heavy))
+                                    .foregroundColor(Color.spiceMuted)
+                                    .tracking(0.5)
+
+                                Spacer()
+
+                                if selectedPhotoData != nil {
+                                    Button(action: {
+                                        selectedPhotoData = nil
+                                        selectedPhotoItem = nil
+                                        selectedImage = nil
+                                    }) {
+                                        Text("Remove")
+                                            .font(.appFont(size: 11.5, weight: .bold))
+                                            .foregroundColor(Color.spiceDue)
+                                    }
+                                }
+                            }
+
+                            if let image = selectedImage, let data = selectedPhotoData {
+                                HStack(spacing: 12) {
+                                    Image(uiImage: image)
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: 56, height: 56)
+                                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 10)
+                                                .stroke(Color.spiceCardBorder, lineWidth: 1)
+                                        )
+
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("Receipt Attached")
+                                            .font(.appFont(size: 13, weight: .bold))
+                                            .foregroundColor(Color.spiceInk)
+
+                                        Text("\(String(format: "%.1f KB", Double(data.count) / 1024.0)) · Ready to send")
+                                            .font(.appFont(size: 11.5, weight: .medium))
+                                            .foregroundColor(Color.spicePrimary)
+                                    }
+
+                                    Spacer()
+
+                                    PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                                        Text("Change")
+                                            .font(.appFont(size: 12, weight: .bold))
+                                            .foregroundColor(Color.spicePrimary)
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 6)
+                                            .background(Color.spicePrimaryLight)
+                                            .cornerRadius(8)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                                .padding(12)
+                                .background(Color.white)
+                                .cornerRadius(12)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.spiceCardBorder, lineWidth: 1)
+                                )
+                            } else {
+                                PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                                    HStack(spacing: 12) {
+                                        ZStack {
+                                            Circle()
+                                                .fill(Color.spicePrimaryLight)
+                                                .frame(width: 40, height: 40)
+
+                                            Image(systemName: "paperclip")
+                                                .font(.system(size: 16, weight: .bold))
+                                                .foregroundColor(Color.spicePrimary)
+                                        }
+
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text("Upload Payment Receipt / Slip")
+                                                .font(.appFont(size: 13, weight: .bold))
+                                                .foregroundColor(Color.spiceInk)
+
+                                            Text("Tap to select screenshot or photo proof")
+                                                .font(.appFont(size: 11, weight: .medium))
+                                                .foregroundColor(Color.spiceMuted)
+                                        }
+
+                                        Spacer()
+
+                                        Image(systemName: "photo.badge.plus")
+                                            .font(.system(size: 16, weight: .semibold))
+                                            .foregroundColor(Color.spicePrimary)
+                                    }
+                                    .padding(12)
+                                    .background(Color.white)
+                                    .cornerRadius(12)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(Color.spiceCardBorder, lineWidth: 1)
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                            }
                         }
 
                         // Error Message
@@ -209,6 +327,17 @@ struct SubmitPaymentRequestSheet: View {
                     }
                 }
             }
+            .onChange(of: selectedPhotoItem) { _, newItem in
+                guard let newItem = newItem else { return }
+                Task {
+                    if let data = try? await newItem.loadTransferable(type: Data.self) {
+                        await MainActor.run {
+                            self.selectedPhotoData = data
+                            self.selectedImage = UIImage(data: data)
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -223,7 +352,9 @@ struct SubmitPaymentRequestSheet: View {
             amount: amount,
             message: messageText.trimmingCharacters(in: .whitespacesAndNewlines),
             paymentMode: selectedMode,
-            referenceNumber: referenceNumber.trimmingCharacters(in: .whitespacesAndNewlines)
+            referenceNumber: referenceNumber.trimmingCharacters(in: .whitespacesAndNewlines),
+            attachmentData: selectedPhotoData,
+            attachmentFileName: "payment_receipt_\(Int(Date().timeIntervalSince1970)).jpg"
         ) { success, msg in
             if success {
                 presentationMode.wrappedValue.dismiss()
@@ -239,6 +370,8 @@ struct SubmitPaymentRequestSheet: View {
 struct PaymentRequestsListSheet: View {
     @Environment(\.presentationMode) var presentationMode
     @ObservedObject private var requestManager = PaymentRequestManager.shared
+
+    @State private var selectedPreviewURL: IdentifiableAttachmentURL? = nil
 
     var body: some View {
         NavigationStack {
@@ -286,6 +419,9 @@ struct PaymentRequestsListSheet: View {
             }
             .onAppear {
                 requestManager.fetchRemoteRequests()
+            }
+            .sheet(item: $selectedPreviewURL) { item in
+                AttachmentImageViewerSheet(url: item.url)
             }
         }
     }
@@ -364,35 +500,40 @@ struct PaymentRequestsListSheet: View {
 
             // Attachment image preview (if any)
             if let attachmentUrl = item.attachment, !attachmentUrl.isEmpty, let url = URL(string: attachmentUrl) {
-                HStack(spacing: 8) {
-                    Image(systemName: "paperclip")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundColor(Color.spicePrimary)
+                Button(action: {
+                    selectedPreviewURL = IdentifiableAttachmentURL(url: url)
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "paperclip")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(Color.spicePrimary)
 
-                    Text("Receipt Attached")
-                        .font(.appFont(size: 12, weight: .semibold))
-                        .foregroundColor(Color.spicePrimary)
+                        Text("Receipt Attached (Tap to view)")
+                            .font(.appFont(size: 12, weight: .semibold))
+                            .foregroundColor(Color.spicePrimary)
 
-                    Spacer()
+                        Spacer()
 
-                    AsyncImage(url: url) { phase in
-                        if let image = phase.image {
-                            image
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 40, height: 40)
-                                .clipped()
-                                .cornerRadius(6)
-                        } else {
-                            RoundedRectangle(cornerRadius: 6)
-                                .fill(Color.spiceCardBorder.opacity(0.5))
-                                .frame(width: 40, height: 40)
+                        AsyncImage(url: url) { phase in
+                            if let image = phase.image {
+                                image
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(width: 40, height: 40)
+                                    .clipped()
+                                    .cornerRadius(6)
+                            } else {
+                                RoundedRectangle(cornerRadius: 6)
+                                    .fill(Color.spiceCardBorder.opacity(0.5))
+                                    .frame(width: 40, height: 40)
+                            }
                         }
                     }
+                    .padding(8)
+                    .background(Color.spiceBackground)
+                    .cornerRadius(8)
                 }
-                .padding(8)
-                .background(Color.spiceBackground)
-                .cornerRadius(8)
+                .buttonStyle(.plain)
             }
 
             Divider().background(Color.spiceDivider)
@@ -416,5 +557,57 @@ struct PaymentRequestsListSheet: View {
             RoundedRectangle(cornerRadius: 14)
                 .stroke(Color.spiceCardBorder, lineWidth: 1)
         )
+    }
+}
+
+// MARK: - Attachment Fullscreen Viewer Sheet
+
+struct AttachmentImageViewerSheet: View {
+    let url: URL
+    @Environment(\.presentationMode) var presentationMode
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color.black.ignoresSafeArea()
+
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .empty:
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFit()
+                            .padding()
+                    case .failure:
+                        VStack(spacing: 8) {
+                            Image(systemName: "exclamationmark.triangle")
+                                .font(.system(size: 32))
+                                .foregroundColor(.white.opacity(0.7))
+                            Text("Unable to load receipt image")
+                                .font(.appFont(size: 13, weight: .medium))
+                                .foregroundColor(.white.opacity(0.8))
+                        }
+                    @unknown default:
+                        EmptyView()
+                    }
+                }
+            }
+            .navigationTitle("Receipt Preview")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        presentationMode.wrappedValue.dismiss()
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 20))
+                            .foregroundColor(.white)
+                    }
+                }
+            }
+        }
     }
 }

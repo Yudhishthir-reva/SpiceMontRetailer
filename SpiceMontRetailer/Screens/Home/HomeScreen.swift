@@ -34,11 +34,6 @@ struct HomeScreen: View {
         viewModel.address.isEmpty ? defaults.getUserDefaultsString(key: .shopAddress) : viewModel.address
     }
 
-    var sellerCodeText: String {
-        let code = viewModel.sellerId.isEmpty ? defaults.getUserDefaultsString(key: .sellerId) : viewModel.sellerId
-        return code
-    }
-
     var body: some View {
         VStack(spacing: 0) {
                 // MARK: - Header Top Bar
@@ -95,6 +90,16 @@ struct HomeScreen: View {
 
                 if viewModel.isAccountPending {
                     accountPendingStateView
+                } else if viewModel.isLoading && viewModel.retailerWidgets.isEmpty {
+                    ScrollView(showsIndicators: false) {
+                        VStack(alignment: .leading, spacing: 14) {
+                            homeSkeletonView
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.top, 12)
+                        .padding(.bottom, 24)
+                    }
+                    .background(Color.spiceBackground)
                 } else {
                     ScrollView(showsIndicators: false) {
                         VStack(alignment: .leading, spacing: 14) {
@@ -102,18 +107,8 @@ struct HomeScreen: View {
                             retailerProfileCard
 
                             // MARK: - Dynamic Server Widgets
-                            if !viewModel.retailerWidgets.isEmpty {
-                                ForEach(viewModel.retailerWidgets) { widget in
-                                    dynamicWidgetView(for: widget)
-                                }
-                            } else if viewModel.isLoading {
-                                // Clean Loading Indicator while fetching server widgets
-                                HStack {
-                                    Spacer()
-                                    ProgressView()
-                                        .padding(.vertical, 40)
-                                    Spacer()
-                                }
+                            ForEach(viewModel.retailerWidgets) { widget in
+                                dynamicWidgetView(for: widget)
                             }
 
                             Spacer(minLength: 24)
@@ -226,27 +221,15 @@ struct HomeScreen: View {
             }
 
             // Badges Row
-            if !sellerCodeText.isEmpty || !viewModel.salesmanName.isEmpty {
+            if !viewModel.salesmanName.isEmpty {
                 HStack(spacing: 8) {
-                    if !sellerCodeText.isEmpty {
-                        Text(sellerCodeText)
-                            .font(.appFont(size: 11, weight: .bold, design: .monospaced))
-                            .foregroundColor(Color(hex: "#374151"))
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(Color(hex: "#F3F4F6"))
-                            .cornerRadius(6)
-                    }
-
-                    if !viewModel.salesmanName.isEmpty {
-                        Text("Salesman: \(viewModel.salesmanName)")
-                            .font(.appFont(size: 11, weight: .bold))
-                            .foregroundColor(Color(hex: "#374151"))
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(Color(hex: "#F3F4F6"))
-                            .cornerRadius(6)
-                    }
+                    Text("Salesman: \(viewModel.salesmanName)")
+                        .font(.appFont(size: 11, weight: .bold))
+                        .foregroundColor(Color(hex: "#374151"))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color(hex: "#F3F4F6"))
+                        .cornerRadius(6)
 
                     Spacer()
                 }
@@ -849,6 +832,149 @@ struct HomeScreen: View {
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.spiceBackground)
+    }
+
+    // MARK: - Home Shimmer / Skeleton View
+    @ViewBuilder
+    private var homeSkeletonView: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            // 1. Retailer Profile Header Card Skeleton
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 12) {
+                    Circle()
+                        .fill(Color(hex: "#E5E7EB"))
+                        .frame(width: 46, height: 46)
+                        .spiceShimmer()
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        SpiceSkeletonBox(width: 90, height: 12, cornerRadius: 4)
+                        SpiceSkeletonBox(width: 170, height: 16, cornerRadius: 4)
+                        SpiceSkeletonBox(width: 130, height: 11, cornerRadius: 4)
+                    }
+
+                    Spacer()
+                }
+
+                // Salesman / Badge skeleton
+                HStack(spacing: 8) {
+                    SpiceSkeletonBox(width: 130, height: 22, cornerRadius: 6)
+                    Spacer()
+                }
+            }
+            .padding(16)
+            .background(Color.white)
+            .cornerRadius(16)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.spiceCardBorder.opacity(0.8), lineWidth: 1)
+            )
+
+            // 2. Ledger Summary Card Skeleton
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    SpiceSkeletonBox(width: 140, height: 16, cornerRadius: 4)
+                    Spacer()
+                    SpiceSkeletonBox(width: 60, height: 14, cornerRadius: 4)
+                }
+
+                // Big Balance Box
+                VStack(alignment: .leading, spacing: 8) {
+                    SpiceSkeletonBox(width: 100, height: 12, cornerRadius: 4)
+                    SpiceSkeletonBox(width: 150, height: 28, cornerRadius: 6)
+                }
+                .padding(14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color(hex: "#F9FAFB"))
+                .cornerRadius(12)
+
+                // 3 KPI mini boxes
+                HStack(spacing: 8) {
+                    ForEach(0..<3, id: \.self) { _ in
+                        VStack(spacing: 6) {
+                            SpiceSkeletonBox(width: 50, height: 10, cornerRadius: 3)
+                            SpiceSkeletonBox(width: 65, height: 14, cornerRadius: 4)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(Color(hex: "#F9FAFB"))
+                        .cornerRadius(8)
+                    }
+                }
+            }
+            .padding(16)
+            .background(Color.white)
+            .cornerRadius(16)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.spiceCardBorder.opacity(0.8), lineWidth: 1)
+            )
+
+            // 3. Place New Order Banner Skeleton
+            HStack(spacing: 12) {
+                Circle()
+                    .fill(Color(hex: "#E5E7EB"))
+                    .frame(width: 42, height: 42)
+                    .spiceShimmer()
+
+                VStack(alignment: .leading, spacing: 5) {
+                    SpiceSkeletonBox(width: 140, height: 15, cornerRadius: 4)
+                    SpiceSkeletonBox(width: 190, height: 11, cornerRadius: 4)
+                }
+
+                Spacer()
+
+                Circle()
+                    .fill(Color(hex: "#E5E7EB"))
+                    .frame(width: 28, height: 28)
+                    .spiceShimmer()
+            }
+            .padding(14)
+            .background(Color.white)
+            .cornerRadius(16)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.spiceCardBorder.opacity(0.8), lineWidth: 1)
+            )
+
+            // 4. Quick Actions Grid Skeleton
+            VStack(alignment: .leading, spacing: 14) {
+                SpiceSkeletonBox(width: 120, height: 15, cornerRadius: 4)
+
+                HStack(spacing: 10) {
+                    ForEach(0..<4, id: \.self) { _ in
+                        VStack(spacing: 8) {
+                            Circle()
+                                .fill(Color(hex: "#E5E7EB"))
+                                .frame(width: 48, height: 48)
+                                .spiceShimmer()
+
+                            SpiceSkeletonBox(width: 55, height: 10, cornerRadius: 3)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                }
+            }
+            .padding(16)
+            .background(Color.white)
+            .cornerRadius(16)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.spiceCardBorder.opacity(0.8), lineWidth: 1)
+            )
+
+            // 5. Top Banners Carousel Skeleton
+            VStack(alignment: .leading, spacing: 10) {
+                SpiceSkeletonBox(width: 120, height: 15, cornerRadius: 4)
+                SpiceSkeletonBox(height: 155, cornerRadius: 16)
+            }
+
+            // 6. Recent Orders Card Skeleton
+            VStack(alignment: .leading, spacing: 10) {
+                SpiceSkeletonBox(width: 120, height: 15, cornerRadius: 4)
+                SpiceSkeletonBox(height: 95, cornerRadius: 16)
+                SpiceSkeletonBox(height: 95, cornerRadius: 16)
+            }
+        }
     }
 }
 

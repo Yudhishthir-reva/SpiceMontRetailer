@@ -720,7 +720,7 @@ struct OrderDetailScreen: View {
                             .tint(Color.spicePrimary)
                             .scaleEffect(0.8)
                     }
-                    Text(isRepeatingOrder ? "Checking Stock..." : "Repeat Order")
+                    Text(isRepeatingOrder ? "Adding to Cart..." : "Repeat Order")
                         .font(.appFont(size: 14.5, weight: .heavy))
                         .foregroundColor(Color.spicePrimary)
                 }
@@ -742,7 +742,7 @@ struct OrderDetailScreen: View {
         .overlay(Divider().background(Color.spiceDivider), alignment: .top)
     }
 
-    // MARK: - Repeat Order Action (Stock & Availability Verification)
+    // MARK: - Repeat Order Action (Stock & Availability Verification & Backend Sync)
     private func handleRepeatOrder(_ ord: Order) {
         guard let items = ord.items, !items.isEmpty else {
             toastMessage = "No items to repeat"
@@ -751,88 +751,13 @@ struct OrderDetailScreen: View {
         }
 
         isRepeatingOrder = true
-        let headers = UserDefaultManager.shared.authHeader
 
-        let group = DispatchGroup()
-        var addedItemsCount = 0
-        var outOfStockNames: [String] = []
-        var adjustedNames: [String] = []
+        cartManager.repeatOrder(items: items) { addedCount, outOfStockNames, adjustedNames, success in
+            isRepeatingOrder = false
 
-        for item in items {
-            guard let pId = item.productId ?? item.id, let reqQty = item.quantity, reqQty > 0 else {
-                continue
-            }
-
-            group.enter()
-            productService.fetchDetail(params: ["id": pId], headers: headers)
-                .receive(on: DispatchQueue.main)
-                .sink { _ in
-                    group.leave()
-                } receiveValue: { response in
-                    let prod = response.product
-                    let prodName = item.productName ?? prod?.name ?? "Product #\(pId)"
-
-                    // 1. Check if product is marked out of stock
-                    if prod?.inStock == false {
-                        outOfStockNames.append(prodName)
-                        return
-                    }
-
-                    // 2. Find matching variant if any
-                    var matchingVariant: ProductVariant? = nil
-                    if let vId = item.variantId, let variants = prod?.variants {
-                        matchingVariant = variants.first(where: { $0.id == vId })
-                    }
-                    if matchingVariant == nil, let vName = item.variantName ?? item.unit, let variants = prod?.variants {
-                        matchingVariant = variants.first(where: { $0.unit == vName || $0.variantName == vName })
-                    }
-
-                    // 3. Determine available stock
-                    let availableStock = matchingVariant?.availableQuantity ?? prod?.availableQuantity
-                    let priceToUse = matchingVariant?.price ?? prod?.price ?? item.price
-
-                    if let maxStock = availableStock {
-                        if maxStock <= 0 {
-                            outOfStockNames.append(prodName)
-                            return
-                        } else if reqQty > maxStock {
-                            // Clamp to available stock
-                            cartManager.setQuantity(
-                                productId: pId,
-                                variantId: matchingVariant?.id ?? item.variantId,
-                                variantName: matchingVariant?.unit ?? item.variantName ?? item.unit,
-                                quantity: maxStock,
-                                product: prod,
-                                price: priceToUse,
-                                availableQuantity: maxStock
-                            )
-                            addedItemsCount += 1
-                            adjustedNames.append("\(prodName) (only \(maxStock) available)")
-                            return
-                        }
-                    }
-
-                    // 4. In stock with requested quantity
-                    cartManager.setQuantity(
-                        productId: pId,
-                        variantId: matchingVariant?.id ?? item.variantId,
-                        variantName: matchingVariant?.unit ?? item.variantName ?? item.unit,
-                        quantity: reqQty,
-                        product: prod,
-                        price: priceToUse,
-                        availableQuantity: availableStock
-                    )
-                    addedItemsCount += 1
-                }
-                .store(in: &cancellables)
-        }
-
-        group.notify(queue: .main) {
-            self.isRepeatingOrder = false
-
-            if addedItemsCount == 0 && !outOfStockNames.isEmpty {
-                self.toastMessage = "\(outOfStockNames.joined(separator: ", ")) is out of stock"
-                self.isShowToast = true
+            if addedCount == 0 && !outOfStockNames.isEmpty {
+                toastMessage = "\(outOfStockNames.joined(separator: ", ")) is out of stock"
+                isShowToast = true
             } else if !outOfStockNames.isEmpty || !adjustedNames.isEmpty {
                 var notes: [String] = []
                 if !outOfStockNames.isEmpty {
@@ -841,17 +766,16 @@ struct OrderDetailScreen: View {
                 if !adjustedNames.isEmpty {
                     notes.append(adjustedNames.joined(separator: ", "))
                 }
-                self.toastMessage = "Added \(addedItemsCount) item(s). \(notes.joined(separator: "; "))"
-                self.isShowToast = true
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                    self.showCart = true
-                }
+                toastMessage = "Added \(addedCount) item(s). \(notes.joined(separator: "; "))"
+                isShowToast = true
+                showCart = true
+            } else if addedCount > 0 || success {
+                toastMessage = "\(addedCount) item(s) added to cart successfully!"
+                isShowToast = true
+                showCart = true
             } else {
-                self.toastMessage = "All items added to cart successfully!"
-                self.isShowToast = true
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    self.showCart = true
-                }
+                toastMessage = "Unable to add items to cart"
+                isShowToast = true
             }
         }
     }

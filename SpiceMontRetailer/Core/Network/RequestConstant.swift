@@ -5,6 +5,18 @@
 
 import Foundation
 
+public struct MultipartFile {
+    public let data: Data
+    public let fileName: String
+    public let mimeType: String
+
+    public init(data: Data, fileName: String = "attachment.jpg", mimeType: String = "image/jpeg") {
+        self.data = data
+        self.fileName = fileName
+        self.mimeType = mimeType
+    }
+}
+
 enum RequestConstants {
     typealias EndPoint = RouterManagable
     typealias Param = Any

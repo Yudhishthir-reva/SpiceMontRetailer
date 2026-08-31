@@ -119,12 +119,18 @@ class OrderServiceManager {
     func submitPaymentRequest(
         amount: Double,
         message: String,
+        attachmentData: Data? = nil,
+        attachmentFileName: String? = nil,
         headers: RequestConstants.Header
     ) -> AnyPublisher<PaymentRequestSubmitResponse, Error> {
-        let params: [String: Any] = [
+        var params: [String: Any] = [
             "amount": amount,
             "message": message
         ]
+        if let attachmentData = attachmentData, !attachmentData.isEmpty {
+            let fileName = attachmentFileName ?? "payment_receipt.jpg"
+            params["attachment"] = MultipartFile(data: attachmentData, fileName: fileName, mimeType: "image/jpeg")
+        }
         return networkService.request(APIRouter.submitPaymentRequest, params: params, headers: headers)
     }
 

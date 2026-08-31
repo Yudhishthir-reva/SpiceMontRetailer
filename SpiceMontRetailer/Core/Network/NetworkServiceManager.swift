@@ -30,7 +30,8 @@ class NetworkServiceManager: NetworkServiceManagable {
         var targetURL = url
         let isGet = endpoint.requestType == .get
         let rawFields = Self.fields(from: params)
-        let hasParams = !rawFields.isEmpty
+        let dict = params as? [String: Any]
+        let hasParams = (dict != nil ? !(dict?.isEmpty ?? true) : !rawFields.isEmpty)
 
         if isGet && hasParams {
             if var components = URLComponents(url: url, resolvingAgainstBaseURL: false) {
@@ -142,15 +143,39 @@ class NetworkServiceManager: NetworkServiceManagable {
             .eraseToAnyPublisher()
     }
 
-    /// `multipart/form-data` body of plain text fields — the wire format Postman produces for
-    /// `--form mobile=…`, which is what the SpiceMonk auth endpoints parse.
+    /// `multipart/form-data` body for plain text fields and binary file/attachment data.
     private static func multipartBody(from params: RequestConstants.Param, boundary: String) -> Data {
         var body = Data()
 
-        for (key, value) in fields(from: params) {
-            body.append(Data("--\(boundary)\r\n".utf8))
-            body.append(Data("Content-Disposition: form-data; name=\"\(key)\"\r\n\r\n".utf8))
-            body.append(Data("\(value)\r\n".utf8))
+        guard let dictionary = params as? [String: Any] else { return body }
+
+        for (key, value) in dictionary.sorted(by: { $0.key < $1.key }) {
+            if let file = value as? MultipartFile {
+                body.append(Data("--\(boundary)\r\n".utf8))
+                body.append(Data("Content-Disposition: form-data; name=\"\(key)\"; filename=\"\(file.fileName)\"\r\n".utf8))
+                body.append(Data("Content-Type: \(file.mimeType)\r\n\r\n".utf8))
+                body.append(file.data)
+                body.append(Data("\r\n".utf8))
+            } else if let fileArray = value as? [MultipartFile] {
+                for file in fileArray {
+                    body.append(Data("--\(boundary)\r\n".utf8))
+                    body.append(Data("Content-Disposition: form-data; name=\"\(key)[]\"; filename=\"\(file.fileName)\"\r\n".utf8))
+                    body.append(Data("Content-Type: \(file.mimeType)\r\n\r\n".utf8))
+                    body.append(file.data)
+                    body.append(Data("\r\n".utf8))
+                }
+            } else if let data = value as? Data {
+                body.append(Data("--\(boundary)\r\n".utf8))
+                body.append(Data("Content-Disposition: form-data; name=\"\(key)\"; filename=\"\(key).jpg\"\r\n".utf8))
+                body.append(Data("Content-Type: image/jpeg\r\n\r\n".utf8))
+                body.append(data)
+                body.append(Data("\r\n".utf8))
+            } else {
+                let stringValue = String(describing: value)
+                body.append(Data("--\(boundary)\r\n".utf8))
+                body.append(Data("Content-Disposition: form-data; name=\"\(key)\"\r\n\r\n".utf8))
+                body.append(Data("\(stringValue)\r\n".utf8))
+            }
         }
         body.append(Data("--\(boundary)--\r\n".utf8))
 
@@ -172,7 +197,12 @@ class NetworkServiceManager: NetworkServiceManagable {
     private static func fields(from params: RequestConstants.Param) -> [(key: String, value: String)] {
         guard let dictionary = params as? [String: Any] else { return [] }
         return dictionary
-            .map { (key: $0.key, value: String(describing: $0.value)) }
+            .compactMap { (key, value) in
+                if value is Data || value is MultipartFile || value is [MultipartFile] {
+                    return nil
+                }
+                return (key: key, value: String(describing: value))
+            }
             .sorted { $0.key < $1.key }
     }
 }

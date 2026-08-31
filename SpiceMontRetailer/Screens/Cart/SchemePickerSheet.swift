@@ -15,6 +15,7 @@ struct SchemePickerSheet: View {
     let cartTotal: Double
     let appliedSchemeId: Int?
     var onSchemeSelected: ((RetailerOfferScheme) -> Void)?
+    var onSchemeApplied: ((RetailerAppliedOffer) -> Void)?
     var onSchemeRemoved: (() -> Void)?
 
     @State private var schemes: [RetailerOfferScheme] = []
@@ -411,7 +412,7 @@ struct SchemePickerSheet: View {
             } receiveValue: { response in
                 if response.status == true {
                     let d = response.data
-                    cartManager.appliedOffer = RetailerAppliedOffer(
+                    let appliedOffer = RetailerAppliedOffer(
                         type: d?.rewardType ?? scheme.type,
                         id: d?.offerId ?? pId,
                         title: d?.offerTitle ?? scheme.title,
@@ -419,12 +420,10 @@ struct SchemePickerSheet: View {
                         giftDescription: d?.giftDescription,
                         finalAmount: d?.finalAmount
                     )
-                    toastMessage = response.message ?? "Offer applied successfully!"
-                    isShowToast = true
+                    cartManager.appliedOffer = appliedOffer
                     onSchemeSelected?(scheme)
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                        dismiss()
-                    }
+                    onSchemeApplied?(appliedOffer)
+                    dismiss()
                 } else {
                     toastMessage = response.message ?? "Failed to apply offer"
                     isShowToast = true
@@ -450,7 +449,7 @@ struct SchemePickerSheet: View {
             } receiveValue: { response in
                 if response.status == true {
                     let d = response.data
-                    cartManager.appliedOffer = RetailerAppliedOffer(
+                    let appliedOffer = RetailerAppliedOffer(
                         type: d?.rewardType ?? slab.type,
                         id: d?.offerId ?? pId,
                         title: d?.offerTitle ?? slab.title,
@@ -458,11 +457,9 @@ struct SchemePickerSheet: View {
                         giftDescription: d?.giftDescription ?? slab.giftDescription,
                         finalAmount: d?.finalAmount
                     )
-                    toastMessage = response.message ?? "Offer applied successfully!"
-                    isShowToast = true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                        dismiss()
-                    }
+                    cartManager.appliedOffer = appliedOffer
+                    onSchemeApplied?(appliedOffer)
+                    dismiss()
                 } else {
                     toastMessage = response.message ?? "Failed to apply offer"
                     isShowToast = true

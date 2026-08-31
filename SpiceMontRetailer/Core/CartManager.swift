@@ -516,6 +516,224 @@ final class CartManager: ObservableObject {
             .store(in: &cancellables)
     }
 
+    // MARK: - Repeat Order
+
+    func repeatOrder(
+        items: [OrderItem],
+        completion: @escaping (_ addedCount: Int, _ outOfStockNames: [String], _ adjustedNames: [String], _ success: Bool) -> Void
+    ) {
+        guard !items.isEmpty else {
+            completion(0, [], [], false)
+            return
+        }
+
+        isLoading = true
+        let headers = UserDefaultManager.shared.authHeader
+        let group = DispatchGroup()
+
+        var outOfStockNames: [String] = []
+        var adjustedNames: [String] = []
+
+        struct PreparedRepeatItem {
+            let productId: Int
+            let variantId: Int?
+            let variantName: String?
+            let quantity: Int
+            let price: String?
+            let productName: String
+            let productImage: String?
+            let product: Product?
+            let availableQuantity: Int?
+        }
+
+        var preparedItems: [PreparedRepeatItem] = []
+        let lock = NSLock()
+
+        for item in items {
+            guard let pId = item.productId ?? item.id, pId > 0,
+                  let reqQty = item.quantity, reqQty > 0 else {
+                continue
+            }
+
+            group.enter()
+            let params: [String: Any] = ["product_id": pId, "id": pId]
+            let publisher: AnyPublisher<ProductDetailResponse, Error> = networkService.request(
+                APIRouter.productDetail, params: params, headers: headers
+            )
+
+            publisher
+                .receive(on: DispatchQueue.main)
+                .sink { _ in
+                    group.leave()
+                } receiveValue: { response in
+                    let prod = response.product
+                    let prodName = item.productName ?? prod?.name ?? "Product #\(pId)"
+
+                    // 1. Out of stock check
+                    if prod?.inStock == false {
+                        lock.lock()
+                        outOfStockNames.append(prodName)
+                        lock.unlock()
+                        return
+                    }
+
+                    // 2. Matching variant
+                    var matchingVariant: ProductVariant? = nil
+                    if let vId = item.variantId, let variants = prod?.variants {
+                        matchingVariant = variants.first(where: { $0.id == vId })
+                    }
+                    if matchingVariant == nil, let vName = item.variantName ?? item.unit, let variants = prod?.variants {
+                        matchingVariant = variants.first(where: { $0.unit == vName || $0.variantName == vName })
+                    }
+
+                    // 3. Stock availability
+                    let availableStock = matchingVariant?.availableQuantity ?? prod?.availableQuantity
+                    let priceToUse = matchingVariant?.price ?? prod?.price ?? item.price
+
+                    var finalQty = reqQty
+                    if let maxStock = availableStock {
+                        if maxStock <= 0 {
+                            lock.lock()
+                            outOfStockNames.append(prodName)
+                            lock.unlock()
+                            return
+                        } else if reqQty > maxStock {
+                            finalQty = maxStock
+                            lock.lock()
+                            adjustedNames.append("\(prodName) (only \(maxStock) available)")
+                            lock.unlock()
+                        }
+                    }
+
+                    lock.lock()
+                    preparedItems.append(PreparedRepeatItem(
+                        productId: pId,
+                        variantId: matchingVariant?.id ?? item.variantId,
+                        variantName: matchingVariant?.unit ?? item.variantName ?? item.unit,
+                        quantity: finalQty,
+                        price: priceToUse,
+                        productName: prodName,
+                        productImage: prod?.image ?? item.productImage,
+                        product: prod,
+                        availableQuantity: availableStock
+                    ))
+                    lock.unlock()
+                }
+                .store(in: &cancellables)
+        }
+
+        group.notify(queue: .main) { [weak self] in
+            guard let self = self else { return }
+
+            // If any items weren't validated due to network or endpoint error, fallback to raw order item
+            for item in items {
+                guard let pId = item.productId ?? item.id, pId > 0,
+                      let reqQty = item.quantity, reqQty > 0 else { continue }
+                let prodName = item.productName ?? "Product #\(pId)"
+
+                let alreadyPrepared = preparedItems.contains(where: { $0.productId == pId && $0.variantId == item.variantId })
+                let isOutOfStock = outOfStockNames.contains(prodName)
+
+                if !alreadyPrepared && !isOutOfStock {
+                    preparedItems.append(PreparedRepeatItem(
+                        productId: pId,
+                        variantId: item.variantId,
+                        variantName: item.variantName ?? item.unit,
+                        quantity: reqQty,
+                        price: item.price,
+                        productName: prodName,
+                        productImage: item.productImage,
+                        product: nil,
+                        availableQuantity: nil
+                    ))
+                }
+            }
+
+            if preparedItems.isEmpty {
+                self.isLoading = false
+                completion(0, outOfStockNames, adjustedNames, false)
+                return
+            }
+
+            // Cancel any pending debounces to prevent race conditions
+            for (_, workItem) in self.debounceTasks {
+                workItem.cancel()
+            }
+            self.debounceTasks.removeAll()
+
+            // Optimistically update local items right away so cart has immediate content
+            for prep in preparedItems {
+                let unitPrice = prep.price ?? "0"
+                let priceVal = Double(unitPrice) ?? 0
+                let totalVal = priceVal * Double(prep.quantity)
+                let totStr = String(format: "%.2f", totalVal)
+
+                if let idx = self.items.firstIndex(where: { self.itemMatchesVariant($0, productId: prep.productId, variantId: prep.variantId, variantName: prep.variantName) }) {
+                    self.items[idx].quantity = prep.quantity
+                    self.items[idx].price = unitPrice
+                    self.items[idx].perPrice = unitPrice
+                    self.items[idx].totalPrice = totStr
+                    if let avl = prep.availableQuantity { self.items[idx].availableQuantity = avl }
+                    if let prod = prep.product { self.items[idx].product = prod }
+                } else {
+                    let newItem = CartItem(
+                        id: nil,
+                        productId: prep.productId,
+                        productName: prep.productName,
+                        productImage: prep.productImage,
+                        variantId: prep.variantId,
+                        variantName: prep.variantName,
+                        quantity: prep.quantity,
+                        price: unitPrice,
+                        perPrice: unitPrice,
+                        totalPrice: totStr,
+                        availableQuantity: prep.availableQuantity,
+                        product: prep.product
+                    )
+                    self.items.append(newItem)
+                }
+            }
+            self.recalculateTotals()
+
+            // Synchronize each item with the backend API
+            let syncGroup = DispatchGroup()
+            var backendSuccessCount = 0
+
+            for prep in preparedItems {
+                syncGroup.enter()
+                let vId = prep.variantId ?? prep.productId
+                let params: [String: Any] = [
+                    "product_id": prep.productId,
+                    "variant_id": vId,
+                    "quantity": prep.quantity,
+                    "qty": prep.quantity
+                ]
+
+                let pub: AnyPublisher<CartResponse, Error> = self.networkService.request(
+                    APIRouter.cartAdd, params: params, headers: headers
+                )
+
+                pub.receive(on: DispatchQueue.main)
+                    .sink { _ in
+                        syncGroup.leave()
+                    } receiveValue: { res in
+                        if res.status == true {
+                            backendSuccessCount += 1
+                        }
+                    }
+                    .store(in: &self.cancellables)
+            }
+
+            syncGroup.notify(queue: .main) {
+                // Refresh full cart response from backend
+                self.fetchCart()
+                self.isLoading = false
+                let finalCount = backendSuccessCount > 0 ? backendSuccessCount : preparedItems.count
+                completion(finalCount, outOfStockNames, adjustedNames, true)
+            }
+        }
+    }
+
     // MARK: - Helpers
 
     private func applyCart(_ response: CartResponse) {
@@ -555,6 +773,7 @@ final class CartManager: ObservableObject {
                     if let sp = serverItem.price { merged[idx].price = sp }
                     if let spp = serverItem.perPrice { merged[idx].perPrice = spp }
                     if let stp = serverItem.totalPrice { merged[idx].totalPrice = stp }
+                    if let q = serverItem.quantity, q > 0 { merged[idx].quantity = q }
                     if let avl = serverItem.availableQuantity {
                         merged[idx].availableQuantity = avl
                     } else if merged[idx].availableQuantity == nil, let pId = merged[idx].productId {
@@ -562,6 +781,8 @@ final class CartManager: ObservableObject {
                     }
                     if let prod = serverItem.product { merged[idx].product = prod }
                     if let vari = serverItem.variant { merged[idx].variant = vari }
+                    if let name = serverItem.productName, !name.isEmpty { merged[idx].productName = name }
+                    if let img = serverItem.productImage, !img.isEmpty { merged[idx].productImage = img }
                 } else {
                     merged.append(itemToAdd)
                 }
