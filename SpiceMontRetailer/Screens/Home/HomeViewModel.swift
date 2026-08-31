@@ -100,9 +100,18 @@ class HomeViewModel: ObservableObject {
                 }
             } receiveValue: { [weak self] response in
                 guard let self else { return }
-                self.homeResponse = response
-                self.isAccountPending = (response.accountStatus?.lowercased() == "pending")
+                let status = response.accountStatus?.lowercased() ?? ""
+                let isPending = (status == "pending" || status == "under_review" || status == "pending_review")
+                self.isAccountPending = isPending
                 self.accountPendingMessage = response.message ?? ""
+                AppConfigManager.shared.isAccountPending = isPending
+                AppConfigManager.shared.accountPendingMessage = response.message ?? ""
+                self.defaults.setUserDefaultsString(value: status, key: .sellerStatus)
+
+                if let msg = response.message, !msg.isEmpty {
+                    self.toastMessage = msg
+                    self.isShowToast = true
+                }
 
                 // 1. Process User Profile
                 if let g = response.greeting ?? response.user?.greeting, !g.isEmpty {

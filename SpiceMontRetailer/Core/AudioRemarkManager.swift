@@ -113,7 +113,8 @@ public final class AudioRemarkManager: NSObject, ObservableObject, AVAudioRecord
         isRecording = false
 
         if let url = currentFileURL, let data = try? Data(contentsOf: url), !data.isEmpty {
-            recordedAudioBase64 = data.base64EncodedString()
+            let base64 = data.base64EncodedString()
+            recordedAudioBase64 = "data:audio/mp4;base64,\(base64)"
             hasRecordedAudio = true
         }
     }

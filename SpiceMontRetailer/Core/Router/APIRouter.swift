@@ -50,6 +50,8 @@ enum APIRouter: RouterManagable {
     case retailerCities(stateId: Int?)
     case retailerProfile
     case retailerCheckStatus
+    case submitPaymentRequest
+    case paymentRequestsList(page: Int, perPage: Int)
 
     var endPointUrl: String {
         switch self {
@@ -144,12 +146,16 @@ enum APIRouter: RouterManagable {
             return "profile"
         case .retailerCheckStatus:
             return "config/check-status"
+        case .submitPaymentRequest:
+            return "payment-request/submit"
+        case .paymentRequestsList(let page, let perPage):
+            return "payment-request/list?page=\(page)&per_page=\(perPage)"
         }
     }
 
     var requestType: RequestMethodType {
         switch self {
-        case .home, .addressList, .addressDetail, .cart, .coupons, .orders, .brandList, .offersAvailable, .retailerLedger, .retailerPaymentHistory, .retailerStates, .retailerCities, .retailerProfile:
+        case .home, .addressList, .addressDetail, .cart, .coupons, .orders, .brandList, .offersAvailable, .retailerLedger, .retailerPaymentHistory, .retailerStates, .retailerCities, .retailerProfile, .paymentRequestsList:
             return .get
         case .cartClear:
             return .delete

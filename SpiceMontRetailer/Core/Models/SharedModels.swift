@@ -537,11 +537,17 @@ struct RetailerWidget: Decodable, Identifiable {
 }
 
 struct RetailerBannerItem: Decodable, Identifiable, Hashable {
-    var id: Int?
+    var idNum: Int?
     var image: String?
     var actionUrl: String?
     var description: String?
     var sortOrder: Int?
+
+    var id: String {
+        if let idNum = idNum { return "\(idNum)" }
+        if let img = image, !img.isEmpty { return img }
+        return UUID().uuidString
+    }
 
     enum CodingKeys: String, CodingKey {
         case id, image, description
@@ -551,7 +557,7 @@ struct RetailerBannerItem: Decodable, Identifiable, Hashable {
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        id = c.decodeIntLeniently(forKey: .id)
+        idNum = c.decodeIntLeniently(forKey: .id)
         image = c.decodeStringLeniently(forKey: .image)
         actionUrl = c.decodeStringLeniently(forKey: .actionUrl)
         description = c.decodeStringLeniently(forKey: .description)
@@ -2024,9 +2030,18 @@ struct RetailerLedgerAPISummary: Decodable, Hashable {
     var totalPending: String?
     var paymentModeWise: [String: String]?
 
-    var totalBilledDouble: Double { Double(totalBilled ?? "0") ?? 0 }
-    var totalPaidDouble: Double { Double(totalPaid ?? "0") ?? 0 }
-    var totalPendingDouble: Double { Double(totalPending ?? "0") ?? 0 }
+    var totalBilledDouble: Double {
+        let clean = (totalBilled ?? "0").replacingOccurrences(of: ",", with: "").trimmingCharacters(in: .whitespaces)
+        return Double(clean) ?? 0
+    }
+    var totalPaidDouble: Double {
+        let clean = (totalPaid ?? "0").replacingOccurrences(of: ",", with: "").trimmingCharacters(in: .whitespaces)
+        return Double(clean) ?? 0
+    }
+    var totalPendingDouble: Double {
+        let clean = (totalPending ?? "0").replacingOccurrences(of: ",", with: "").trimmingCharacters(in: .whitespaces)
+        return Double(clean) ?? 0
+    }
 
     enum CodingKeys: String, CodingKey {
         case totalBilled = "total_billed"
@@ -2771,6 +2786,135 @@ public struct RetailerCheckStatusData: Decodable {
         accountDetails = try? c.decodeIfPresent(RetailerAccountDetails.self, forKey: .accountDetails)
     }
 }
+
+// MARK: - Payment Request Models
+
+public struct PaymentRequestSubmitResponse: Decodable {
+    public var status: Bool?
+    public var message: String?
+    public var data: PaymentRequestSubmitData?
+
+    enum CodingKeys: String, CodingKey {
+        case status, message, data
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        status = c.decodeBoolLeniently(forKey: .status)
+        message = c.decodeStringLeniently(forKey: .message)
+        data = try? c.decodeIfPresent(PaymentRequestSubmitData.self, forKey: .data)
+    }
+}
+
+public struct PaymentRequestSubmitData: Decodable, Identifiable, Hashable {
+    public var id: Int?
+    public var amount: Double?
+    public var message: String?
+    public var attachment: String?
+    public var status: Int?
+    public var statusText: String?
+    public var statusColor: String?
+    public var adminRemark: String?
+    public var createdAt: String?
+    public var paymentMode: String?
+    public var referenceNumber: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, amount, message, attachment, status
+        case statusText = "status_text"
+        case statusColor = "status_color"
+        case adminRemark = "admin_remark"
+        case createdAt = "created_at"
+        case paymentMode = "payment_mode"
+        case referenceNumber = "reference_number"
+    }
+
+    public init(
+        id: Int? = nil,
+        amount: Double? = nil,
+        message: String? = nil,
+        attachment: String? = nil,
+        status: Int? = nil,
+        statusText: String? = nil,
+        statusColor: String? = nil,
+        adminRemark: String? = nil,
+        createdAt: String? = nil,
+        paymentMode: String? = nil,
+        referenceNumber: String? = nil
+    ) {
+        self.id = id
+        self.amount = amount
+        self.message = message
+        self.attachment = attachment
+        self.status = status
+        self.statusText = statusText
+        self.statusColor = statusColor
+        self.adminRemark = adminRemark
+        self.createdAt = createdAt
+        self.paymentMode = paymentMode
+        self.referenceNumber = referenceNumber
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = c.decodeIntLeniently(forKey: .id)
+        amount = try? c.decodeIfPresent(Double.self, forKey: .amount)
+        if amount == nil, let val = c.decodeIntLeniently(forKey: .amount) { amount = Double(val) }
+        message = c.decodeStringLeniently(forKey: .message)
+        attachment = c.decodeStringLeniently(forKey: .attachment)
+        status = c.decodeIntLeniently(forKey: .status)
+        statusText = c.decodeStringLeniently(forKey: .statusText)
+        statusColor = c.decodeStringLeniently(forKey: .statusColor)
+        adminRemark = c.decodeStringLeniently(forKey: .adminRemark)
+        createdAt = c.decodeStringLeniently(forKey: .createdAt)
+        paymentMode = c.decodeStringLeniently(forKey: .paymentMode)
+        referenceNumber = c.decodeStringLeniently(forKey: .referenceNumber)
+    }
+}
+
+public struct PaymentRequestListPageData: Decodable {
+    public var currentPage: Int?
+    public var data: [PaymentRequestSubmitData]?
+    public var perPage: Int?
+    public var total: Int?
+    public var lastPage: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case currentPage = "current_page"
+        case data
+        case perPage = "per_page"
+        case total
+        case lastPage = "last_page"
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        currentPage = c.decodeIntLeniently(forKey: .currentPage)
+        data = try? c.decodeIfPresent([PaymentRequestSubmitData].self, forKey: .data)
+        perPage = c.decodeIntLeniently(forKey: .perPage)
+        total = c.decodeIntLeniently(forKey: .total)
+        lastPage = c.decodeIntLeniently(forKey: .lastPage)
+    }
+}
+
+public struct PaymentRequestListResponse: Decodable {
+    public var status: Bool?
+    public var message: String?
+    public var data: PaymentRequestListPageData?
+
+    enum CodingKeys: String, CodingKey {
+        case status, message, data
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        status = c.decodeBoolLeniently(forKey: .status)
+        message = c.decodeStringLeniently(forKey: .message)
+        data = try? c.decodeIfPresent(PaymentRequestListPageData.self, forKey: .data)
+    }
+}
+
+
 
 
 

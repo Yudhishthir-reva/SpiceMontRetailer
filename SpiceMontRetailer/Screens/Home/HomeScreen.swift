@@ -12,6 +12,7 @@ struct HomeScreen: View {
     @StateObject private var viewModel = HomeViewModel()
     @ObservedObject private var cartManager = CartManager.shared
     @State private var showNotifications: Bool = false
+    @State private var selectedBanner: RetailerBannerItem? = nil
 
     private let defaults = UserDefaultManager.shared
     private let orderService = OrderServiceManager()
@@ -130,6 +131,12 @@ struct HomeScreen: View {
             .sheet(isPresented: $showNotifications) {
                 NavigationStack { NotificationScreen() }
             }
+            .sheet(item: $selectedBanner) { banner in
+                BannerDetailSheet(banner: banner)
+            }
+            .toast(isPresenting: $viewModel.isShowToast, duration: 3.0, offsetY: 10, alert: {
+                AlertToast(displayMode: .banner(.pop), type: .regular, title: viewModel.toastMessage)
+            }, onTap: nil, completion: nil)
             .onAppear {
                 loadLiveDashboard()
             }
@@ -214,6 +221,8 @@ struct HomeScreen: View {
                             .multilineTextAlignment(.leading)
                     }
                 }
+
+                Spacer()
             }
 
             // Badges Row
@@ -238,10 +247,13 @@ struct HomeScreen: View {
                             .background(Color(hex: "#F3F4F6"))
                             .cornerRadius(6)
                     }
+
+                    Spacer()
                 }
             }
         }
-        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
         .background(Color.white)
         .cornerRadius(16)
         .overlay(
@@ -538,25 +550,8 @@ struct HomeScreen: View {
 
     // MARK: - 6. Top Banners Section
     private func topBannersSection(banners: [RetailerBannerItem], title: String) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(title)
-                .font(.appFont(size: 15, weight: .heavy))
-                .foregroundColor(Color.spiceInk)
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    ForEach(banners) { banner in
-                        RemoteImage(url: banner.image, contentMode: .fill)
-                            .frame(width: 300, height: 140)
-                            .clipped()
-                            .cornerRadius(14)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 14)
-                                    .stroke(Color.spiceCardBorder.opacity(0.8), lineWidth: 1)
-                            )
-                    }
-                }
-            }
+        BannerCarouselSectionView(banners: banners, title: title) { banner in
+            selectedBanner = banner
         }
     }
 
@@ -771,41 +766,241 @@ struct HomeScreen: View {
             Spacer()
 
             Circle()
-                .fill(Color.spiceAmberLight)
-                .frame(width: 64, height: 64)
+                .fill(Color(hex: "#FDF0DC"))
+                .frame(width: 72, height: 72)
                 .overlay(
                     Image(systemName: "hourglass")
-                        .font(.appFont(size: 28, weight: .bold))
-                        .foregroundColor(Color.spiceAmber)
+                        .font(.system(size: 32, weight: .bold))
+                        .foregroundColor(Color(hex: "#A85B08"))
                 )
 
             SpiceStatusBadge(status: "PENDING_REVIEW")
 
             Text("Your Account is Under Review")
-                .font(.appFont(size: 18, weight: .heavy))
+                .font(.appFont(size: 19, weight: .heavy))
                 .foregroundColor(Color.spiceInk)
                 .multilineTextAlignment(.center)
 
-            Text(viewModel.accountPendingMessage.isEmpty ? "Your retailer registration has been submitted and is being reviewed by our team. You will be able to place orders once approved." : viewModel.accountPendingMessage)
-                .font(.appFont(size: 12.5, weight: .medium))
-                .foregroundColor(Color.spiceMuted)
-                .multilineTextAlignment(.center)
-                .lineSpacing(3)
-                .padding(.horizontal, 24)
+            VStack(spacing: 8) {
+                Text("Your registration has been submitted successfully!")
+                    .font(.appFont(size: 13.5, weight: .bold))
+                    .foregroundColor(Color.spiceInk)
+                    .multilineTextAlignment(.center)
 
-            SpiceOutlinedButton(title: "Contact Support", icon: "phone.fill", color: Color.spicePrimary, height: 42) {
-                if let url = URL(string: "tel://\(viewModel.customerSupportPhone)") {
-                    UIApplication.shared.open(url)
-                }
+                Text(viewModel.accountPendingMessage.isEmpty ? "Your details have been sent for review.\nYou will be notified once your account is approved by our team." : viewModel.accountPendingMessage)
+                    .font(.appFont(size: 13, weight: .medium))
+                    .foregroundColor(Color.spiceMuted)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(3)
             }
-            .frame(width: 200)
-            .padding(.top, 8)
+            .padding(.horizontal, 24)
+
+            VStack(spacing: 10) {
+                SpiceOutlinedButton(title: "Contact Support", icon: "phone.fill", color: Color.spicePrimary, height: 44) {
+                    let phone = viewModel.customerSupportPhone.isEmpty ? AppConfigManager.shared.customerSupportNumber : viewModel.customerSupportPhone
+                    if let url = URL(string: "tel://\(phone.isEmpty ? "18002004455" : phone)") {
+                        UIApplication.shared.open(url)
+                    }
+                }
+
+                Button {
+                    AppConfigManager.shared.recheckAccountApproval()
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 13, weight: .bold))
+                        Text("Check Approval Status")
+                            .font(.appFont(size: 13.5, weight: .heavy))
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+                    .background(Color.spicePrimary)
+                    .cornerRadius(10)
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    AppConfigManager.shared.performLogout()
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "rectangle.portrait.and.arrow.right")
+                            .font(.system(size: 13, weight: .bold))
+                        Text("Log Out")
+                            .font(.appFont(size: 13.5, weight: .heavy))
+                    }
+                    .foregroundColor(Color.spiceDue)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 42)
+                    .background(Color.white)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(Color.spiceDue.opacity(0.4), lineWidth: 1.2)
+                    )
+                    .cornerRadius(10)
+                }
+                .buttonStyle(.plain)
+            }
+            .frame(maxWidth: 260)
+            .padding(.top, 12)
 
             Spacer()
         }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.spiceBackground)
+    }
+}
+
+// MARK: - Banner Carousel Section View
+struct BannerCarouselSectionView: View {
+    let banners: [RetailerBannerItem]
+    let title: String
+    let onBannerTap: (RetailerBannerItem) -> Void
+
+    @State private var currentIndex: Int = 0
+    private let timer = Timer.publish(every: 4.0, on: .main, in: .common).autoconnect()
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .font(.appFont(size: 15, weight: .heavy))
+                .foregroundColor(Color.spiceInk)
+
+            if banners.count == 1, let banner = banners.first {
+                Button(action: {
+                    onBannerTap(banner)
+                }) {
+                    RemoteImage(url: banner.image, contentMode: .fill)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 145)
+                        .clipped()
+                        .cornerRadius(14)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14)
+                                .stroke(Color.spiceCardBorder.opacity(0.8), lineWidth: 1)
+                        )
+                }
+                .buttonStyle(.plain)
+            } else if banners.count > 1 {
+                VStack(spacing: 8) {
+                    TabView(selection: $currentIndex) {
+                        ForEach(Array(banners.enumerated()), id: \.offset) { index, banner in
+                            Button(action: {
+                                onBannerTap(banner)
+                            }) {
+                                RemoteImage(url: banner.image, contentMode: .fill)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 145)
+                                    .clipped()
+                                    .cornerRadius(14)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 14)
+                                            .stroke(Color.spiceCardBorder.opacity(0.8), lineWidth: 1)
+                                    )
+                            }
+                            .buttonStyle(.plain)
+                            .tag(index)
+                        }
+                    }
+                    .tabViewStyle(.page(indexDisplayMode: .never))
+                    .frame(height: 145)
+                    .onReceive(timer) { _ in
+                        guard banners.count > 1 else { return }
+                        withAnimation(.easeInOut(duration: 0.45)) {
+                            currentIndex = (currentIndex + 1) % banners.count
+                        }
+                    }
+
+                    // Indicator Dots
+                    HStack(spacing: 6) {
+                        ForEach(0..<banners.count, id: \.self) { idx in
+                            Capsule()
+                                .fill(idx == currentIndex ? Color.spicePrimary : Color.spiceCardBorder.opacity(0.8))
+                                .frame(width: idx == currentIndex ? 18 : 6, height: 6)
+                                .animation(.spring(response: 0.35, dampingFraction: 0.7), value: currentIndex)
+                                .onTapGesture {
+                                    withAnimation(.easeInOut(duration: 0.35)) {
+                                        currentIndex = idx
+                                    }
+                                }
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 2)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Banner Detail Sheet
+struct BannerDetailSheet: View {
+    let banner: RetailerBannerItem
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 14) {
+                    // Banner Image
+                    if let img = banner.image, !img.isEmpty {
+                        RemoteImage(url: img, contentMode: .fill)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 170)
+                            .clipped()
+                            .cornerRadius(14)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14)
+                                    .stroke(Color.spiceCardBorder.opacity(0.8), lineWidth: 1)
+                            )
+                    }
+
+                    // Banner Description
+                    if let desc = banner.description, !desc.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        Text(desc)
+                            .font(.appFont(size: 14, weight: .regular))
+                            .foregroundColor(Color.spiceInk)
+                            .lineSpacing(4)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    // Action URL button if present
+                    if let actionUrl = banner.actionUrl, !actionUrl.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        Button(action: {
+                            if let url = URL(string: actionUrl), UIApplication.shared.canOpenURL(url) {
+                                UIApplication.shared.open(url)
+                            }
+                        }) {
+                            HStack {
+                                Text("Explore Offer")
+                                    .font(.appFont(size: 14.5, weight: .heavy))
+                                Image(systemName: "arrow.right")
+                                    .font(.appFont(size: 13, weight: .bold))
+                            }
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 46)
+                            .background(
+                                LinearGradient(
+                                    colors: [Color.spicePrimary, Color.spicePrimaryDark],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .cornerRadius(12)
+                            .shadow(color: Color.spicePrimary.opacity(0.25), radius: 6, x: 0, y: 3)
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.top, 4)
+                    }
+                }
+                .padding(16)
+            }
+        }
+        .background(Color.white)
+        .presentationDetents([.fraction(0.48), .medium, .large])
+        .presentationDragIndicator(.visible)
     }
 }
 

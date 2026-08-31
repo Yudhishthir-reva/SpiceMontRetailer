@@ -12,7 +12,7 @@ struct OrdersScreen: View {
     @Environment(\.dismiss) private var dismiss
     @State private var searchText: String = ""
     @State private var selectedStatusFilter: String = "All Orders"
-    @State private var selectedDateRange: DateRange? = DateRange.today
+    @State private var selectedDateRange: DateRange? = nil
 
     @State private var allOrders: [Order] = []
     @State private var isLoading: Bool = false
@@ -90,6 +90,53 @@ struct OrdersScreen: View {
                                 .stroke(Color.spiceCardBorder, lineWidth: 1)
                         )
 
+                        // MARK: - Amber Date Notice Banner
+                        if let range = selectedDateRange, range.isActive {
+                            HStack(alignment: .center, spacing: 12) {
+                                Image(systemName: "calendar")
+                                    .font(.system(size: 20, weight: .semibold))
+                                    .foregroundColor(Color(hex: "#9C6212"))
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Showing \(range.displayString.lowercased())")
+                                        .font(.appFont(size: 13, weight: .heavy))
+                                        .foregroundColor(Color(hex: "#8C580E"))
+
+                                    Text("Your dashboard total covers every order, so it will be higher.")
+                                        .font(.appFont(size: 11.5, weight: .medium))
+                                        .foregroundColor(Color(hex: "#9C6212"))
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+
+                                Spacer()
+
+                                Button(action: {
+                                    selectedDateRange = nil
+                                    loadOrders()
+                                }) {
+                                    Text("All time")
+                                        .font(.appFont(size: 12.5, weight: .bold))
+                                        .foregroundColor(Color(hex: "#8C580E"))
+                                        .padding(.horizontal, 14)
+                                        .padding(.vertical, 7)
+                                        .background(Color.white)
+                                        .cornerRadius(8)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .stroke(Color(hex: "#E8C89A"), lineWidth: 1)
+                                        )
+                                }
+                                .buttonStyle(.plain)
+                            }
+                            .padding(14)
+                            .background(Color(hex: "#FEF4E6"))
+                            .cornerRadius(14)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14)
+                                    .stroke(Color(hex: "#FAD8A8"), lineWidth: 1)
+                            )
+                        }
+
                         // MARK: - Status Filter Chips
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 8) {
@@ -117,7 +164,7 @@ struct OrdersScreen: View {
 
                         // MARK: - Date Range Filter Chip & Clear All (Calendar Sheet)
                         HStack {
-                            SpiceDateRangeFilterChip(selectedRange: $selectedDateRange)
+                            SpiceDateRangeFilterChip(selectedRange: $selectedDateRange, placeholder: "Any Date")
 
                             Spacer()
 
@@ -129,7 +176,7 @@ struct OrdersScreen: View {
                                     loadOrders()
                                 }) {
                                     Text("Clear all")
-                                        .font(.appFont(size: 12, weight: .bold))
+                                        .font(.appFont(size: 12.5, weight: .bold))
                                         .foregroundColor(Color.spicePrimary)
                                 }
                             }
@@ -209,14 +256,12 @@ struct OrdersScreen: View {
     // MARK: - Order Card Component
     @ViewBuilder
     private func orderCardView(order: Order) -> some View {
-        let isAssigned = (order.status ?? "").lowercased() == "assigned"
-
         NavigationLink(destination: OrderDetailScreen(orderId: order.id, orderNumber: order.orderNumberFormatted)) {
-            VStack(alignment: .leading, spacing: 10) {
-                // Top Row: Order ID + Status
+            VStack(alignment: .leading, spacing: 8) {
+                // Top Row: Order ID + Status Badge
                 HStack {
                     Text(order.orderNumberFormatted)
-                        .font(.appFont(size: 14.5, weight: .heavy, design: .monospaced))
+                        .font(.appFont(size: 14.5, weight: .heavy))
                         .foregroundColor(Color.spiceInk)
 
                     Spacer()
@@ -224,65 +269,28 @@ struct OrdersScreen: View {
                     statusBadge(status: order.statusLabel)
                 }
 
-                // Middle Row: Date & Items Count
-                HStack {
+                // Bottom Row: Date · Amount
+                HStack(spacing: 6) {
                     Text(formatDate(order.orderDate ?? order.createdAt))
-                        .font(.appFont(size: 12, weight: .medium))
+                        .font(.appFont(size: 12.5, weight: .regular))
                         .foregroundColor(Color.spiceMuted)
 
-                    Spacer()
+                    Text("·")
+                        .font(.appFont(size: 12.5, weight: .bold))
+                        .foregroundColor(Color.spiceMuted)
 
-                    let count = order.items?.count ?? order.itemsCount ?? 0
-                    Text("\(count) items")
-                        .font(.appFont(size: 12, weight: .semibold))
+                    Text(formatOrderPrice(order))
+                        .font(.appFont(size: 13, weight: .heavy))
                         .foregroundColor(Color.spiceInk)
                 }
-
-                Divider().background(Color.spiceDivider).padding(.vertical, 2)
-
-                // Bottom Row: Total Amount & Track button / Chevron
-                HStack {
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text("Bill Amount")
-                            .font(.appFont(size: 10.5, weight: .medium))
-                            .foregroundColor(Color.spiceMuted)
-
-                        Text(order.totalPriceFormatted)
-                            .font(.appFont(size: 14.5, weight: .heavy, design: .monospaced))
-                            .foregroundColor(Color.spiceInk)
-                    }
-
-                    Spacer()
-
-                    if isAssigned {
-                        NavigationLink(destination: DeliveryTrackingScreen(orderId: order.id, orderNumber: order.orderNumberFormatted)) {
-                            Text("Track")
-                                .font(.appFont(size: 12, weight: .heavy))
-                                .foregroundColor(Color.spicePrimary)
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 6)
-                                .background(Color.spicePrimaryLight)
-                                .cornerRadius(8)
-                        }
-                        .buttonStyle(.plain)
-                    } else {
-                        HStack(spacing: 4) {
-                            Text("Details")
-                                .font(.appFont(size: 12, weight: .bold))
-                                .foregroundColor(Color.spicePrimary)
-                            Image(systemName: "chevron.right")
-                                .font(.appFont(size: 10, weight: .bold))
-                                .foregroundColor(Color.spicePrimary)
-                        }
-                    }
-                }
             }
-            .padding(14)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
             .background(Color.white)
             .cornerRadius(16)
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
-                    .stroke(Color.spiceCardBorder, lineWidth: 1)
+                    .stroke(Color.spiceCardBorder.opacity(0.8), lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
@@ -296,7 +304,7 @@ struct OrdersScreen: View {
         let badgeColor: (bg: Color, text: Color) = {
             let lower = cleanStatus.lowercased()
             if lower.contains("pending") {
-                return (Color(hex: "#FEF4E6"), Color(hex: "#B87314"))
+                return (Color(hex: "#FDF0DC"), Color(hex: "#A85B08"))
             } else if lower.contains("assign") {
                 return (Color(hex: "#E8F0FE"), Color(hex: "#1A73E8"))
             } else if lower.contains("deliver") {
@@ -309,25 +317,69 @@ struct OrdersScreen: View {
         }()
 
         Text(cleanStatus.uppercased())
-            .font(.appFont(size: 10, weight: .heavy, design: .monospaced))
+            .font(.appFont(size: 10.5, weight: .heavy))
             .foregroundColor(badgeColor.text)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3.5)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 4)
             .background(badgeColor.bg)
-            .cornerRadius(5)
+            .cornerRadius(6)
+    }
+
+    // MARK: - Format Price Helper
+    private func formatOrderPrice(_ order: Order) -> String {
+        let raw = (order.total?.isEmpty == false ? order.total : order.subtotal) ?? "0"
+        let cleanRaw = raw.replacingOccurrences(of: "₹", with: "").replacingOccurrences(of: ",", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
+        if let doubleVal = Double(cleanRaw) {
+            let formatter = NumberFormatter()
+            formatter.numberStyle = .currency
+            formatter.locale = Locale(identifier: "en_IN")
+            formatter.currencySymbol = "₹"
+            formatter.minimumFractionDigits = 2
+            formatter.maximumFractionDigits = 2
+            return formatter.string(from: NSNumber(value: doubleVal)) ?? "₹\(cleanRaw)"
+        }
+        return "₹\(cleanRaw)"
     }
 
     // MARK: - Date Formatter Helper
     private func formatDate(_ raw: String?) -> String {
         guard let raw = raw, !raw.isEmpty else { return "" }
-        let iso = DateFormatter()
-        iso.dateFormat = "yyyy-MM-dd"
-        if let d = iso.date(from: String(raw.prefix(10))) {
-            let out = DateFormatter()
-            out.dateFormat = "d MMM yyyy"
-            return out.string(from: d)
+        let cleanRaw = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        let formatters = [
+            "yyyy-MM-dd HH:mm:ss",
+            "yyyy-MM-dd'T'HH:mm:ss.SSSZ",
+            "yyyy-MM-dd'T'HH:mm:ssZ",
+            "yyyy-MM-dd",
+            "dd-MM-yyyy",
+            "dd/MM/yyyy"
+        ]
+
+        for format in formatters {
+            let df = DateFormatter()
+            df.dateFormat = format
+            df.locale = Locale(identifier: "en_US_POSIX")
+            if let date = df.date(from: cleanRaw) {
+                let out = DateFormatter()
+                out.dateFormat = "d MMM yyyy"
+                out.locale = Locale(identifier: "en_US_POSIX")
+                return out.string(from: date)
+            }
         }
-        return raw
+
+        if cleanRaw.count >= 10 {
+            let prefix = String(cleanRaw.prefix(10))
+            let df = DateFormatter()
+            df.dateFormat = "yyyy-MM-dd"
+            df.locale = Locale(identifier: "en_US_POSIX")
+            if let date = df.date(from: prefix) {
+                let out = DateFormatter()
+                out.dateFormat = "d MMM yyyy"
+                out.locale = Locale(identifier: "en_US_POSIX")
+                return out.string(from: date)
+            }
+        }
+
+        return cleanRaw
     }
 
     // MARK: - Load Orders

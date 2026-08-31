@@ -13,24 +13,17 @@ struct LedgerScreen: View {
     @State private var searchText: String = ""
     @State private var selectedPaymentFilter: String = "All Payments"
     @State private var selectedOrderStatusFilter: String = "All Orders"
-    @State private var selectedDateRange: DateRange? = DateRange.today
+    @State private var selectedDateRange: DateRange? = nil
     @State private var expandedOrderIds: Set<Int> = []
 
     private let paymentFilters = ["All Payments", "Pending", "Partial", "Paid"]
     private let orderStatusFilters = ["All Orders", "Pending", "Assigned", "Out for Delivery"]
 
     var filterSubtitleText: String {
-        var parts: [String] = []
         if let range = selectedDateRange, range.isActive {
-            parts.append(range.displayString)
+            return range.displayString
         }
-        if selectedOrderStatusFilter != "All Orders" {
-            parts.append("\(selectedOrderStatusFilter.lowercased()) orders")
-        }
-        if selectedPaymentFilter != "All Payments" {
-            parts.append("\(selectedPaymentFilter.lowercased()) only")
-        }
-        return parts.isEmpty ? "all orders" : parts.joined(separator: " · ")
+        return "All time"
     }
 
     var filteredOrders: [RetailerLedgerOrderItem] {
@@ -81,6 +74,47 @@ struct LedgerScreen: View {
                         // MARK: - Top Outstanding Summary Pink Card
                         outstandingSummaryCard
 
+                        // MARK: - Make Payment Banner
+                        if (viewModel.summary?.totalPendingDouble ?? 0) > 0 {
+                            NavigationLink(destination: MakePaymentScreen(outstandingAmount: viewModel.summary?.totalPending ?? "0.00")) {
+                                HStack(spacing: 12) {
+                                    ZStack {
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .fill(Color.white.opacity(0.2))
+                                            .frame(width: 40, height: 40)
+
+                                        Image(systemName: "wallet.pass.fill")
+                                            .font(.system(size: 18, weight: .bold))
+                                            .foregroundColor(.white)
+                                    }
+
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("Make Payment")
+                                            .font(.appFont(size: 15, weight: .heavy))
+                                            .foregroundColor(.white)
+
+                                        let pendingText = (viewModel.summary?.totalPending?.isEmpty == false && viewModel.summary?.totalPending != "0.00")
+                                            ? "₹\(viewModel.summary!.totalPending!)"
+                                            : "dues"
+                                        Text("Settle \(pendingText) by UPI, QR or bank transfer")
+                                            .font(.appFont(size: 11.5, weight: .medium))
+                                            .foregroundColor(.white.opacity(0.9))
+                                    }
+
+                                    Spacer()
+
+                                    Image(systemName: "arrow.right")
+                                        .font(.system(size: 16, weight: .bold))
+                                        .foregroundColor(.white)
+                                }
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 14)
+                                .background(Color.spicePrimary)
+                                .cornerRadius(14)
+                            }
+                            .buttonStyle(.plain)
+                        }
+
                         // MARK: - Search Bar
                         HStack(spacing: 10) {
                             Image(systemName: "magnifyingglass")
@@ -100,6 +134,53 @@ struct LedgerScreen: View {
                             RoundedRectangle(cornerRadius: 12)
                                 .stroke(Color.spiceCardBorder, lineWidth: 1)
                         )
+
+                        // MARK: - Amber Date Active Notice Banner
+                        if let range = selectedDateRange, range.isActive {
+                            HStack(alignment: .center, spacing: 12) {
+                                Image(systemName: "calendar")
+                                    .font(.system(size: 20, weight: .semibold))
+                                    .foregroundColor(Color(hex: "#9C6212"))
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Showing \(range.displayString.lowercased())")
+                                        .font(.appFont(size: 13, weight: .heavy))
+                                        .foregroundColor(Color(hex: "#8C580E"))
+
+                                    Text("Your dashboard total covers every order, so it will be higher.")
+                                        .font(.appFont(size: 11.5, weight: .medium))
+                                        .foregroundColor(Color(hex: "#9C6212"))
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+
+                                Spacer()
+
+                                Button(action: {
+                                    selectedDateRange = nil
+                                    viewModel.loadAll(range: nil)
+                                }) {
+                                    Text("All time")
+                                        .font(.appFont(size: 12.5, weight: .bold))
+                                        .foregroundColor(Color(hex: "#8C580E"))
+                                        .padding(.horizontal, 14)
+                                        .padding(.vertical, 7)
+                                        .background(Color.white)
+                                        .cornerRadius(8)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .stroke(Color(hex: "#E8C89A"), lineWidth: 1)
+                                        )
+                                }
+                                .buttonStyle(.plain)
+                            }
+                            .padding(14)
+                            .background(Color(hex: "#FEF4E6"))
+                            .cornerRadius(14)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14)
+                                    .stroke(Color(hex: "#FAD8A8"), lineWidth: 1)
+                            )
+                        }
 
                         // MARK: - Filter Row 1: Payment Status
                         ScrollView(.horizontal, showsIndicators: false) {
@@ -151,21 +232,24 @@ struct LedgerScreen: View {
                             .padding(.vertical, 1)
                         }
 
-                        // MARK: - Filter Row 3: Date & Clear All (Calendar Sheet)
+                        // MARK: - Filter Row 3: Date & Clear All
                         HStack {
-                            SpiceDateRangeFilterChip(selectedRange: $selectedDateRange)
+                            SpiceDateRangeFilterChip(selectedRange: $selectedDateRange, placeholder: "Any Date")
 
                             Spacer()
 
-                            Button(action: {
-                                selectedPaymentFilter = "All Payments"
-                                selectedOrderStatusFilter = "All Orders"
-                                selectedDateRange = DateRange.today
-                                searchText = ""
-                            }) {
-                                Text("Clear all")
-                                    .font(.appFont(size: 12.5, weight: .bold))
-                                    .foregroundColor(Color.spicePrimary)
+                            if selectedDateRange != nil || selectedPaymentFilter != "All Payments" || selectedOrderStatusFilter != "All Orders" || !searchText.isEmpty {
+                                Button(action: {
+                                    selectedPaymentFilter = "All Payments"
+                                    selectedOrderStatusFilter = "All Orders"
+                                    selectedDateRange = nil
+                                    searchText = ""
+                                    viewModel.loadAll(range: nil)
+                                }) {
+                                    Text("Clear all")
+                                        .font(.appFont(size: 12.5, weight: .bold))
+                                        .foregroundColor(Color.spicePrimary)
+                                }
                             }
                         }
 
@@ -183,7 +267,7 @@ struct LedgerScreen: View {
                                     message: "Great news! You have cleared all payments and have zero pending dues.",
                                     buttonTitle: "Refresh"
                                 ) {
-                                    viewModel.loadAll()
+                                    viewModel.loadAll(range: selectedDateRange)
                                 }
                                 .padding(.top, 24)
                             } else {
@@ -192,7 +276,7 @@ struct LedgerScreen: View {
                                     message: "No orders match your filter criteria.",
                                     buttonTitle: "Refresh"
                                 ) {
-                                    viewModel.loadAll()
+                                    viewModel.loadAll(range: selectedDateRange)
                                 }
                                 .padding(.top, 24)
                             }
@@ -210,7 +294,7 @@ struct LedgerScreen: View {
                     .padding(.top, 10)
                 }
                 .refreshable {
-                    viewModel.loadAll()
+                    viewModel.loadAll(range: selectedDateRange)
                 }
             }
         }
@@ -221,7 +305,8 @@ struct LedgerScreen: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: {
-                    viewModel.loadAll()
+                    viewModel.loadAll(range: selectedDateRange)
+                    AppConfigManager.shared.checkStatus()
                 }) {
                     Text("Refresh")
                         .font(.appFont(size: 13.5, weight: .heavy))
@@ -230,7 +315,11 @@ struct LedgerScreen: View {
             }
         }
         .onAppear {
-            viewModel.loadAll()
+            viewModel.loadAll(range: selectedDateRange)
+            AppConfigManager.shared.checkStatus()
+        }
+        .onChange(of: selectedDateRange) { _, newRange in
+            viewModel.loadAll(range: newRange)
         }
         .toast(isPresenting: $viewModel.isShowToast, duration: 2.0, offsetY: 10, alert: {
             AlertToast(displayMode: .banner(.pop), type: .regular, title: viewModel.toastMessage)
@@ -315,34 +404,56 @@ struct LedgerScreen: View {
     @ViewBuilder
     private func ledgerOrderCardView(order: RetailerLedgerOrderItem) -> some View {
         let orderNum = order.orderNo ?? "#\(order.id)"
-        let statusText = (order.paymentStatusText ?? "PENDING").uppercased()
-        let isPaid = statusText == "PAID"
+        let orderStatus = (order.orderStatusText ?? "PENDING").uppercased()
+        let paymentStatus = (order.paymentStatusText ?? "PENDING").uppercased()
+        let isPaymentPaid = paymentStatus == "PAID"
+        let isOrderDelivered = orderStatus == "DELIVERED"
         let isExpanded = expandedOrderIds.contains(order.id)
         let payments = order.paymentHistory ?? []
         let hasPayments = !payments.isEmpty || (order.paidAmount ?? 0) > 0
 
         VStack(alignment: .leading, spacing: 10) {
-            // 1. Top Row: Order # + Status Badge
-            HStack {
+            // 1. Order Number & Date
+            VStack(alignment: .leading, spacing: 2) {
                 Text(orderNum)
                     .font(.appFont(size: 14.5, weight: .heavy, design: .monospaced))
                     .foregroundColor(Color.spiceInk)
 
-                Spacer()
-
-                Text(statusText)
-                    .font(.appFont(size: 10, weight: .heavy, design: .monospaced))
-                    .foregroundColor(isPaid ? Color(hex: "#167E46") : Color(hex: "#B87314"))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3.5)
-                    .background(isPaid ? Color(hex: "#E8F8EE") : Color(hex: "#FEF4E6"))
-                    .cornerRadius(5)
+                Text(formatDate(order.orderDate))
+                    .font(.appFont(size: 12, weight: .medium))
+                    .foregroundColor(Color.spiceMuted)
             }
 
-            // 2. Subheader: Date · Order Status · Payment Mode
-            Text(orderSubheader(order: order))
-                .font(.appFont(size: 12, weight: .medium))
-                .foregroundColor(Color.spiceMuted)
+            // 2. Dual Status Badges (Order Status & Payment Status)
+            HStack(spacing: 8) {
+                // Order Status Badge
+                HStack(spacing: 4) {
+                    Image(systemName: "box.truck.fill")
+                        .font(.system(size: 10, weight: .bold))
+                    Text("ORDER \(orderStatus)")
+                        .font(.appFont(size: 9.5, weight: .heavy))
+                }
+                .foregroundColor(isOrderDelivered ? Color(hex: "#167E46") : Color(hex: "#B87314"))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(isOrderDelivered ? Color(hex: "#E8F8EE") : Color(hex: "#FEF4E6"))
+                .cornerRadius(6)
+
+                // Payment Status Badge
+                HStack(spacing: 4) {
+                    Image(systemName: "creditcard.fill")
+                        .font(.system(size: 10, weight: .bold))
+                    Text("PAYMENT \(paymentStatus)")
+                        .font(.appFont(size: 9.5, weight: .heavy))
+                }
+                .foregroundColor(isPaymentPaid ? Color(hex: "#167E46") : Color(hex: "#C8322B"))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(isPaymentPaid ? Color(hex: "#E8F8EE") : Color(hex: "#FEECEB"))
+                .cornerRadius(6)
+
+                Spacer()
+            }
 
             Divider().background(Color.spiceDivider)
 
@@ -501,10 +612,16 @@ struct LedgerScreen: View {
 
     // MARK: - Date Formatter Helper
     private func formatDate(_ raw: String?) -> String {
-        guard let raw = raw, !raw.isEmpty else { return "24 Aug 2026" }
+        guard let raw = raw, !raw.isEmpty else { return "" }
         let iso = DateFormatter()
         iso.dateFormat = "yyyy-MM-dd"
         if let d = iso.date(from: String(raw.prefix(10))) {
+            let cal = Calendar.current
+            if cal.isDateInToday(d) {
+                return "Today"
+            } else if cal.isDateInYesterday(d) {
+                return "Yesterday"
+            }
             let out = DateFormatter()
             out.dateFormat = "d MMM yyyy"
             return out.string(from: d)
@@ -526,16 +643,17 @@ class LedgerViewModel: ObservableObject {
     private let service = OrderServiceManager()
     private var cancellables = Set<AnyCancellable>()
 
-    func loadAll() {
-        loadLedgerOrders()
-        loadPaymentHistory()
+    func loadAll(range: DateRange? = nil) {
+        let (startDate, endDate) = formattedDates(from: range)
+        loadLedgerOrders(startDate: startDate, endDate: endDate)
+        loadPaymentHistory(startDate: startDate, endDate: endDate)
     }
 
-    func loadLedgerOrders() {
+    func loadLedgerOrders(startDate: String? = nil, endDate: String? = nil) {
         isLoading = true
         let headers = UserDefaultManager.shared.authHeader
 
-        service.fetchRetailerLedger(page: 1, perPage: 15, headers: headers)
+        service.fetchRetailerLedger(page: 1, perPage: 15, startDate: startDate, endDate: endDate, headers: headers)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] completion in
                 self?.isLoading = false
@@ -551,10 +669,10 @@ class LedgerViewModel: ObservableObject {
             .store(in: &cancellables)
     }
 
-    func loadPaymentHistory() {
+    func loadPaymentHistory(startDate: String? = nil, endDate: String? = nil) {
         let headers = UserDefaultManager.shared.authHeader
 
-        service.fetchRetailerPaymentHistory(page: 1, perPage: 15, headers: headers)
+        service.fetchRetailerPaymentHistory(page: 1, perPage: 15, startDate: startDate, endDate: endDate, headers: headers)
             .receive(on: DispatchQueue.main)
             .sink { _ in } receiveValue: { [weak self] response in
                 if response.status == true {
@@ -563,6 +681,13 @@ class LedgerViewModel: ObservableObject {
                 }
             }
             .store(in: &cancellables)
+    }
+
+    private func formattedDates(from range: DateRange?) -> (startDate: String?, endDate: String?) {
+        guard let range = range, range.isActive else { return (nil, nil) }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return (formatter.string(from: range.startDate), formatter.string(from: range.endDate))
     }
 }
 

@@ -66,6 +66,7 @@
 		C58CD910A303B200E0038A272 /* LedgerScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD900A303B200E0038A272 /* LedgerScreen.swift */; };
 		C58CD910B303B200E0038A272 /* SalesmanScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD900B303B200E0038A272 /* SalesmanScreen.swift */; };
 		C58CD9206303B200E0038A272 /* SchemePickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58CD9306303B200E0038A272 /* SchemePickerSheet.swift */; };
+		C59C00943045621800A44298 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = C59C00933045621800A44298 /* GoogleService-Info.plist */; };
 		C5F10F6A303D801100525CC1 /* PaymentsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5F10F69303D801100525CC1 /* PaymentsScreen.swift */; };
 		C5F10F6C303D922900525CC1 /* ProductDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5F10F6B303D922900525CC1 /* ProductDetailViewModel.swift */; };
 		C5F10F6E303D950000525CC1 /* PackSizeSelectionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5F10F6D303D950000525CC1 /* PackSizeSelectionSheet.swift */; };
@@ -82,6 +83,12 @@
 		C5F10F86303D9A0000525CC1 /* AppConfigManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5F10F85303D9A0000525CC1 /* AppConfigManager.swift */; };
 		C5F10F88303D9B0000525CC1 /* AppStatusDialogs.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5F10F87303D9B0000525CC1 /* AppStatusDialogs.swift */; };
 		C5F10F8A303D9C0000525CC1 /* AudioRemarkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5F10F89303D9C0000525CC1 /* AudioRemarkManager.swift */; };
+		C5F10F8C303D9D0000525CC1 /* QRCodeGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5F10F8B303D9D0000525CC1 /* QRCodeGenerator.swift */; };
+		C5F10F8E303D9E0000525CC1 /* PaymentRequestManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5F10F8D303D9E0000525CC1 /* PaymentRequestManager.swift */; };
+		C5F10F90303D9F0000525CC1 /* MakePaymentScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5F10F8F303D9F0000525CC1 /* MakePaymentScreen.swift */; };
+		C5F10F92303DA00000525CC1 /* PaymentRequestSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5F10F91303DA00000525CC1 /* PaymentRequestSheets.swift */; };
+		C5F10F94303DA10000525CC1 /* AccountUnderReviewOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5F10F93303DA10000525CC1 /* AccountUnderReviewOverlayView.swift */; };
+		C5F10F96303DA20000525CC1 /* UPIPaymentManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5F10F95303DA20000525CC1 /* UPIPaymentManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -146,6 +153,8 @@
 		C58CD900A303B200E0038A272 /* LedgerScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LedgerScreen.swift; sourceTree = "<group>"; };
 		C58CD900B303B200E0038A272 /* SalesmanScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SalesmanScreen.swift; sourceTree = "<group>"; };
 		C58CD9306303B200E0038A272 /* SchemePickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemePickerSheet.swift; sourceTree = "<group>"; };
+		C59C009230455C9B00A44298 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		C59C00933045621800A44298 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		C5F10F69303D801100525CC1 /* PaymentsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentsScreen.swift; sourceTree = "<group>"; };
 		C5F10F6B303D922900525CC1 /* ProductDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductDetailViewModel.swift; sourceTree = "<group>"; };
 		C5F10F6D303D950000525CC1 /* PackSizeSelectionSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackSizeSelectionSheet.swift; sourceTree = "<group>"; };
@@ -162,6 +171,12 @@
 		C5F10F85303D9A0000525CC1 /* AppConfigManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfigManager.swift; sourceTree = "<group>"; };
 		C5F10F87303D9B0000525CC1 /* AppStatusDialogs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStatusDialogs.swift; sourceTree = "<group>"; };
 		C5F10F89303D9C0000525CC1 /* AudioRemarkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRemarkManager.swift; sourceTree = "<group>"; };
+		C5F10F8B303D9D0000525CC1 /* QRCodeGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRCodeGenerator.swift; sourceTree = "<group>"; };
+		C5F10F8D303D9E0000525CC1 /* PaymentRequestManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentRequestManager.swift; sourceTree = "<group>"; };
+		C5F10F8F303D9F0000525CC1 /* MakePaymentScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MakePaymentScreen.swift; sourceTree = "<group>"; };
+		C5F10F91303DA00000525CC1 /* PaymentRequestSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentRequestSheets.swift; sourceTree = "<group>"; };
+		C5F10F93303DA10000525CC1 /* AccountUnderReviewOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountUnderReviewOverlayView.swift; sourceTree = "<group>"; };
+		C5F10F95303DA20000525CC1 /* UPIPaymentManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UPIPaymentManager.swift; sourceTree = "<group>"; };
 		CB5697D51143704000A868C9 /* Pods_SpiceMontRetailer.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SpiceMontRetailer.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -238,6 +253,7 @@
 				C5F10F85303D9A0000525CC1 /* AppConfigManager.swift */,
 				C5F10F87303D9B0000525CC1 /* AppStatusDialogs.swift */,
 				C5F10F89303D9C0000525CC1 /* AudioRemarkManager.swift */,
+				C5F10F8D303D9E0000525CC1 /* PaymentRequestManager.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -265,6 +281,8 @@
 				C58CCFF0303B14C70038A272 /* SpiceBackdrops.swift */,
 				C58CCFF1303B14C70038A272 /* SpiceDecorView.swift */,
 				C58CCFF2303B14C70038A272 /* SpiceIllustrations.swift */,
+				C5F10F8B303D9D0000525CC1 /* QRCodeGenerator.swift */,
+				C5F10F95303DA20000525CC1 /* UPIPaymentManager.swift */,
 			);
 			path = Utility;
 			sourceTree = "<group>";
@@ -281,6 +299,8 @@
 				C58CCFF5303B14C70038A272 /* Assets.xcassets */,
 				C5F10F83303D990000525CC1 /* LaunchScreen.storyboard */,
 				C58CCFF6303B14C70038A272 /* SpiceMontRetailerApp.swift */,
+				C59C009230455C9B00A44298 /* Info.plist */,
+				C59C00933045621800A44298 /* GoogleService-Info.plist */,
 			);
 			path = SpiceMontRetailer;
 			sourceTree = "<group>";
@@ -329,6 +349,9 @@
 				C58CD900A303B200E0038A272 /* LedgerScreen.swift */,
 				C58CD900B303B200E0038A272 /* SalesmanScreen.swift */,
 				C58CD01A303B200E0038A272 /* AccountScreen.swift */,
+				C5F10F8F303D9F0000525CC1 /* MakePaymentScreen.swift */,
+				C5F10F91303DA00000525CC1 /* PaymentRequestSheets.swift */,
+				C5F10F93303DA10000525CC1 /* AccountUnderReviewOverlayView.swift */,
 			);
 			path = Account;
 			sourceTree = "<group>";
@@ -415,13 +438,12 @@
 			path = Models;
 			sourceTree = "<group>";
 		};
-		E6075D42B994DD608F6108E1 /* Pods */ = {
+		C5F10F75303D980000525CC1 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				B54250F54D02D226B0533270 /* Pods-SpiceMontRetailer.debug.xcconfig */,
-				37B56382C6A46F498C5850CC /* Pods-SpiceMontRetailer.release.xcconfig */,
+				C5F10F76303D980000525CC1 /* Fonts */,
 			);
-			path = Pods;
+			path = Resources;
 			sourceTree = "<group>";
 		};
 		C5F10F76303D980000525CC1 /* Fonts */ = {
@@ -437,12 +459,13 @@
 			path = Fonts;
 			sourceTree = "<group>";
 		};
-		C5F10F75303D980000525CC1 /* Resources */ = {
+		E6075D42B994DD608F6108E1 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				C5F10F76303D980000525CC1 /* Fonts */,
+				B54250F54D02D226B0533270 /* Pods-SpiceMontRetailer.debug.xcconfig */,
+				37B56382C6A46F498C5850CC /* Pods-SpiceMontRetailer.release.xcconfig */,
 			);
-			path = Resources;
+			path = Pods;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -507,6 +530,7 @@
 			files = (
 				C58CD00E303B14C70038A272 /* Assets.xcassets in Resources */,
 				C5F10F78303D980000525CC1 /* DMSans-Regular.ttf in Resources */,
+				C59C00943045621800A44298 /* GoogleService-Info.plist in Resources */,
 				C5F10F7A303D980000525CC1 /* DMSans-Medium.ttf in Resources */,
 				C5F10F7C303D980000525CC1 /* DMSans-Bold.ttf in Resources */,
 				C5F10F7E303D980000525CC1 /* DMSans-Italic.ttf in Resources */,
@@ -570,6 +594,12 @@
 				C5F10F86303D9A0000525CC1 /* AppConfigManager.swift in Sources */,
 				C5F10F88303D9B0000525CC1 /* AppStatusDialogs.swift in Sources */,
 				C5F10F8A303D9C0000525CC1 /* AudioRemarkManager.swift in Sources */,
+				C5F10F8C303D9D0000525CC1 /* QRCodeGenerator.swift in Sources */,
+				C5F10F8E303D9E0000525CC1 /* PaymentRequestManager.swift in Sources */,
+				C5F10F90303D9F0000525CC1 /* MakePaymentScreen.swift in Sources */,
+				C5F10F92303DA00000525CC1 /* PaymentRequestSheets.swift in Sources */,
+				C5F10F94303DA10000525CC1 /* AccountUnderReviewOverlayView.swift in Sources */,
+				C5F10F96303DA20000525CC1 /* UPIPaymentManager.swift in Sources */,
 				C58CCFFB303B14C70038A272 /* RequestConstant.swift in Sources */,
 				C5F10F6A303D801100525CC1 /* PaymentsScreen.swift in Sources */,
 				C58CCFFC303B14C70038A272 /* APIRouter.swift in Sources */,
@@ -752,7 +782,9 @@
 				DEVELOPMENT_TEAM = TP9YK56DA7;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SpiceMontRetailer/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Spice Monk Retailer";
+				INFOPLIST_KEY_LSApplicationQueriesSchemes = "tez gpay phonepe paytmmp paytm credpay cred bhim amazonpay mobikwik upi moneyview navi";
 				INFOPLIST_KEY_NSCameraUsageDescription = "We need camera access to take photos of KYC documents and shop profile.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "We need your shop GPS location to verify delivery address and dispatch orders accurately.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "We need access to your microphone to record voice instructions and audio notes for your orders.";
@@ -761,7 +793,6 @@
 				INFOPLIST_KEY_UIAppFonts = "DMSans-Regular.ttf DMSans-Medium.ttf DMSans-Bold.ttf DMSans-Italic.ttf DMSans-BoldItalic.ttf DMSans-Variable.ttf";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = NO;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
@@ -772,7 +803,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.spicemonkRetailer;
+				PRODUCT_BUNDLE_IDENTIFIER = com.SpiceMonkRetailer.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -799,7 +830,9 @@
 				DEVELOPMENT_TEAM = TP9YK56DA7;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SpiceMontRetailer/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Spice Monk Retailer";
+				INFOPLIST_KEY_LSApplicationQueriesSchemes = "tez gpay phonepe paytmmp paytm credpay cred bhim amazonpay mobikwik upi moneyview navi";
 				INFOPLIST_KEY_NSCameraUsageDescription = "We need camera access to take photos of KYC documents and shop profile.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "We need your shop GPS location to verify delivery address and dispatch orders accurately.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "We need access to your microphone to record voice instructions and audio notes for your orders.";
@@ -808,7 +841,6 @@
 				INFOPLIST_KEY_UIAppFonts = "DMSans-Regular.ttf DMSans-Medium.ttf DMSans-Bold.ttf DMSans-Italic.ttf DMSans-BoldItalic.ttf DMSans-Variable.ttf";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = NO;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
@@ -819,7 +851,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.spicemonkRetailer;
+				PRODUCT_BUNDLE_IDENTIFIER = com.SpiceMonkRetailer.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";

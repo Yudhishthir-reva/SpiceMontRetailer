@@ -85,17 +85,55 @@ class OrderServiceManager {
     func fetchRetailerLedger(
         page: Int = 1,
         perPage: Int = 15,
+        startDate: String? = nil,
+        endDate: String? = nil,
         headers: RequestConstants.Header
     ) -> AnyPublisher<RetailerLedgerResponse, Error> {
-        networkService.request(APIRouter.retailerLedger(page: page, perPage: perPage), params: [:] as [String: Any], headers: headers)
+        var params: [String: Any] = [:]
+        if let startDate = startDate, !startDate.isEmpty {
+            params["start_date"] = startDate
+        }
+        if let endDate = endDate, !endDate.isEmpty {
+            params["end_date"] = endDate
+        }
+        return networkService.request(APIRouter.retailerLedger(page: page, perPage: perPage), params: params, headers: headers)
     }
 
     func fetchRetailerPaymentHistory(
         page: Int = 1,
         perPage: Int = 15,
+        startDate: String? = nil,
+        endDate: String? = nil,
         headers: RequestConstants.Header
     ) -> AnyPublisher<RetailerPaymentHistoryListResponse, Error> {
-        networkService.request(APIRouter.retailerPaymentHistory(page: page, perPage: perPage), params: [:] as [String: Any], headers: headers)
+        var params: [String: Any] = [:]
+        if let startDate = startDate, !startDate.isEmpty {
+            params["start_date"] = startDate
+        }
+        if let endDate = endDate, !endDate.isEmpty {
+            params["end_date"] = endDate
+        }
+        return networkService.request(APIRouter.retailerPaymentHistory(page: page, perPage: perPage), params: params, headers: headers)
+    }
+
+    func submitPaymentRequest(
+        amount: Double,
+        message: String,
+        headers: RequestConstants.Header
+    ) -> AnyPublisher<PaymentRequestSubmitResponse, Error> {
+        let params: [String: Any] = [
+            "amount": amount,
+            "message": message
+        ]
+        return networkService.request(APIRouter.submitPaymentRequest, params: params, headers: headers)
+    }
+
+    func fetchPaymentRequests(
+        page: Int = 1,
+        perPage: Int = 20,
+        headers: RequestConstants.Header
+    ) -> AnyPublisher<PaymentRequestListResponse, Error> {
+        networkService.request(APIRouter.paymentRequestsList(page: page, perPage: perPage), params: [:] as [String: Any], headers: headers)
     }
 }
 

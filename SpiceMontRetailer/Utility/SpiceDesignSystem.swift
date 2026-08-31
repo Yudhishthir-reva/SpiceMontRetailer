@@ -591,12 +591,32 @@ public struct DateRange: Equatable, Hashable {
 
     public var displayString: String {
         guard let s = start else { return "All time" }
-        let formatter = DateFormatter()
-        formatter.dateFormat = "d MMM yyyy"
-        if let e = end, !Calendar.current.isDate(s, inSameDayAs: e) {
-            return "\(formatter.string(from: s)) → \(formatter.string(from: e))"
+        let cal = Calendar.current
+        if let e = end, !cal.isDate(s, inSameDayAs: e) {
+            let startCal = cal.dateComponents([.year, .month, .day], from: s)
+            let endCal = cal.dateComponents([.year, .month, .day], from: e)
+            let monthFormatter = DateFormatter()
+            monthFormatter.dateFormat = "MMM"
+
+            if startCal.year == endCal.year && startCal.month == endCal.month {
+                return "\(startCal.day ?? 1) - \(endCal.day ?? 1) \(monthFormatter.string(from: s))"
+            } else if startCal.year == endCal.year {
+                return "\(startCal.day ?? 1) \(monthFormatter.string(from: s)) - \(endCal.day ?? 1) \(monthFormatter.string(from: e))"
+            } else {
+                let fullFormatter = DateFormatter()
+                fullFormatter.dateFormat = "d MMM yyyy"
+                return "\(fullFormatter.string(from: s)) - \(fullFormatter.string(from: e))"
+            }
         } else {
-            return formatter.string(from: s)
+            if cal.isDateInToday(s) {
+                return "Today"
+            } else if cal.isDateInYesterday(s) {
+                return "Yesterday"
+            } else {
+                let formatter = DateFormatter()
+                formatter.dateFormat = "d MMM yyyy"
+                return formatter.string(from: s)
+            }
         }
     }
 }
@@ -604,10 +624,10 @@ public struct DateRange: Equatable, Hashable {
 // MARK: - Date Range Filter Chip
 public struct SpiceDateRangeFilterChip: View {
     @Binding var selectedRange: DateRange?
-    var placeholder: String = "Select Date"
+    var placeholder: String = "Any Date"
     @State private var showModal: Bool = false
 
-    public init(selectedRange: Binding<DateRange?>, placeholder: String = "Select Date") {
+    public init(selectedRange: Binding<DateRange?>, placeholder: String = "Any Date") {
         self._selectedRange = selectedRange
         self.placeholder = placeholder
     }
@@ -618,39 +638,20 @@ public struct SpiceDateRangeFilterChip: View {
     }
 
     public var body: some View {
-        HStack(spacing: 6) {
-            Button(action: { showModal = true }) {
-                HStack(spacing: 6) {
-                    Image(systemName: "calendar")
-                        .font(.appFont(size: 12, weight: .semibold))
-                        .foregroundColor(selectedRange?.isActive == true ? Color.spicePrimary : Color.spiceMuted)
-
-                    Text(label)
-                        .font(.appFont(size: 12.5, weight: .bold))
-                        .foregroundColor(selectedRange?.isActive == true ? Color.spicePrimary : Color.spiceInk)
-                }
+        Button(action: { showModal = true }) {
+            Text(label)
+                .font(.appFont(size: 12.5, weight: .bold))
                 .padding(.horizontal, 14)
                 .padding(.vertical, 7)
-                .background(selectedRange?.isActive == true ? Color(hex: "#E8F5EC") : Color.white)
+                .background(selectedRange?.isActive == true ? Color.spicePrimary : Color.white)
+                .foregroundColor(selectedRange?.isActive == true ? .white : Color.spiceInk)
                 .cornerRadius(20)
                 .overlay(
                     RoundedRectangle(cornerRadius: 20)
                         .stroke(selectedRange?.isActive == true ? Color.spicePrimary : Color.spiceCardBorder, lineWidth: 1)
                 )
-            }
-            .buttonStyle(.plain)
-
-            if selectedRange?.isActive == true {
-                Button(action: {
-                    selectedRange = nil
-                }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.appFont(size: 14))
-                        .foregroundColor(Color.spiceMuted)
-                }
-                .buttonStyle(.plain)
-            }
         }
+        .buttonStyle(.plain)
         .fullScreenCover(isPresented: $showModal) {
             SpiceDateRangeModal(selectedRange: $selectedRange, isPresented: $showModal)
                 .background(BackgroundCleanerView())
@@ -691,12 +692,31 @@ public struct SpiceDateRangeModal: View {
 
     var rangePreviewText: String {
         guard let s = tempStart else { return "Select dates" }
-        let formatter = DateFormatter()
-        formatter.dateFormat = "d MMM yyyy"
         if let e = tempEnd, !calendar.isDate(s, inSameDayAs: e) {
-            return "\(formatter.string(from: s)) → \(formatter.string(from: e))"
+            let startCal = calendar.dateComponents([.year, .month, .day], from: s)
+            let endCal = calendar.dateComponents([.year, .month, .day], from: e)
+            let monthFormatter = DateFormatter()
+            monthFormatter.dateFormat = "MMM"
+
+            if startCal.year == endCal.year && startCal.month == endCal.month {
+                return "\(startCal.day ?? 1) - \(endCal.day ?? 1) \(monthFormatter.string(from: s))"
+            } else if startCal.year == endCal.year {
+                return "\(startCal.day ?? 1) \(monthFormatter.string(from: s)) - \(endCal.day ?? 1) \(monthFormatter.string(from: e))"
+            } else {
+                let fullFormatter = DateFormatter()
+                fullFormatter.dateFormat = "d MMM yyyy"
+                return "\(fullFormatter.string(from: s)) - \(fullFormatter.string(from: e))"
+            }
         } else {
-            return formatter.string(from: s)
+            if calendar.isDateInToday(s) {
+                return "Today"
+            } else if calendar.isDateInYesterday(s) {
+                return "Yesterday"
+            } else {
+                let formatter = DateFormatter()
+                formatter.dateFormat = "d MMM yyyy"
+                return formatter.string(from: s)
+            }
         }
     }
 

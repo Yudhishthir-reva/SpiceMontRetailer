@@ -11,7 +11,7 @@ import Combine
 struct PaymentsScreen: View {
     @StateObject private var viewModel = PaymentsViewModel()
     @State private var selectedModeFilter: String = "All Modes"
-    @State private var selectedDateRange: DateRange? = DateRange.today
+    @State private var selectedDateRange: DateRange? = nil
 
     private let modeFilters = ["All Modes", "Cash", "Cheque", "UPI"]
 
@@ -37,9 +37,12 @@ struct PaymentsScreen: View {
 
     var filterSubtitleText: String {
         let modeText = selectedModeFilter
-        let dateText = selectedDateRange?.displayString ?? "All Time"
+        let dateText = selectedDateRange?.displayString ?? "All time"
         return "\(modeText), \(dateText)"
     }
+
+    @State private var isShowingSubmitSheet: Bool = false
+    @State private var isShowingRequestsListSheet: Bool = false
 
     var body: some View {
         ZStack {
@@ -48,13 +51,130 @@ struct PaymentsScreen: View {
             VStack(spacing: 0) {
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 14) {
-                        // MARK: - Top Total Paid Summary Mint Card
+                        // MARK: - 1. Top Make Payment Banner
+                        NavigationLink(destination: MakePaymentScreen()) {
+                            HStack(spacing: 12) {
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .fill(Color.white.opacity(0.2))
+                                        .frame(width: 40, height: 40)
+
+                                    Image(systemName: "wallet.pass.fill")
+                                        .font(.system(size: 18, weight: .bold))
+                                        .foregroundColor(.white)
+                                }
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Make Payment")
+                                        .font(.appFont(size: 15, weight: .heavy))
+                                        .foregroundColor(.white)
+
+                                    Text("Pay by UPI, QR or bank transfer")
+                                        .font(.appFont(size: 11.5, weight: .medium))
+                                        .foregroundColor(.white.opacity(0.9))
+                                }
+
+                                Spacer()
+
+                                Image(systemName: "arrow.right")
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundColor(.white)
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 14)
+                            .background(Color.spicePrimary)
+                            .cornerRadius(14)
+                        }
+                        .buttonStyle(.plain)
+
+                        // MARK: - 2. Action Buttons Row: Submit Request & View Requests
+                        HStack(spacing: 12) {
+                            Button(action: {
+                                isShowingSubmitSheet = true
+                            }) {
+                                Text("Submit Request")
+                                    .font(.appFont(size: 13, weight: .heavy))
+                                    .foregroundColor(Color.spicePrimary)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 44)
+                                    .background(Color.white)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .stroke(Color.spicePrimary, lineWidth: 1.2)
+                                    )
+                                    .cornerRadius(10)
+                            }
+                            .buttonStyle(.plain)
+
+                            Button(action: {
+                                isShowingRequestsListSheet = true
+                            }) {
+                                Text("View Requests")
+                                    .font(.appFont(size: 13, weight: .heavy))
+                                    .foregroundColor(Color.spicePrimary)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 44)
+                                    .background(Color.white)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .stroke(Color.spicePrimary, lineWidth: 1.2)
+                                    )
+                                    .cornerRadius(10)
+                            }
+                            .buttonStyle(.plain)
+                        }
+
+                        // MARK: - 3. Total Paid Summary Mint Card
                         totalPaidSummaryCard
 
-                        // MARK: - Bank & UPI Account Details Card
-                        accountDetailsCard
+                        // MARK: - Amber Date Notice Banner
+                        if let range = selectedDateRange, range.isActive {
+                            HStack(alignment: .center, spacing: 12) {
+                                Image(systemName: "calendar")
+                                    .font(.system(size: 20, weight: .semibold))
+                                    .foregroundColor(Color(hex: "#9C6212"))
 
-                        // MARK: - Payment Mode Filter Chips
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Showing \(range.displayString.lowercased())")
+                                        .font(.appFont(size: 13, weight: .heavy))
+                                        .foregroundColor(Color(hex: "#8C580E"))
+
+                                    Text("Your dashboard total covers every order, so it will be higher.")
+                                        .font(.appFont(size: 11.5, weight: .medium))
+                                        .foregroundColor(Color(hex: "#9C6212"))
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+
+                                Spacer()
+
+                                Button(action: {
+                                    selectedDateRange = nil
+                                    viewModel.loadPayments(range: nil)
+                                }) {
+                                    Text("All time")
+                                        .font(.appFont(size: 12.5, weight: .bold))
+                                        .foregroundColor(Color(hex: "#8C580E"))
+                                        .padding(.horizontal, 14)
+                                        .padding(.vertical, 7)
+                                        .background(Color.white)
+                                        .cornerRadius(8)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .stroke(Color(hex: "#E8C89A"), lineWidth: 1)
+                                        )
+                                }
+                                .buttonStyle(.plain)
+                            }
+                            .padding(14)
+                            .background(Color(hex: "#FEF4E6"))
+                            .cornerRadius(14)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14)
+                                    .stroke(Color(hex: "#FAD8A8"), lineWidth: 1)
+                            )
+                        }
+
+                        // MARK: - 4. Payment Mode Filter Chips
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 8) {
                                 ForEach(modeFilters, id: \.self) { mode in
@@ -79,9 +199,9 @@ struct PaymentsScreen: View {
                             .padding(.vertical, 1)
                         }
 
-                        // MARK: - Filter Row 2: Date Filter (Calendar Sheet)
+                        // MARK: - 5. Date Filter (Calendar Sheet)
                         HStack {
-                            SpiceDateRangeFilterChip(selectedRange: $selectedDateRange)
+                            SpiceDateRangeFilterChip(selectedRange: $selectedDateRange, placeholder: "Any Date")
 
                             Spacer()
 
@@ -89,15 +209,16 @@ struct PaymentsScreen: View {
                                 Button(action: {
                                     selectedDateRange = nil
                                     selectedModeFilter = "All Modes"
+                                    viewModel.loadPayments(range: nil)
                                 }) {
                                     Text("Clear all")
-                                        .font(.appFont(size: 12, weight: .bold))
+                                        .font(.appFont(size: 12.5, weight: .bold))
                                         .foregroundColor(Color.spicePrimary)
                                 }
                             }
                         }
 
-                        // MARK: - Transactions List or Skeletons
+                        // MARK: - 6. Transactions List or Empty State
                         if viewModel.isLoading && viewModel.transactions.isEmpty {
                             VStack(spacing: 12) {
                                 ForEach(0..<4, id: \.self) { _ in
@@ -105,25 +226,30 @@ struct PaymentsScreen: View {
                                 }
                             }
                         } else if filteredTransactions.isEmpty {
-                            if viewModel.transactions.isEmpty {
-                                SpiceEmptyStateView(
-                                    title: "No Payment History",
-                                    message: "No payment transactions have been recorded for your account yet.",
-                                    buttonTitle: "Refresh"
-                                ) {
-                                    viewModel.loadPayments()
+                            VStack(spacing: 14) {
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 14)
+                                        .fill(Color(hex: "#F0F3F1"))
+                                        .frame(width: 56, height: 56)
+
+                                    Image(systemName: "photo.on.rectangle.angled")
+                                        .font(.system(size: 24))
+                                        .foregroundColor(Color.spiceMuted)
                                 }
-                                .padding(.top, 24)
-                            } else {
-                                SpiceEmptyStateView(
-                                    title: "No Transactions Found",
-                                    message: "No payments match your filter criteria.",
-                                    buttonTitle: "Refresh"
-                                ) {
-                                    viewModel.loadPayments()
-                                }
-                                .padding(.top, 24)
+                                .padding(.top, 40)
+
+                                Text("No Payments Yet")
+                                    .font(.appFont(size: 17, weight: .heavy))
+                                    .foregroundColor(Color.spiceInk)
+
+                                Text("Payments recorded against your orders will appear here.")
+                                    .font(.appFont(size: 12.5, weight: .medium))
+                                    .foregroundColor(Color.spiceMuted)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal, 32)
                             }
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 20)
                         } else {
                             VStack(spacing: 12) {
                                 ForEach(filteredTransactions) { txn in
@@ -138,7 +264,7 @@ struct PaymentsScreen: View {
                     .padding(.top, 10)
                 }
                 .refreshable {
-                    viewModel.loadPayments()
+                    viewModel.loadPayments(range: selectedDateRange)
                 }
             }
         }
@@ -149,7 +275,7 @@ struct PaymentsScreen: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: {
-                    viewModel.loadPayments()
+                    viewModel.loadPayments(range: selectedDateRange)
                     AppConfigManager.shared.checkStatus()
                 }) {
                     Text("Refresh")
@@ -159,8 +285,17 @@ struct PaymentsScreen: View {
             }
         }
         .onAppear {
-            viewModel.loadPayments()
+            viewModel.loadPayments(range: selectedDateRange)
             AppConfigManager.shared.checkStatus()
+        }
+        .onChange(of: selectedDateRange) { _, newRange in
+            viewModel.loadPayments(range: newRange)
+        }
+        .sheet(isPresented: $isShowingSubmitSheet) {
+            SubmitPaymentRequestSheet()
+        }
+        .sheet(isPresented: $isShowingRequestsListSheet) {
+            PaymentRequestsListSheet()
         }
         .toast(isPresenting: $viewModel.isShowToast, duration: 2.0, offsetY: 10, alert: {
             AlertToast(displayMode: .banner(.pop), type: .regular, title: viewModel.toastMessage)
@@ -178,7 +313,7 @@ struct PaymentsScreen: View {
                 .foregroundColor(Color(hex: "#167444"))
                 .tracking(0.5)
 
-            Text("All time")
+            Text(selectedDateRange?.displayString ?? "All time")
                 .font(.appFont(size: 11.5, weight: .medium))
                 .foregroundColor(Color(hex: "#5B8A6E"))
 
@@ -346,10 +481,16 @@ struct PaymentsScreen: View {
 
     // MARK: - Date Formatter Helper
     private func formatDate(_ raw: String?) -> String {
-        guard let raw = raw, !raw.isEmpty else { return "24 Aug 2026" }
+        guard let raw = raw, !raw.isEmpty else { return "" }
         let iso = DateFormatter()
         iso.dateFormat = "yyyy-MM-dd"
         if let d = iso.date(from: String(raw.prefix(10))) {
+            let cal = Calendar.current
+            if cal.isDateInToday(d) {
+                return "Today"
+            } else if cal.isDateInYesterday(d) {
+                return "Yesterday"
+            }
             let out = DateFormatter()
             out.dateFormat = "d MMM yyyy"
             return out.string(from: d)
@@ -369,11 +510,20 @@ class PaymentsViewModel: ObservableObject {
     private let service = OrderServiceManager()
     private var cancellables = Set<AnyCancellable>()
 
-    func loadPayments() {
+    func loadPayments(range: DateRange? = nil) {
         isLoading = true
         let headers = UserDefaultManager.shared.authHeader
 
-        service.fetchRetailerPaymentHistory(page: 1, perPage: 20, headers: headers)
+        var startDate: String? = nil
+        var endDate: String? = nil
+        if let range = range, range.isActive {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
+            startDate = formatter.string(from: range.startDate)
+            endDate = formatter.string(from: range.endDate)
+        }
+
+        service.fetchRetailerPaymentHistory(page: 1, perPage: 20, startDate: startDate, endDate: endDate, headers: headers)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] completion in
                 self?.isLoading = false
