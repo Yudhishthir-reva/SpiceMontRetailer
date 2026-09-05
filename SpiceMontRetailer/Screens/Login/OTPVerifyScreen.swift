@@ -11,7 +11,6 @@ import Combine
 struct OTPVerifyScreen: View {
 
     let mobile: String
-    var prefilledOTP: String = ""
 
     @StateObject private var viewModel = OTPVerifyViewModel()
     @FocusState private var focusedIndex: Int?
@@ -110,13 +109,8 @@ struct OTPVerifyScreen: View {
         }
         .navigationBarHidden(true)
         .onAppear {
-            if !prefilledOTP.isEmpty {
-                for (i, ch) in prefilledOTP.prefix(6).enumerated() {
-                    viewModel.digits[i] = String(ch)
-                }
-            }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                focusedIndex = prefilledOTP.isEmpty ? 0 : nil
+                focusedIndex = 0
             }
             viewModel.startResendTimer()
         }
@@ -220,14 +214,8 @@ class OTPVerifyViewModel: ObservableObject {
                 if response.status == true {
                     self?.toastMessage = response.message ?? "OTP sent successfully"
                     self?.isShowToast = true
+                    self?.digits = Array(repeating: "", count: 6)
                     self?.startResendTimer()
-                    // Prefill if echoed
-                    let echoed = OTPSendModel.usableOTP(from: response.otp)
-                    if !echoed.isEmpty {
-                        for (i, ch) in echoed.prefix(6).enumerated() {
-                            self?.digits[i] = String(ch)
-                        }
-                    }
                 } else {
                     self?.toastMessage = response.message ?? "Failed to send OTP"
                     self?.isShowToast = true
@@ -246,7 +234,6 @@ class OTPVerifyViewModel: ObservableObject {
 
         isVerifying = true
         let deviceInfo = defaults.deviceInfoJSONString
-        print("📱 [Verify OTP] Sending params with device_info: \(deviceInfo)")
 
         let params: [String: Any] = [
             "mobile": mobile,

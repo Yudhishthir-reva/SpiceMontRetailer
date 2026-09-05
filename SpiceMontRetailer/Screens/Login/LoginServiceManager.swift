@@ -66,24 +66,15 @@ class LoginServiceManager {
 struct OTPSendModel: Decodable {
     var status: Bool?
     var message: String?
-    /// Only present on staging, where the backend echoes the code it just sent.
-    var otp: String?
 
     enum CodingKeys: String, CodingKey {
-        case status, message, otp
+        case status, message
     }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         status = container.decodeBoolLeniently(forKey: .status)
         message = container.decodeStringLeniently(forKey: .message)
-        otp = container.decodeStringLeniently(forKey: .otp)
-    }
-
-    /// The echoed code, but only when it is a complete 6-digit OTP the boxes can actually hold.
-    static func usableOTP(from otp: String?) -> String {
-        let digits = otp?.filter(\.isNumber) ?? ""
-        return digits.count == 6 ? digits : ""
     }
 }
 

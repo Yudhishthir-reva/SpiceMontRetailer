@@ -160,8 +160,7 @@ struct LoginScreen: View {
             .animation(.easeInOut(duration: 0.25), value: viewModel.accountBlock != nil)
             .navigationDestination(isPresented: $viewModel.goToOTP) {
                 OTPVerifyScreen(
-                    mobile: viewModel.mobile.trimmingCharacters(in: .whitespacesAndNewlines),
-                    prefilledOTP: viewModel.echoedOTP
+                    mobile: viewModel.mobile.trimmingCharacters(in: .whitespacesAndNewlines)
                 )
             }
             .fullScreenCover(isPresented: $showRegistration) {

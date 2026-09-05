@@ -25,7 +25,11 @@ final class CartManager: ObservableObject {
     @Published var couponCode: String = ""
     @Published var couponDiscount: String = "0"
     @Published var appliedOffer: RetailerAppliedOffer?
+    /// Remembers the last scheme that fell off due to cart total/qty, for unlock hint UI.
+    @Published var lastDroppedOfferHint: RetailerAppliedOffer?
     @Published var isLoading = false
+    /// Bumps after every successful cart API sync so screens can refresh offers/schemes.
+    @Published private(set) var syncRevision: Int = 0
 
     var cartCount: Int { items.reduce(0) { $0 + ($1.quantity ?? 0) } }
     var itemCount: Int { items.count }
@@ -34,6 +38,9 @@ final class CartManager: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var debounceTasks: [String: DispatchWorkItem] = [:]
     private var stockRegistry: [String: Int] = [:]
+    /// Per-item debounce window before hitting cart update/remove APIs.
+    /// Matches Android `CartStore.SYNC_DEBOUNCE_MILLIS` (400ms).
+    private let quantityDebounceSeconds: TimeInterval = 0.4
 
     private init(networkService: NetworkServiceManagable = NetworkServiceManager.shared) {
         self.networkService = networkService
@@ -100,6 +107,7 @@ final class CartManager: ObservableObject {
                 if case .failure = completion { /* silent */ }
             } receiveValue: { [weak self] response in
                 self?.applyCart(response)
+                self?.bumpSyncRevision()
             }
             .store(in: &cancellables)
     }
@@ -163,35 +171,48 @@ final class CartManager: ObservableObject {
             // Optimistically set to 0 locally without immediately destroying server item
             if let idx = items.firstIndex(where: { itemMatchesVariant($0, productId: productId, variantId: variantId, variantName: variantName) }) {
                 items[idx].quantity = 0
-                recalculateTotals()
+                items[idx].totalPrice = "0.00"
+                // Do NOT recompute published cart totals locally — server `cart_total` is source of truth
             }
 
-            // Debounce removal so quick backspacing/typing doesn't trigger server delete
+            // Debounce removal so rapid − taps don't fire delete APIs mid-edit
             debounceTasks[key]?.cancel()
             let workItem = DispatchWorkItem { [weak self] in
-                self?.executeBackendRemoval(productId: productId, variantId: variantId, variantName: variantName)
-                self?.items.removeAll(where: {
-                    (self?.itemMatchesVariant($0, productId: productId, variantId: variantId, variantName: variantName) ?? false) &&
-                    ($0.quantity ?? 0) <= 0
-                })
-                self?.recalculateTotals()
-                self?.debounceTasks.removeValue(forKey: key)
+                guard let self else { return }
+                // Re-read latest qty — user may have typed back up before debounce fired
+                let latestQty = self.items.first(where: {
+                    self.itemMatchesVariant($0, productId: productId, variantId: variantId, variantName: variantName)
+                })?.quantity ?? 0
+                if latestQty > 0 {
+                    self.executeBackendSync(productId: productId, variantId: variantId, variantName: variantName, quantity: latestQty)
+                } else {
+                    self.executeBackendRemoval(productId: productId, variantId: variantId, variantName: variantName)
+                    self.items.removeAll(where: {
+                        self.itemMatchesVariant($0, productId: productId, variantId: variantId, variantName: variantName) &&
+                        ($0.quantity ?? 0) <= 0
+                    })
+                    self.revalidateAppliedOfferEligibility()
+                }
+                self.debounceTasks.removeValue(forKey: key)
             }
             debounceTasks[key] = workItem
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6, execute: workItem)
+            DispatchQueue.main.asyncAfter(deadline: .now() + quantityDebounceSeconds, execute: workItem)
             completion?(true)
             return
         }
 
-        // 1. Instant optimistic update
+        // 1. Instant optimistic update (line totals only — footer stays on last server total_amount)
         if let idx = items.firstIndex(where: { itemMatchesVariant($0, productId: productId, variantId: variantId, variantName: variantName) }) {
             items[idx].quantity = finalQty
-            let priceVal = Double(items[idx].price ?? items[idx].perPrice ?? price ?? "0") ?? 0
+            // Prefer existing per_price (pack rate), then explicit price arg, then base price
+            let priceVal = Double(items[idx].perPrice ?? price ?? items[idx].price ?? "0") ?? 0
+            if items[idx].perPrice == nil, let price, !price.isEmpty {
+                items[idx].perPrice = price
+            }
             items[idx].totalPrice = String(format: "%.2f", priceVal * Double(finalQty))
             if let avl = resolvedMaxAvl {
                 items[idx].availableQuantity = avl
             }
-            recalculateTotals()
         } else {
             let itemPrice = price ?? product?.price ?? "24.50"
             let priceVal = Double(itemPrice) ?? 0
@@ -210,18 +231,27 @@ final class CartManager: ObservableObject {
                 product: product
             )
             items.append(newItem)
-            recalculateTotals()
         }
 
-        // 2. Per-Item Independent Debounce (Prevents cancelling other variants!)
+        // 2. Per-item independent debounce (does not cancel other variants)
         debounceTasks[key]?.cancel()
         let workItem = DispatchWorkItem { [weak self] in
-            self?.executeBackendSync(productId: productId, variantId: variantId, variantName: variantName, quantity: finalQty)
-            self?.debounceTasks.removeValue(forKey: key)
+            guard let self else { return }
+            // Use latest local qty for this key so only one API fires with final value
+            let latestQty = self.items.first(where: {
+                self.itemMatchesVariant($0, productId: productId, variantId: variantId, variantName: variantName)
+            })?.quantity ?? finalQty
+            if latestQty > 0 {
+                self.executeBackendSync(productId: productId, variantId: variantId, variantName: variantName, quantity: latestQty)
+            } else {
+                self.executeBackendRemoval(productId: productId, variantId: variantId, variantName: variantName)
+            }
+            self.debounceTasks.removeValue(forKey: key)
         }
         debounceTasks[key] = workItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4, execute: workItem)
+        DispatchQueue.main.asyncAfter(deadline: .now() + quantityDebounceSeconds, execute: workItem)
 
+        revalidateAppliedOfferEligibility()
         completion?(true)
     }
 
@@ -234,7 +264,7 @@ final class CartManager: ObservableObject {
         if let idx = items.firstIndex(where: { itemMatchesVariant($0, productId: productId, variantId: variantId, variantName: variantName) }) {
             removedServerId = items[idx].id
             items.remove(at: idx)
-            recalculateTotals()
+            // Totals stay on last server cart_total until remove API responds
         }
 
         if let cId = removedServerId, cId > 0 {
@@ -245,13 +275,147 @@ final class CartManager: ObservableObject {
     }
 
     func recalculateTotals() {
-        let sum = items.reduce(0.0) { running, item in
-            let price = Double(item.price ?? item.perPrice ?? item.product?.price ?? "0") ?? 0.0
-            return running + (price * Double(item.quantity ?? 1))
-        }
+        // Fallback only when server has not sent total_amount yet (empty cart / first load).
+        let sum = items.reduce(0.0) { $0 + $1.lineTotalValue }
+        let hasServerTotal = (Double(subtotal) ?? 0) > 0 || (Double(finalAmount) ?? 0) > 0
+        guard !hasServerTotal || items.isEmpty else { return }
+
         subtotal = String(format: "%.2f", sum)
-        finalAmount = String(format: "%.2f", sum)
-        total = String(format: "%.2f", sum)
+        if let offer = appliedOffer, let offerDiscount = offer.discountAmount, offerDiscount > 0,
+           isOfferStillEligible(offer, forSubtotal: sum) {
+            let net = max(0, sum - offerDiscount)
+            finalAmount = String(format: "%.2f", net)
+            total = finalAmount
+            discount = String(format: "%.2f", offerDiscount)
+        } else {
+            finalAmount = String(format: "%.2f", sum)
+            total = finalAmount
+            if appliedOffer == nil {
+                discount = "0"
+            }
+        }
+    }
+
+    /// Apply authoritative totals from cart API.
+    /// Slim `cart/add` + `cart/update` only send `total_amount` (+ items).
+    /// Full `GET cart` also sends `final_amount`, charges, `applied_offer`.
+    private func applyServerTotals(from response: CartResponse) {
+        let amountStr = response.cartTotal ?? response.subtotal
+        if let amountStr, !amountStr.isEmpty, let value = Double(amountStr), value >= 0 {
+            let normalized = String(format: "%.2f", value)
+            subtotal = normalized
+
+            // Slim add/update payload — total_amount is the only amount; use it everywhere
+            if !response.includesDiscountFields {
+                finalAmount = normalized
+                total = normalized
+            }
+        }
+
+        if response.includesDiscountFields {
+            if let fa = response.finalAmount, !fa.isEmpty, let value = Double(fa), value >= 0 {
+                let normalized = String(format: "%.2f", value)
+                finalAmount = normalized
+                total = normalized
+            } else if let amountStr, let value = Double(amountStr), value >= 0 {
+                let normalized = String(format: "%.2f", value)
+                finalAmount = normalized
+                total = normalized
+            }
+            if let dis = response.discount { discount = dis }
+            if let hc = response.handlingCharge { handlingCharge = hc }
+            if let pc = response.packingCharge { packingCharge = pc }
+        }
+
+        if let dc = response.deliveryCharge { deliveryCharge = dc }
+    }
+
+    /// Drops applied scheme locally as soon as cart falls below its min order value.
+    private func revalidateAppliedOfferEligibility() {
+        guard let offer = appliedOffer else { return }
+        let sum = Double(subtotal) ?? 0
+        if !isOfferStillEligible(offer, forSubtotal: sum) {
+            rememberDroppedOffer(offer)
+            appliedOffer = nil
+            discount = "0"
+            recalculateTotals()
+            removeAppliedOfferOnServer()
+        }
+    }
+
+    private func removeAppliedOfferOnServer() {
+        let headers = UserDefaultManager.shared.authHeader
+        let publisher: AnyPublisher<StatusResponse, Error> = networkService.request(
+            APIRouter.offersRemove, params: [:] as [String: Any], headers: headers
+        )
+        publisher
+            .receive(on: DispatchQueue.main)
+            .sink { _ in } receiveValue: { _ in
+                self.bumpSyncRevision()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func rememberDroppedOffer(_ offer: RetailerAppliedOffer) {
+        lastDroppedOfferHint = offer
+    }
+
+    func clearDroppedOfferHint() {
+        lastDroppedOfferHint = nil
+    }
+
+    private func isOfferStillEligible(_ offer: RetailerAppliedOffer, forSubtotal sum: Double) -> Bool {
+        if let minQty = offer.minQty, minQty > 0 {
+            if cartCount < minQty { return false }
+        }
+        if let minVal = offer.minOrderValue, minVal > 0 {
+            return sum + 0.009 >= minVal
+        }
+        // Unknown threshold — keep until server cart response clears it
+        return true
+    }
+
+    /// Apply root `cart_total` from `offers/available` (e.g. 544).
+    /// This is the authoritative product total after cart add/update.
+    func applyOffersCartTotal(_ cartTotal: Double?) {
+        guard let cartTotal, cartTotal >= 0 else { return }
+        let normalized = String(format: "%.2f", cartTotal)
+        subtotal = normalized
+
+        let offerDiscount = appliedOffer?.discountAmount ?? 0
+        if offerDiscount > 0 {
+            let net = max(0, cartTotal - offerDiscount)
+            finalAmount = String(format: "%.2f", net)
+            total = finalAmount
+            discount = String(format: "%.2f", offerDiscount)
+        } else {
+            finalAmount = normalized
+            total = normalized
+        }
+        bumpSyncRevision()
+    }
+
+    /// Apply result from `offers/apply` — sets applied offer + `final_amount` (e.g. 544 for gift).
+    func applyOfferResult(_ offer: RetailerAppliedOffer) {
+        appliedOffer = offer
+        lastDroppedOfferHint = nil
+
+        if let final = offer.finalAmount, final >= 0 {
+            let normalized = String(format: "%.2f", final)
+            finalAmount = normalized
+            total = normalized
+        }
+        if let discountAmt = offer.discountAmount, discountAmt > 0 {
+            discount = String(format: "%.2f", discountAmt)
+        } else if (offer.giftDescription?.isEmpty == false) {
+            // Gift schemes: payable == final_amount, no cash discount line
+            discount = "0"
+        }
+        bumpSyncRevision()
+    }
+
+    private func bumpSyncRevision() {
+        syncRevision += 1
     }
 
     // MARK: - Backend Execution
@@ -290,6 +454,7 @@ final class CartManager: ObservableObject {
                 if case .failure = comp { /* silent error */ }
             } receiveValue: { [weak self] response in
                 self?.applyCart(response)
+                self?.bumpSyncRevision()
             }
             .store(in: &cancellables)
     }
@@ -327,6 +492,7 @@ final class CartManager: ObservableObject {
                 if case .failure = comp { completion?(false) }
             } receiveValue: { [weak self] response in
                 self?.applyCart(response)
+                self?.bumpSyncRevision()
                 completion?(response.status == true)
             }
             .store(in: &cancellables)
@@ -347,6 +513,7 @@ final class CartManager: ObservableObject {
                 if case .failure = comp { completion?(false) }
             } receiveValue: { [weak self] response in
                 self?.applyCart(response)
+                self?.bumpSyncRevision()
                 completion?(response.status == true)
             }
             .store(in: &cancellables)
@@ -370,6 +537,7 @@ final class CartManager: ObservableObject {
                 if case .failure = comp { completion?(false) }
             } receiveValue: { [weak self] response in
                 self?.applyCart(response)
+                self?.bumpSyncRevision()
                 completion?(response.status == true)
             }
             .store(in: &cancellables)
@@ -406,6 +574,7 @@ final class CartManager: ObservableObject {
                 }
             } receiveValue: { [weak self] response in
                 self?.applyCart(response)
+                self?.bumpSyncRevision()
                 completion?(response.status == true)
             }
             .store(in: &cancellables)
@@ -436,6 +605,7 @@ final class CartManager: ObservableObject {
                 if case .failure = comp { completion?(false) }
             } receiveValue: { [weak self] response in
                 self?.applyCart(response)
+                self?.bumpSyncRevision()
                 completion?(response.status == true)
             }
             .store(in: &cancellables)
@@ -460,6 +630,7 @@ final class CartManager: ObservableObject {
         couponCode = ""
         couponDiscount = "0"
         appliedOffer = nil
+        lastDroppedOfferHint = nil
 
         let headers = UserDefaultManager.shared.authHeader
         let publisher: AnyPublisher<CartActionResponse, Error> = networkService.request(
@@ -738,70 +909,75 @@ final class CartManager: ObservableObject {
 
     private func applyCart(_ response: CartResponse) {
         if let responseItems = response.items {
-            var merged = items
+            // add/update/GET all return the full cart_items snapshot — rebuild from server,
+            // but keep any qty that still has a pending debounce (user still tapping).
+            var nextItems: [CartItem] = []
+            nextItems.reserveCapacity(responseItems.count)
 
             for serverItem in responseItems {
-                var itemToAdd = serverItem
+                var item = serverItem
                 if let pId = serverItem.productId {
                     if let avl = serverItem.availableQuantity {
                         registerStock(productId: pId, variantId: serverItem.variantId, variantName: serverItem.variantName, stock: avl)
                     } else if let cached = getStock(productId: pId, variantId: serverItem.variantId, variantName: serverItem.variantName) {
-                        itemToAdd.availableQuantity = cached
+                        item.availableQuantity = cached
                     }
                 }
 
-                if let idx = merged.firstIndex(where: {
-                    // Match by cart id
-                    ($0.id != nil && serverItem.id != nil && $0.id == serverItem.id) ||
-                    // Match by productId + variant
-                    ($0.productId == serverItem.productId && $0.productId != nil && (
-                        // Both have variantId → match on variantId
-                        ($0.variantId != nil && serverItem.variantId != nil && $0.variantId == serverItem.variantId) ||
-                        // Both have variantName → match on variantName
-                        ($0.variantName != nil && serverItem.variantName != nil && $0.variantName?.lowercased().trimmingCharacters(in: .whitespaces) == serverItem.variantName?.lowercased().trimmingCharacters(in: .whitespaces)) ||
-                        // Both have NO variant info → simple product, match on productId alone
-                        ($0.variantId == nil && serverItem.variantId == nil && $0.variantName == nil && serverItem.variantName == nil) ||
-                        // Local item has no id yet (optimistic) → match by productId + either variant field
-                        ($0.id == nil && (
-                            ($0.variantId != nil && $0.variantId == serverItem.variantId) ||
-                            ($0.variantName != nil && $0.variantName?.lowercased().trimmingCharacters(in: .whitespaces) == serverItem.variantName?.lowercased().trimmingCharacters(in: .whitespaces)) ||
-                            ($0.variantId == nil && $0.variantName == nil)
-                        ))
-                    ))
-                }) {
-                    merged[idx].id = serverItem.id ?? merged[idx].id
-                    if let sp = serverItem.price { merged[idx].price = sp }
-                    if let spp = serverItem.perPrice { merged[idx].perPrice = spp }
-                    if let stp = serverItem.totalPrice { merged[idx].totalPrice = stp }
-                    if let q = serverItem.quantity, q > 0 { merged[idx].quantity = q }
-                    if let avl = serverItem.availableQuantity {
-                        merged[idx].availableQuantity = avl
-                    } else if merged[idx].availableQuantity == nil, let pId = merged[idx].productId {
-                        merged[idx].availableQuantity = getStock(productId: pId, variantId: merged[idx].variantId, variantName: merged[idx].variantName)
-                    }
-                    if let prod = serverItem.product { merged[idx].product = prod }
-                    if let vari = serverItem.variant { merged[idx].variant = vari }
-                    if let name = serverItem.productName, !name.isEmpty { merged[idx].productName = name }
-                    if let img = serverItem.productImage, !img.isEmpty { merged[idx].productImage = img }
-                } else {
-                    merged.append(itemToAdd)
+                let pendingKey = "\(item.productId ?? 0)_\(item.variantId ?? 0)_\(item.variantName ?? "")"
+                if debounceTasks[pendingKey] != nil,
+                   let local = items.first(where: {
+                       itemMatchesVariant($0, productId: item.productId ?? 0, variantId: item.variantId, variantName: item.variantName)
+                   }) {
+                    // Keep optimistic qty / line total while this row is still debouncing
+                    item.quantity = local.quantity
+                    item.totalPrice = local.totalPrice
+                }
+
+                nextItems.append(item)
+            }
+
+            // Keep optimistic rows that are not on the server yet (brand-new add still in flight)
+            // only if they have a pending debounce and qty > 0
+            for local in items {
+                let pendingKey = "\(local.productId ?? 0)_\(local.variantId ?? 0)_\(local.variantName ?? "")"
+                guard debounceTasks[pendingKey] != nil, (local.quantity ?? 0) > 0 else { continue }
+                let already = nextItems.contains {
+                    itemMatchesVariant($0, productId: local.productId ?? 0, variantId: local.variantId, variantName: local.variantName)
+                }
+                if !already {
+                    nextItems.append(local)
                 }
             }
 
-            merged.removeAll(where: { ($0.quantity ?? 0) <= 0 })
-            items = merged
+            items = nextItems.filter { ($0.quantity ?? 0) > 0 }
         }
-        recalculateTotals()
-        if let st = response.subtotal, !st.isEmpty, st != "0" { subtotal = st }
-        if let dis = response.discount { discount = dis }
-        if let dc = response.deliveryCharge { deliveryCharge = dc }
-        if let hc = response.handlingCharge { handlingCharge = hc }
-        if let pc = response.packingCharge { packingCharge = pc }
-        if let fa = response.finalAmount ?? response.total, !fa.isEmpty, fa != "0" { finalAmount = fa }
-        if let tot = response.total, !tot.isEmpty, tot != "0" { total = tot }
-        couponCode = response.couponCode ?? ""
-        couponDiscount = response.couponDiscount ?? "0"
-        appliedOffer = response.appliedOffer
+
+        applyServerTotals(from: response)
+
+        if let code = response.couponCode { couponCode = code }
+        if let cd = response.couponDiscount { couponDiscount = cd }
+
+        let previousOffer = appliedOffer
+        // cart/add + cart/update omit applied_offer — keep existing scheme
+        if response.includesAppliedOffer {
+            var serverOffer = response.appliedOffer
+            if var offer = serverOffer {
+                if offer.minOrderValue == nil {
+                    offer.minOrderValue = previousOffer?.id == offer.id ? previousOffer?.minOrderValue : nil
+                }
+                if offer.minQty == nil {
+                    offer.minQty = previousOffer?.id == offer.id ? previousOffer?.minQty : nil
+                }
+                serverOffer = offer
+                lastDroppedOfferHint = nil
+            } else if let previousOffer, previousOffer.minOrderValue != nil || previousOffer.minQty != nil {
+                rememberDroppedOffer(previousOffer)
+            }
+            appliedOffer = serverOffer
+        }
+        revalidateAppliedOfferEligibility()
+        bumpSyncRevision()
     }
 
     func quantityForProduct(_ productId: Int, variantId: Int? = nil, variantName: String? = nil) -> Int {

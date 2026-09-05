@@ -231,8 +231,7 @@ struct ProductListingView: View {
                 .lineLimit(1)
                 .padding(.top, 2)
 
-            // Unit (e.g. 100 gms)
-            Text(product.unit ?? "100 gms")
+            Text(product.displayUnitLabel)
                 .font(.appFont(size: 11.5, weight: .medium))
                 .foregroundColor(Color.spiceMuted)
 

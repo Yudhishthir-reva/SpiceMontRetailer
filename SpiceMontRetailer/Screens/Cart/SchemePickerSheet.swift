@@ -248,7 +248,7 @@ struct SchemePickerSheet: View {
                 .padding(.vertical, 1)
 
                 // Unlock Shortfall Text
-                Text("Add ₹\(String(format: "%.2f", shortfall)) more to unlock")
+                Text("Add ₹\(String(format: "%.0f", shortfall)) more to activate this scheme")
                     .font(.appFont(size: 12, weight: .medium))
                     .foregroundColor(Color(hex: "#8B5014"))
             } else {
@@ -418,9 +418,10 @@ struct SchemePickerSheet: View {
                         title: d?.offerTitle ?? scheme.title,
                         discountAmount: d?.discountAmount ?? scheme.discountAmount ?? 0.0,
                         giftDescription: d?.giftDescription,
-                        finalAmount: d?.finalAmount
+                        finalAmount: d?.finalAmount,
+                        minOrderValue: scheme.minOrderValue
                     )
-                    cartManager.appliedOffer = appliedOffer
+                    cartManager.applyOfferResult(appliedOffer)
                     onSchemeSelected?(scheme)
                     onSchemeApplied?(appliedOffer)
                     dismiss()
@@ -455,9 +456,10 @@ struct SchemePickerSheet: View {
                         title: d?.offerTitle ?? slab.title,
                         discountAmount: d?.discountAmount ?? slab.discountAmount ?? 0.0,
                         giftDescription: d?.giftDescription ?? slab.giftDescription,
-                        finalAmount: d?.finalAmount
+                        finalAmount: d?.finalAmount,
+                        minQty: slab.minQty
                     )
-                    cartManager.appliedOffer = appliedOffer
+                    cartManager.applyOfferResult(appliedOffer)
                     onSchemeApplied?(appliedOffer)
                     dismiss()
                 } else {
@@ -480,6 +482,7 @@ struct SchemePickerSheet: View {
                 if response.status == true {
                     self.schemes = response.data?.schemes ?? []
                     self.slabs = response.data?.slabs ?? []
+                    cartManager.applyOffersCartTotal(response.cartTotal)
                 }
             }
             .store(in: &cancellables)

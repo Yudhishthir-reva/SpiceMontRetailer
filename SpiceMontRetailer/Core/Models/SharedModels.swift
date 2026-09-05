@@ -125,6 +125,13 @@ struct Product: Decodable, Identifiable, Hashable {
         let pct = Int(((m - p) / m) * 100)
         return pct > 0 ? "\(pct)% OFF" : ""
     }
+
+    /// "100 gms" for single pack; "2 options" when product has multiple variants.
+    var displayUnitLabel: String {
+        let count = variants?.count ?? 0
+        if count > 1 { return "\(count) options" }
+        return unit ?? "100 gms"
+    }
 }
 
 struct ProductImage: Decodable, Hashable {
@@ -751,12 +758,12 @@ struct RetailerOfferScheme: Decodable, Identifiable, Hashable {
         type = c.decodeStringLeniently(forKey: .type)
         title = c.decodeStringLeniently(forKey: .title)
         discountType = c.decodeStringLeniently(forKey: .discountType)
-        discountValue = try? c.decodeIfPresent(Double.self, forKey: .discountValue)
-        minOrderValue = try? c.decodeIfPresent(Double.self, forKey: .minOrderValue)
+        discountValue = c.decodeDoubleLeniently(forKey: .discountValue)
+        minOrderValue = c.decodeDoubleLeniently(forKey: .minOrderValue)
         productId = c.decodeIntLeniently(forKey: .productId)
         description = c.decodeStringLeniently(forKey: .description)
         eligible = c.decodeBoolLeniently(forKey: .eligible)
-        discountAmount = try? c.decodeIfPresent(Double.self, forKey: .discountAmount)
+        discountAmount = c.decodeDoubleLeniently(forKey: .discountAmount)
         expiryDate = c.decodeStringLeniently(forKey: .expiryDate) ?? c.decodeStringLeniently(forKey: .validTill) ?? c.decodeStringLeniently(forKey: .endDate)
     }
 }
@@ -791,17 +798,18 @@ struct RetailerQuantitySlab: Decodable, Identifiable, Hashable {
         title = c.decodeStringLeniently(forKey: .title)
         minQty = c.decodeIntLeniently(forKey: .minQty)
         rewardType = c.decodeStringLeniently(forKey: .rewardType)
-        discountValue = try? c.decodeIfPresent(Double.self, forKey: .discountValue)
+        discountValue = c.decodeDoubleLeniently(forKey: .discountValue)
         giftDescription = c.decodeStringLeniently(forKey: .giftDescription)
         productId = c.decodeIntLeniently(forKey: .productId)
         description = c.decodeStringLeniently(forKey: .description)
         eligible = c.decodeBoolLeniently(forKey: .eligible)
-        discountAmount = try? c.decodeIfPresent(Double.self, forKey: .discountAmount)
+        discountAmount = c.decodeDoubleLeniently(forKey: .discountAmount)
     }
 }
 
 struct RetailerOffersResponse: Decodable {
     var status: Bool?
+    /// Root-level `cart_total` from offers/available (e.g. 544).
     var cartTotal: Double?
     var data: RetailerOffersData?
 
@@ -813,7 +821,7 @@ struct RetailerOffersResponse: Decodable {
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         status = c.decodeBoolLeniently(forKey: .status)
-        cartTotal = try? c.decodeIfPresent(Double.self, forKey: .cartTotal)
+        cartTotal = c.decodeDoubleLeniently(forKey: .cartTotal)
         data = try? c.decodeIfPresent(RetailerOffersData.self, forKey: .data)
     }
 }
@@ -884,9 +892,10 @@ struct RetailerOfferApplyData: Decodable {
         let rType = c.decodeStringLeniently(forKey: .rewardType)
         rewardType = (type1 != nil && !type1!.isEmpty) ? type1 : rType
 
-        discountAmount = try? c.decodeIfPresent(Double.self, forKey: .discountAmount)
+        // API may send ints (0, 544) or strings ("0.00")
+        discountAmount = c.decodeDoubleLeniently(forKey: .discountAmount)
         giftDescription = c.decodeStringLeniently(forKey: .giftDescription)
-        finalAmount = try? c.decodeIfPresent(Double.self, forKey: .finalAmount)
+        finalAmount = c.decodeDoubleLeniently(forKey: .finalAmount)
     }
 }
 
@@ -939,15 +948,23 @@ struct CartResponse: Decodable {
     var packingCharge: String?
     var total: String?
     var finalAmount: String?
+    /// Authoritative cart total from API (`cart_total` / `total_amount`).
+    var cartTotal: String?
     var couponCode: String?
     var couponDiscount: String?
     var appliedOffer: RetailerAppliedOffer?
+    /// `cart/update` often omits `applied_offer`; full `cart` GET includes it.
+    var includesAppliedOffer: Bool = false
+    var includesDiscountFields: Bool = false
 
     enum CodingKeys: String, CodingKey {
         case status, message, items, subtotal, discount, total, data
         case deliveryCharge = "delivery_charge"
         case couponCode = "coupon_code"
         case couponDiscount = "coupon_discount"
+        case cartTotal = "cart_total"
+        case finalAmount = "final_amount"
+        case totalAmount = "total_amount"
     }
 
     init(from decoder: Decoder) throws {
@@ -955,30 +972,58 @@ struct CartResponse: Decodable {
         status = c.decodeBoolLeniently(forKey: .status)
         message = c.decodeStringLeniently(forKey: .message)
 
+        let rootCartTotal = Self.decodeMoneyString(c, keys: [.cartTotal, .totalAmount])
+
         if let dataObj = try? c.decodeIfPresent(RetailerCartData.self, forKey: .data) {
             items = dataObj.cartItems ?? []
-            subtotal = dataObj.totalAmount ?? "0"
-            discount = dataObj.discountAmount ?? "0"
-            handlingCharge = dataObj.handlingCharge ?? "0"
-            packingCharge = dataObj.packingCharge ?? "0"
-            finalAmount = dataObj.finalAmount ?? dataObj.totalAmount ?? "0"
-            total = dataObj.finalAmount ?? dataObj.totalAmount ?? "0"
+            // cart/update + cart GET both send total_amount (number or string)
+            let dataTotal = dataObj.totalAmount
+                ?? dataObj.cartTotal
+                ?? dataObj.finalAmount
+                ?? rootCartTotal
+            cartTotal = dataTotal
+            subtotal = dataTotal ?? "0"
+            includesDiscountFields = dataObj.didDecodeDiscountFields
+            discount = dataObj.discountAmount ?? (dataObj.didDecodeDiscountFields ? "0" : nil)
+            handlingCharge = dataObj.handlingCharge
+            packingCharge = dataObj.packingCharge
+            // update response has no final_amount — fall back to total_amount
+            finalAmount = dataObj.finalAmount ?? dataTotal ?? "0"
+            total = dataObj.finalAmount ?? dataTotal ?? "0"
+            includesAppliedOffer = dataObj.didDecodeAppliedOffer
             appliedOffer = dataObj.appliedOffer
         } else {
             items = (try? c.decodeIfPresent([CartItem].self, forKey: .items)) ?? []
-            subtotal = c.decodeStringLeniently(forKey: .subtotal)
+            cartTotal = rootCartTotal
+            subtotal = c.decodeStringLeniently(forKey: .subtotal) ?? rootCartTotal
             discount = c.decodeStringLeniently(forKey: .discount)
             deliveryCharge = c.decodeStringLeniently(forKey: .deliveryCharge)
-            total = c.decodeStringLeniently(forKey: .total)
-            finalAmount = total
+            total = c.decodeStringLeniently(forKey: .total) ?? rootCartTotal
+            finalAmount = c.decodeStringLeniently(forKey: .finalAmount) ?? total ?? rootCartTotal
             couponCode = c.decodeStringLeniently(forKey: .couponCode)
             couponDiscount = c.decodeStringLeniently(forKey: .couponDiscount)
+            includesAppliedOffer = c.contains(.data) == false
         }
+    }
+
+    /// Reads money that may arrive as string `"456"` or number `456`.
+    private static func decodeMoneyString(_ c: KeyedDecodingContainer<CodingKeys>, keys: [CodingKeys]) -> String? {
+        for key in keys {
+            if let s = c.decodeStringLeniently(forKey: key), !s.isEmpty { return s }
+            if let d = try? c.decodeIfPresent(Double.self, forKey: key) {
+                return String(format: "%.2f", d)
+            }
+            if let i = c.decodeIntLeniently(forKey: key) {
+                return String(format: "%.2f", Double(i))
+            }
+        }
+        return nil
     }
 }
 
 struct RetailerCartData: Decodable {
     var totalAmount: String?
+    var cartTotal: String?
     var discountAmount: String?
     var handlingCharge: String?
     var handlingTitle: String?
@@ -987,9 +1032,12 @@ struct RetailerCartData: Decodable {
     var finalAmount: String?
     var appliedOffer: RetailerAppliedOffer?
     var cartItems: [CartItem]?
+    var didDecodeAppliedOffer: Bool = false
+    var didDecodeDiscountFields: Bool = false
 
     enum CodingKeys: String, CodingKey {
         case totalAmount = "total_amount"
+        case cartTotal = "cart_total"
         case discountAmount = "discount_amount"
         case handlingCharge = "handling_charge"
         case handlingTitle = "handling_title"
@@ -1002,15 +1050,29 @@ struct RetailerCartData: Decodable {
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        totalAmount = c.decodeStringLeniently(forKey: .totalAmount)
-        discountAmount = c.decodeStringLeniently(forKey: .discountAmount)
-        handlingCharge = c.decodeStringLeniently(forKey: .handlingCharge)
+        totalAmount = Self.decodeMoney(c, .totalAmount)
+        cartTotal = Self.decodeMoney(c, .cartTotal)
+        didDecodeDiscountFields = c.contains(.discountAmount) || c.contains(.handlingCharge) || c.contains(.packingCharge) || c.contains(.finalAmount)
+        discountAmount = Self.decodeMoney(c, .discountAmount)
+        handlingCharge = Self.decodeMoney(c, .handlingCharge)
         handlingTitle = c.decodeStringLeniently(forKey: .handlingTitle)
-        packingCharge = c.decodeStringLeniently(forKey: .packingCharge)
+        packingCharge = Self.decodeMoney(c, .packingCharge)
         packingTitle = c.decodeStringLeniently(forKey: .packingTitle)
-        finalAmount = c.decodeStringLeniently(forKey: .finalAmount)
+        finalAmount = Self.decodeMoney(c, .finalAmount)
+        didDecodeAppliedOffer = c.contains(.appliedOffer)
         appliedOffer = try? c.decodeIfPresent(RetailerAppliedOffer.self, forKey: .appliedOffer)
         cartItems = try? c.decodeIfPresent([CartItem].self, forKey: .cartItems)
+    }
+
+    private static func decodeMoney(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> String? {
+        if let s = c.decodeStringLeniently(forKey: key), !s.isEmpty { return s }
+        if let d = try? c.decodeIfPresent(Double.self, forKey: key) {
+            return String(format: "%.2f", d)
+        }
+        if let i = c.decodeIntLeniently(forKey: key) {
+            return String(format: "%.2f", Double(i))
+        }
+        return nil
     }
 }
 
@@ -1059,9 +1121,23 @@ struct CartItem: Decodable, Identifiable, Hashable {
         return 9999
     }
 
+    /// API sends base `price` and pack `per_price` (e.g. price=24, per_price=48 for 200 gms).
+    /// Always bill / display using per_price when present.
+    var unitPriceValue: Double {
+        Double(perPrice ?? price ?? product?.price ?? "0") ?? 0
+    }
+
+    var lineTotalValue: Double {
+        if let tp = Double(totalPrice ?? ""), tp > 0 { return tp }
+        return unitPriceValue * Double(quantity ?? 0)
+    }
+
     var identifier: String {
-        if let id = id, id > 0 { return "\(id)" }
-        return "\(productId ?? 0)_\(variantId ?? 0)_\(variantName ?? "")"
+        // Prefer stable cart-row id; otherwise product + variant (never collide across rows)
+        if let id = id, id > 0 {
+            return "cart_\(id)"
+        }
+        return "p_\(productId ?? 0)_v_\(variantId ?? 0)_\(variantName ?? "")"
     }
 
     enum CodingKeys: String, CodingKey {
@@ -1644,6 +1720,9 @@ struct RetailerAppliedOffer: Decodable, Hashable {
     var discountAmount: Double?
     var giftDescription: String?
     var finalAmount: Double?
+    /// Client-side threshold used to drop / unlock-hint when cart falls below min.
+    var minOrderValue: Double?
+    var minQty: Int?
 
     init(
         type: String? = nil,
@@ -1653,7 +1732,9 @@ struct RetailerAppliedOffer: Decodable, Hashable {
         discountValue: Double? = nil,
         discountAmount: Double? = nil,
         giftDescription: String? = nil,
-        finalAmount: Double? = nil
+        finalAmount: Double? = nil,
+        minOrderValue: Double? = nil,
+        minQty: Int? = nil
     ) {
         self.type = type
         self.id = id
@@ -1663,6 +1744,8 @@ struct RetailerAppliedOffer: Decodable, Hashable {
         self.discountAmount = discountAmount
         self.giftDescription = giftDescription
         self.finalAmount = finalAmount
+        self.minOrderValue = minOrderValue
+        self.minQty = minQty
     }
 
     enum CodingKeys: String, CodingKey {
@@ -1673,6 +1756,8 @@ struct RetailerAppliedOffer: Decodable, Hashable {
         case discountAmount = "discount_amount"
         case giftDescription = "gift_description"
         case finalAmount = "final_amount"
+        case minOrderValue = "min_order_value"
+        case minQty = "min_qty"
     }
 
     init(from decoder: Decoder) throws {
@@ -1683,10 +1768,12 @@ struct RetailerAppliedOffer: Decodable, Hashable {
         id = pId ?? dId
         title = c.decodeStringLeniently(forKey: .title)
         discountType = c.decodeStringLeniently(forKey: .discountType)
-        discountValue = try? c.decodeIfPresent(Double.self, forKey: .discountValue)
-        discountAmount = try? c.decodeIfPresent(Double.self, forKey: .discountAmount)
+        discountValue = c.decodeDoubleLeniently(forKey: .discountValue)
+        discountAmount = c.decodeDoubleLeniently(forKey: .discountAmount)
         giftDescription = c.decodeStringLeniently(forKey: .giftDescription)
-        finalAmount = try? c.decodeIfPresent(Double.self, forKey: .finalAmount)
+        finalAmount = c.decodeDoubleLeniently(forKey: .finalAmount)
+        minOrderValue = c.decodeDoubleLeniently(forKey: .minOrderValue)
+        minQty = c.decodeIntLeniently(forKey: .minQty)
     }
 
     var schemeTitle: String? { title }

@@ -18,7 +18,6 @@ class LoginViewModel: ObservableObject {
     @Published var mobile = ""
     @Published var isShowProcessing = false
     @Published var goToOTP = false
-    @Published var echoedOTP = ""
     @Published var isShowToastView = false
     @Published var toastMessage = ""
     @Published var accountBlock: AccountBlock? = nil
@@ -79,7 +78,6 @@ class LoginViewModel: ObservableObject {
                 }
             } receiveValue: { [weak self] response in
                 if response.status == true {
-                    self?.echoedOTP = OTPSendModel.usableOTP(from: response.otp)
                     self?.goToOTP = true
                 } else {
                     let msg = response.message ?? "Something went wrong"

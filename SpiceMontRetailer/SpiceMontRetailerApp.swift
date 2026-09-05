@@ -14,6 +14,7 @@ struct SpiceMontRetailerApp: App {
     var body: some Scene {
         WindowGroup {
             SplashScreen()
+                .dynamicTypeSize(.large)
                 .font(.dmSans(14, weight: .regular))
                 .preferredColorScheme(.light)
                 .handleNoInternet()

@@ -150,11 +150,9 @@ struct SearchScreen: View {
                 .foregroundStyle(AppTheme.textPrimary)
                 .lineLimit(2)
 
-            if let unit = product.unit, !unit.isEmpty {
-                Text(unit)
-                    .font(.appFont(size: 11))
-                    .foregroundStyle(AppTheme.textMuted)
-            }
+            Text(product.displayUnitLabel)
+                .font(.appFont(size: 11))
+                .foregroundStyle(AppTheme.textMuted)
 
             HStack(spacing: 4) {
                 Text(product.displayPrice)

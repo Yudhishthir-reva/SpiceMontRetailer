@@ -28,6 +28,7 @@ struct CartScreen: View {
     @State private var availableSchemes: [RetailerOfferScheme] = []
     @State private var availableSlabs: [RetailerQuantitySlab] = []
     @State private var isLoadingOffers: Bool = false
+    @State private var offersReloadWorkItem: DispatchWorkItem? = nil
 
     private let defaults = UserDefaultManager.shared
     private let orderService = OrderServiceManager()
@@ -42,13 +43,11 @@ struct CartScreen: View {
     }
 
     var productTotal: Double {
+        // Prefer server `data.total_amount` (mapped to subtotal)
         if let sub = Double(cartManager.subtotal), sub > 0 {
             return sub
         }
-        return cartManager.items.reduce(0.0) { sum, item in
-            let price = Double(item.price ?? item.perPrice ?? item.product?.price ?? "0") ?? 0.0
-            return sum + (price * Double(item.quantity ?? 1))
-        }
+        return cartManager.items.reduce(0.0) { $0 + $1.lineTotalValue }
     }
 
     var finalAmount: Double {
@@ -149,19 +148,19 @@ struct CartScreen: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(.horizontal, 4)
                                 .padding(.top, 2)
-
-                            Spacer(minLength: 80)
                         }
                         .padding(16)
+                        .padding(.bottom, 12)
                     }
                 }
             }
-
-            // MARK: - Floating Bottom Checkout Bar
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
             if !cartManager.items.isEmpty {
                 bottomCheckoutBar
             }
-
+        }
+        .overlay {
             // MARK: - Scheme Applied Celebration Modal & Confetti
             if showCelebrationModal, let offer = celebrationOffer {
                 SchemeCelebrationModalView(offer: offer) {
@@ -181,6 +180,18 @@ struct CartScreen: View {
         }
         .onChange(of: cartManager.items.count) { _, _ in
             loadAvailableOffers()
+        }
+        .onChange(of: cartManager.subtotal) { _, _ in
+            loadAvailableOffersDebounced()
+        }
+        .onChange(of: cartManager.syncRevision) { _, _ in
+            loadAvailableOffersDebounced()
+        }
+        .onChange(of: cartManager.appliedOffer?.id) { _, newId in
+            if newId != nil {
+                cartManager.clearDroppedOfferHint()
+            }
+            loadAvailableOffersDebounced()
         }
         .sheet(isPresented: $showSchemeSheet) {
             SchemePickerSheet(
@@ -251,11 +262,13 @@ struct CartScreen: View {
     private func cartItemCard(_ item: CartItem) -> some View {
         let title = item.productName ?? item.product?.name ?? item.product?.title ?? "Spice Product"
         let unitText = item.variantName ?? item.product?.unit ?? "100 gms"
-        let unitPriceVal = Double(item.price ?? item.perPrice ?? item.product?.price ?? "0") ?? 0.0
+        let unitPriceVal = item.unitPriceValue
         let unitPriceText = String(format: "₹%.2f / unit", unitPriceVal)
         let qty = item.quantity ?? 1
-        let lineTotal = unitPriceVal * Double(qty)
+        let lineTotal = item.lineTotalValue
         let maxAvailable = item.maxStock
+        // Never fall back to cart-row `id` — that breaks variant matching on qty updates
+        let productId = item.productId
 
         return VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top, spacing: 12) {
@@ -291,14 +304,13 @@ struct CartScreen: View {
 
                 // Remove Button
                 Button(action: {
-                    if let pId = item.productId ?? item.id {
-                        cartManager.setQuantity(
-                            productId: pId,
-                            variantId: item.variantId,
-                            variantName: item.variantName,
-                            quantity: 0
-                        )
-                    }
+                    guard let pId = productId else { return }
+                    cartManager.setQuantity(
+                        productId: pId,
+                        variantId: item.variantId,
+                        variantName: item.variantName,
+                        quantity: 0
+                    )
                 }) {
                     Text("Remove")
                         .font(.appFont(size: 12, weight: .bold))
@@ -315,21 +327,20 @@ struct CartScreen: View {
                 // Green Stepper Pill
                 HStack(spacing: 0) {
                     Button(action: {
-                        if let pId = item.productId ?? item.id {
-                            let newQty = max(0, qty - 1)
-                            cartManager.setQuantity(
-                                productId: pId,
-                                variantId: item.variantId,
-                                variantName: item.variantName,
-                                quantity: newQty,
-                                availableQuantity: maxAvailable
-                            )
-                        }
+                        guard let pId = productId else { return }
+                        let newQty = max(0, qty - 1)
+                        cartManager.setQuantity(
+                            productId: pId,
+                            variantId: item.variantId,
+                            variantName: item.variantName,
+                            quantity: newQty
+                        )
                     }) {
                         Image(systemName: "minus")
                             .font(.appFont(size: 11, weight: .bold))
                             .foregroundColor(.white)
-                            .frame(width: 32, height: 32)
+                            .frame(width: 36, height: 36)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
 
@@ -339,26 +350,26 @@ struct CartScreen: View {
                         .frame(minWidth: 32)
 
                     Button(action: {
-                        if let pId = item.productId ?? item.id {
-                            if qty >= maxAvailable {
-                                toastMessage = "Sirf \(maxAvailable) units stock me available hain."
-                                isShowToast = true
-                                return
-                            }
-                            let newQty = min(maxAvailable, qty + 1)
-                            cartManager.setQuantity(
-                                productId: pId,
-                                variantId: item.variantId,
-                                variantName: item.variantName,
-                                quantity: newQty,
-                                availableQuantity: maxAvailable
-                            )
+                        guard let pId = productId else { return }
+                        if maxAvailable < 9999, qty >= maxAvailable {
+                            toastMessage = "Sirf \(maxAvailable) units stock me available hain."
+                            isShowToast = true
+                            return
                         }
+                        let newQty = maxAvailable < 9999 ? min(maxAvailable, qty + 1) : qty + 1
+                        cartManager.setQuantity(
+                            productId: pId,
+                            variantId: item.variantId,
+                            variantName: item.variantName,
+                            quantity: newQty,
+                            availableQuantity: maxAvailable < 9999 ? maxAvailable : nil
+                        )
                     }) {
                         Image(systemName: "plus")
                             .font(.appFont(size: 11, weight: .bold))
-                            .foregroundColor(qty >= maxAvailable ? Color.white.opacity(0.35) : .white)
-                            .frame(width: 32, height: 32)
+                            .foregroundColor(maxAvailable < 9999 && qty >= maxAvailable ? Color.white.opacity(0.35) : .white)
+                            .frame(width: 36, height: 36)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 }
@@ -423,136 +434,193 @@ struct CartScreen: View {
                 RoundedRectangle(cornerRadius: 16)
                     .stroke(Color(hex: "#D2EBD9"), lineWidth: 1)
             )
-        } else if !availableSchemes.isEmpty || !availableSlabs.isEmpty {
-            // State 2: Available schemes exist from API
-            let eligibleScheme = availableSchemes.first { $0.eligible == true || (productTotal >= ($0.minOrderValue ?? 0) && ($0.minOrderValue ?? 0) > 0) }
-            let eligibleSlab = availableSlabs.first { $0.eligible == true || (totalUnitsCount >= ($0.minQty ?? 0) && ($0.minQty ?? 0) > 0) }
-
-            if let scheme = eligibleScheme {
-                // Eligible Scheme Card
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Scheme Available")
-                        .font(.appFont(size: 14, weight: .heavy))
-                        .foregroundColor(Color(hex: "#167444"))
-
-                    Text(scheme.title ?? "Special Offer")
-                        .font(.appFont(size: 13, weight: .bold))
-                        .foregroundColor(Color.spiceInk)
-
-                    if let desc = scheme.description, !desc.isEmpty {
-                        Text(desc)
-                            .font(.appFont(size: 12, weight: .medium))
-                            .foregroundColor(Color.spiceMuted)
-                    }
-
-                    Button(action: {
-                        showSchemeSheet = true
-                    }) {
-                        Text("Apply Scheme")
-                            .font(.appFont(size: 13, weight: .heavy))
-                            .foregroundColor(Color(hex: "#167444"))
-                            .padding(.top, 2)
-                    }
-                    .buttonStyle(.plain)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(14)
-                .background(Color(hex: "#EBF7EE"))
-                .cornerRadius(16)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(Color(hex: "#D2EBD9"), lineWidth: 1)
-                )
-            } else if let slab = eligibleSlab {
-                // Eligible Quantity Slab Card
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Scheme Available")
-                        .font(.appFont(size: 14, weight: .heavy))
-                        .foregroundColor(Color(hex: "#167444"))
-
-                    Text(slab.title ?? "Quantity Offer")
-                        .font(.appFont(size: 13, weight: .bold))
-                        .foregroundColor(Color.spiceInk)
-
-                    if let desc = slab.description ?? slab.giftDescription, !desc.isEmpty {
-                        Text(desc)
-                            .font(.appFont(size: 12, weight: .medium))
-                            .foregroundColor(Color.spiceMuted)
-                    }
-
-                    Button(action: {
-                        showSchemeSheet = true
-                    }) {
-                        Text("Apply Scheme")
-                            .font(.appFont(size: 13, weight: .heavy))
-                            .foregroundColor(Color(hex: "#167444"))
-                            .padding(.top, 2)
-                    }
-                    .buttonStyle(.plain)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(14)
-                .background(Color(hex: "#EBF7EE"))
-                .cornerRadius(16)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(Color(hex: "#D2EBD9"), lineWidth: 1)
-                )
-            } else if let firstScheme = availableSchemes.first, let target = firstScheme.minOrderValue, target > 0 {
-                // Locked / In-Progress Scheme
-                let progress = min(1.0, productTotal / target)
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text("Scheme Available")
-                            .font(.appFont(size: 14, weight: .heavy))
-                            .foregroundColor(Color(hex: "#8B5014"))
-
-                        Spacer()
-
-                        Text("₹\(Int(productTotal)) / ₹\(Int(target))")
-                            .font(.appFont(size: 12.5, weight: .heavy, design: .monospaced))
-                            .foregroundColor(Color(hex: "#8B5014"))
-                    }
-
-                    // Progress Bar
-                    GeometryReader { geo in
-                        ZStack(alignment: .leading) {
-                            RoundedRectangle(cornerRadius: 3)
-                                .fill(Color(hex: "#F0DFC9"))
-                                .frame(height: 4)
-
-                            RoundedRectangle(cornerRadius: 3)
-                                .fill(Color(hex: "#8B5014"))
-                                .frame(width: geo.size.width * progress, height: 4)
-                        }
-                    }
-                    .frame(height: 4)
-                    .padding(.vertical, 2)
-
-                    Text(firstScheme.title ?? firstScheme.description ?? "Add more items to unlock offer")
-                        .font(.appFont(size: 13, weight: .medium))
-                        .foregroundColor(Color.spiceInk.opacity(0.85))
-
-                    Button(action: {
-                        showSchemeSheet = true
-                    }) {
-                        Text("View All Schemes")
-                            .font(.appFont(size: 13, weight: .heavy))
-                            .foregroundColor(Color(hex: "#8B5014"))
-                            .padding(.top, 2)
-                    }
-                    .buttonStyle(.plain)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(14)
-                .background(Color(hex: "#FEF7EF"))
-                .cornerRadius(16)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(Color(hex: "#F0DFC9"), lineWidth: 1)
-                )
-            }
+        } else if let scheme = eligibleOrderValueScheme {
+            // Android: title + Apply Scheme (description if API sent one)
+            eligibleSchemeCard(
+                title: scheme.title ?? "Special Offer",
+                description: scheme.description
+            )
+        } else if let slab = eligibleQuantitySlab {
+            eligibleSchemeCard(
+                title: slab.title ?? "Quantity Offer",
+                description: slab.description ?? slab.giftDescription
+            )
+        } else if let unlock = nearestUnlockTarget {
+            // Android CartComponents locked card: fraction + bar + title + View All
+            // (shortfall "Add ₹X more" lives only in SchemePickerSheet)
+            lockedSchemeCard(
+                title: unlock.title,
+                progress: unlock.progress,
+                progressLabel: unlock.progressLabel
+            )
         }
+    }
+
+    private var eligibleOrderValueScheme: RetailerOfferScheme? {
+        // Prefer server `eligible`, else compute from cart total (same as Android)
+        availableSchemes.first {
+            ($0.eligible == true) || (productTotal + 0.009 >= ($0.minOrderValue ?? .greatestFiniteMagnitude) && ($0.minOrderValue ?? 0) > 0)
+        }
+    }
+
+    private var eligibleQuantitySlab: RetailerQuantitySlab? {
+        availableSlabs.first {
+            ($0.eligible == true) || (totalUnitsCount >= ($0.minQty ?? Int.max) && ($0.minQty ?? 0) > 0)
+        }
+    }
+
+    private struct UnlockTarget {
+        let title: String
+        let progress: Double
+        let progressLabel: String
+        let minOrderValue: Double
+    }
+
+    /// Android: `schemes.filterNot { eligible }.minByOrNull { minOrderValue }`
+    /// Prefer last-dropped scheme when still locked, else lowest min-order locked scheme.
+    private var nearestUnlockTarget: UnlockTarget? {
+        if let dropped = cartManager.lastDroppedOfferHint,
+           let minVal = dropped.minOrderValue, minVal > 0, productTotal < minVal {
+            return UnlockTarget(
+                title: dropped.schemeTitle ?? dropped.title ?? "Special Offer",
+                progress: min(1.0, productTotal / minVal),
+                progressLabel: "₹\(Int(productTotal)) / ₹\(Int(minVal))",
+                minOrderValue: minVal
+            )
+        }
+        if let dropped = cartManager.lastDroppedOfferHint,
+           let minQty = dropped.minQty, minQty > 0, totalUnitsCount < minQty {
+            return UnlockTarget(
+                title: dropped.schemeTitle ?? dropped.title ?? "Quantity Offer",
+                progress: min(1.0, Double(totalUnitsCount) / Double(minQty)),
+                progressLabel: "\(totalUnitsCount) / \(minQty) units",
+                minOrderValue: Double(minQty)
+            )
+        }
+
+        let lockedByValue: [UnlockTarget] = availableSchemes.compactMap { scheme in
+            let serverEligible = scheme.eligible == true
+            let locallyEligible = (scheme.minOrderValue ?? 0) > 0 && productTotal + 0.009 >= (scheme.minOrderValue ?? 0)
+            guard !serverEligible && !locallyEligible,
+                  let target = scheme.minOrderValue, target > 0 else { return nil }
+            // Android: `next.description ?: next.title`
+            let label = (scheme.description?.isEmpty == false) ? scheme.description! : (scheme.title ?? "Special Offer")
+            return UnlockTarget(
+                title: label,
+                progress: min(1.0, productTotal / target),
+                progressLabel: "₹\(Int(productTotal)) / ₹\(Int(target))",
+                minOrderValue: target
+            )
+        }
+
+        // Android picks lowest minOrderValue among locked schemes
+        if let best = lockedByValue.min(by: { $0.minOrderValue < $1.minOrderValue }) {
+            return best
+        }
+
+        let lockedSlabs: [UnlockTarget] = availableSlabs.compactMap { slab in
+            guard let minQty = slab.minQty, minQty > 0, totalUnitsCount < minQty else { return nil }
+            if slab.eligible == true { return nil }
+            return UnlockTarget(
+                title: slab.description ?? slab.title ?? "Quantity Offer",
+                progress: min(1.0, Double(totalUnitsCount) / Double(minQty)),
+                progressLabel: "\(totalUnitsCount) / \(minQty) units",
+                minOrderValue: Double(minQty)
+            )
+        }
+        return lockedSlabs.min(by: { $0.minOrderValue < $1.minOrderValue })
+    }
+
+    private func eligibleSchemeCard(title: String, description: String?) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Scheme Available")
+                .font(.appFont(size: 14, weight: .heavy))
+                .foregroundColor(Color(hex: "#167444"))
+
+            Text(title)
+                .font(.appFont(size: 13, weight: .bold))
+                .foregroundColor(Color.spiceInk)
+
+            if let desc = description, !desc.isEmpty, desc != title {
+                Text(desc)
+                    .font(.appFont(size: 12, weight: .medium))
+                    .foregroundColor(Color.spiceMuted)
+            }
+
+            Button(action: {
+                showSchemeSheet = true
+            }) {
+                Text("Apply Scheme")
+                    .font(.appFont(size: 13, weight: .heavy))
+                    .foregroundColor(Color(hex: "#167444"))
+                    .padding(.top, 2)
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(Color(hex: "#EBF7EE"))
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color(hex: "#D2EBD9"), lineWidth: 1)
+        )
+    }
+
+    private func lockedSchemeCard(
+        title: String,
+        progress: Double,
+        progressLabel: String
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Scheme Available")
+                    .font(.appFont(size: 14, weight: .heavy))
+                    .foregroundColor(Color(hex: "#8B5014"))
+
+                Spacer()
+
+                Text(progressLabel)
+                    .font(.appFont(size: 12.5, weight: .heavy, design: .monospaced))
+                    .foregroundColor(Color(hex: "#8B5014"))
+            }
+
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(Color(hex: "#F0DFC9"))
+                        .frame(height: 4)
+
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(Color(hex: "#8B5014"))
+                        .frame(width: max(0, geo.size.width * progress), height: 4)
+                }
+            }
+            .frame(height: 4)
+            .padding(.vertical, 2)
+
+            Text(title)
+                .font(.appFont(size: 13, weight: .medium))
+                .foregroundColor(Color.spiceInk.opacity(0.85))
+
+            Button(action: {
+                showSchemeSheet = true
+            }) {
+                Text("View All Schemes")
+                    .font(.appFont(size: 13, weight: .heavy))
+                    .foregroundColor(Color(hex: "#8B5014"))
+                    .padding(.top, 2)
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(Color(hex: "#FEF7EF"))
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color(hex: "#F0DFC9"), lineWidth: 1)
+        )
     }
 
     // MARK: - Delivery Address Card
@@ -791,6 +859,15 @@ struct CartScreen: View {
     }
 
     // MARK: - Load Available Offers from API
+    private func loadAvailableOffersDebounced() {
+        offersReloadWorkItem?.cancel()
+        let work = DispatchWorkItem {
+            loadAvailableOffers()
+        }
+        offersReloadWorkItem = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.45, execute: work)
+    }
+
     private func loadAvailableOffers() {
         isLoadingOffers = true
         let headers = defaults.authHeader
@@ -802,6 +879,34 @@ struct CartScreen: View {
             } receiveValue: { [self] response in
                 self.availableSchemes = response.data?.schemes ?? []
                 self.availableSlabs = response.data?.slabs ?? []
+                // Sync cart footer to offers API root cart_total (e.g. 544)
+                cartManager.applyOffersCartTotal(response.cartTotal)
+                // Enrich applied / dropped offer with API min thresholds when missing
+                if var applied = cartManager.appliedOffer {
+                    if applied.minOrderValue == nil,
+                       let match = availableSchemes.first(where: { $0.id == applied.id }) {
+                        applied.minOrderValue = match.minOrderValue
+                    }
+                    if applied.minQty == nil,
+                       let match = availableSlabs.first(where: { $0.id == applied.id }) {
+                        applied.minQty = match.minQty
+                    }
+                    cartManager.appliedOffer = applied
+                }
+                if var dropped = cartManager.lastDroppedOfferHint {
+                    if dropped.minOrderValue == nil,
+                       let match = availableSchemes.first(where: { $0.id == dropped.id }),
+                       let minVal = match.minOrderValue {
+                        dropped.minOrderValue = minVal
+                        cartManager.lastDroppedOfferHint = dropped
+                    }
+                    if dropped.minQty == nil,
+                       let match = availableSlabs.first(where: { $0.id == dropped.id }),
+                       let minQty = match.minQty {
+                        dropped.minQty = minQty
+                        cartManager.lastDroppedOfferHint = dropped
+                    }
+                }
             }
             .store(in: &cancellables)
     }
